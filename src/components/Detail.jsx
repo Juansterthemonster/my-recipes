@@ -2,8 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 
-const EMOJIS = ['🍝','🥘','🥗','🍳','🫕','🌮','🍜','🥩','🍲','🫔','🥪','🍱']
-function getEmoji(name) { return EMOJIS[name ? name.charCodeAt(0) % EMOJIS.length : 0] }
 
 const pill = {
   fontSize: '0.72rem', padding: '5px 13px', borderRadius: 'var(--r-full)',
@@ -19,17 +17,20 @@ const pill = {
    Using an inner grid (not flexbox justify-between) means the amount column
    is sized to its widest value within each cell — no jagged right edges.
 */
+/* ─── INGREDIENT ROW ──────────────────────────────────────────────────────────
+   Stacked layout (v1.1 fix): name on the first line, amount on the second line
+   indented to sit under the name text (past the bullet). This pairing is
+   unambiguous in every context — the narrow 4-col desktop cells and the full-
+   width 1-col mobile view — because the two pieces of data are vertically
+   grouped within a single cell rather than pushed to opposite edges.
+*/
 function IngRow({ ing }) {
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr auto',
-      columnGap: 8,
-      alignItems: 'baseline',
-      padding: '6px 0',
+      padding: '8px 0',
       borderBottom: '1px solid var(--border-soft)',
     }}>
-      {/* Left — bullet + name */}
+      {/* Bullet + name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
         <span style={{
           width: 5, height: 5, borderRadius: '50%',
@@ -41,14 +42,15 @@ function IngRow({ ing }) {
           style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1.4 }}
         >{ing.name}</span>
       </div>
-      {/* Right — amount, right-aligned */}
-      <span
-        className="text-[0.9375rem] md:text-[0.8rem]"
-        style={{
-          color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
-          whiteSpace: 'nowrap', textAlign: 'right',
-        }}
-      >{ing.amount || ''}</span>
+      {/* Amount — indented to align under the name text, muted */}
+      {ing.amount && (
+        <div style={{ paddingLeft: 12, marginTop: 2 }}>
+          <span
+            className="text-[0.875rem] md:text-[0.78rem]"
+            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
+          >{ing.amount}</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -119,11 +121,15 @@ export default function Detail({ recipe, onBack, onEdit, onDelete }) {
 
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : []
   const steps = Array.isArray(recipe.steps) ? recipe.steps : []
-  const activeLabel = recipe.active_time_mins ? `${formatTime(recipe.active_time_mins)} prep` : null
-  const totalLabel = recipe.total_time_min
+
+  // Plain-text time labels — same format as browse cards ("Total time: X", "Prep time: X")
+  const totalTimeText = recipe.total_time_min
     ? recipe.total_time_max && recipe.total_time_max !== recipe.total_time_min
-      ? `${formatTime(recipe.total_time_min)}–${formatTime(recipe.total_time_max)} total`
-      : `${formatTime(recipe.total_time_min)} total`
+      ? `Total time: ${formatTime(recipe.total_time_min)}–${formatTime(recipe.total_time_max)}`
+      : `Total time: ${formatTime(recipe.total_time_min)}`
+    : null
+  const prepTimeText = recipe.active_time_mins
+    ? `Prep time: ${formatTime(recipe.active_time_mins)}`
     : null
 
   return (
@@ -204,10 +210,20 @@ export default function Detail({ recipe, onBack, onEdit, onDelete }) {
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: 12,
-          background: 'var(--cream)', border: '1px solid var(--border-soft)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.75rem', marginBottom: 16,
-        }}>{getEmoji(recipe.name)}</div>
+          background: 'var(--green-light)',
+          marginBottom: 16,
+        }} />
+
+        {/* Meal type eyebrow — muted uppercase label above the title (v1.1) */}
+        {recipe.meal_type && (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).length > 0 && (
+          <div style={{
+            fontSize: '0.62rem', fontWeight: 500, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-body)', marginBottom: 8,
+          }}>
+            {(Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).join(' · ')}
+          </div>
+        )}
 
         <h1
           className="text-[1.5rem] md:text-[1.8rem]"
@@ -224,34 +240,43 @@ export default function Detail({ recipe, onBack, onEdit, onDelete }) {
           >{recipe.description}</p>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          {activeLabel && <span style={pill}>{activeLabel}</span>}
-          {totalLabel && <span style={pill}>{totalLabel}</span>}
-          {recipe.serves && (
-            <span style={{ ...pill, background: 'var(--cream-mid)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }}>
-              Serves {recipe.serves}
-            </span>
-          )}
-          {recipe.cuisine && (
-            <span style={{ ...pill, background: 'var(--cream-mid)', color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' }}>
-              {recipe.cuisine}
-            </span>
-          )}
-          {recipe.meal_type && (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(mt => (
-            <span key={mt} style={{ ...pill, background: 'var(--amber-light)', color: '#8A6500', border: '1px solid #F0D98A' }}>
-              {mt}
-            </span>
-          ))}
-          {recipe.dietary && recipe.dietary.map(d => {
-            const s = {
-              'Gluten free':  { background: 'var(--cream-mid)',    color: 'var(--text-secondary)' },
-              'Vegetarian':   { background: 'var(--green-tint)',   color: 'var(--green-primary)' },
-              'Vegan':        { background: 'var(--white)',        color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' },
-              'Pescatarian':  { background: 'var(--violet-light)', color: 'var(--violet-accent)' },
-            }[d] || {}
-            return <span key={d} style={{ ...pill, ...s }}>{d}</span>
-          })}
-        </div>
+        {/* ── Time — plain text, matching browse card style ── */}
+        {(totalTimeText || prepTimeText) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 10 }}>
+            {totalTimeText && (
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+                {totalTimeText}
+              </span>
+            )}
+            {prepTimeText && (
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+                {prepTimeText}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* ── Serves + Cuisine — plain text metadata, no pills ── */}
+        {(recipe.serves || recipe.cuisine) && (
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 12 }}>
+            {[recipe.serves && `Serves ${recipe.serves}`, recipe.cuisine].filter(Boolean).join(' · ')}
+          </p>
+        )}
+
+        {/* ── Dietary — colour-coded pills only; all other metadata is plain text ── */}
+        {recipe.dietary && recipe.dietary.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {recipe.dietary.map(d => {
+              const s = {
+                'Gluten free':  { background: 'var(--cream-mid)',    color: 'var(--text-secondary)' },
+                'Vegetarian':   { background: 'var(--green-tint)',   color: 'var(--green-primary)' },
+                'Vegan':        { background: 'var(--white)',        color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' },
+                'Pescatarian':  { background: 'var(--violet-light)', color: 'var(--violet-accent)' },
+              }[d] || {}
+              return <span key={d} style={{ ...pill, ...s }}>{d}</span>
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Ingredients — no dividers, two-column name/amount alignment ── */}

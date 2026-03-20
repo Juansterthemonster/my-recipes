@@ -17,17 +17,6 @@ const card = {
   background:'var(--white)', borderRadius:'var(--r-lg)',
   border:'1px solid var(--border-soft)', padding:'20px'
 }
-const btnPill = {
-  background:'var(--green-primary)', color:'var(--text-on-dark)', border:'none',
-  borderRadius:'var(--r-full)', fontFamily:'var(--font-body)', fontSize:'0.82rem',
-  fontWeight:500, padding:'9px 22px', cursor:'pointer', transition:'background 180ms'
-}
-const btnGhost = {
-  background:'var(--white)', color:'var(--text-secondary)',
-  border:'1.5px solid var(--border)', borderRadius:'var(--r-full)',
-  fontFamily:'var(--font-body)', fontSize:'0.82rem', fontWeight:500,
-  padding:'9px 22px', cursor:'pointer', transition:'all 180ms'
-}
 
 function focus(e) { e.target.style.borderColor = '#999' }
 function blur(e)  { e.target.style.borderColor = 'var(--border)' }
@@ -49,9 +38,30 @@ function TimeBox({ val, onChange, unit }) {
   )
 }
 
-function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, tMaxH, setTMaxH, tMaxM, setTMaxM }) {
+/* ─── TIME + SERVES ───────────────────────────────────────────────────────────
+   Order (v1.1 update): Serves | Prep time | Total time
+   Grid template flips to [auto_1fr_1fr] so Serves (compact) comes first.
+   Mobile: single column, stacked. sm+: 3-col side by side.
+*/
+function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, tMaxH, setTMaxH, tMaxM, setTMaxM, serves, setServes }) {
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
+    <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-6 items-start">
+
+      {/* Serves — first, compact auto-width column */}
+      <div>
+        <label style={lbl}>Serves</label>
+        <p style={{ fontSize:'0.68rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', marginBottom:10 }}>
+          Portions
+        </p>
+        <input
+          type="number" min="1" value={serves}
+          onChange={e => setServes(e.target.value)}
+          placeholder="—" onFocus={focus} onBlur={blur}
+          style={{ ...inp, width:72, padding:'10px 10px', fontSize:'0.9rem', textAlign:'center' }}
+        />
+      </div>
+
+      {/* Prep time — second */}
       <div>
         <label style={lbl}>Prep time</label>
         <p style={{ fontSize:'0.68rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', marginBottom:10 }}>
@@ -62,6 +72,8 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, t
           <TimeBox val={aM} onChange={setAM} unit="m" />
         </div>
       </div>
+
+      {/* Total time — third */}
       <div>
         <label style={lbl}>Total time</label>
         <p style={{ fontSize:'0.68rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', marginBottom:10 }}>
@@ -79,22 +91,8 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, t
           <TimeBox val={tMaxM} onChange={setTMaxM} unit="m" />
         </div>
       </div>
-    </div>
-  )
-}
 
-/*
-  KebabIcon — three dots stacked vertically, the standard "more options" affordance.
-  Inline SVG, no icon library required. Uses currentColor so it inherits the
-  button's text color automatically.
-*/
-function KebabIcon() {
-  return (
-    <svg width="4" height="16" viewBox="0 0 4 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="2" cy="2"  r="1.75" fill="currentColor" />
-      <circle cx="2" cy="8"  r="1.75" fill="currentColor" />
-      <circle cx="2" cy="14" r="1.75" fill="currentColor" />
-    </svg>
+    </div>
   )
 }
 
@@ -114,10 +112,11 @@ export default function RecipeForm({ recipe, onBack, onSave }) {
   const [tMaxM, setTMaxM] = useState(tx.minutes || '')
   const [serves, setServes]   = useState(recipe?.serves  || '')
   const [cuisine, setCuisine] = useState(recipe?.cuisine || '')
-  const [dietary, setDietary] = useState(recipe?.dietary || [])
+  // Single-select: dietary is one string (or '' for none). DB still receives an array.
+  const [dietary, setDietary] = useState(recipe?.dietary?.[0] || '')
   const [mealType, setMealType] = useState(
     Array.isArray(recipe?.meal_type) ? recipe.meal_type
-    : recipe?.meal_type ? [recipe.meal_type]   // migrate old single-string values
+    : recipe?.meal_type ? [recipe.meal_type]
     : []
   )
   const [ingredients, setIngredients] = useState(
@@ -149,7 +148,7 @@ export default function RecipeForm({ recipe, onBack, onSave }) {
       total_time_max:   toMins(tMaxH, tMaxM),
       serves:  serves  ? parseInt(serves)  : null,
       cuisine: cuisine.trim() || null,
-      dietary: dietary.length > 0 ? dietary : [],
+      dietary: dietary ? [dietary] : [],
       meal_type: mealType.length > 0 ? mealType : null,
       ingredients: ingredients.filter(i => i.name.trim()).map(i => ({
         name: i.name.trim(), amount: i.amount.trim(), optional: i.optional || false
@@ -177,23 +176,30 @@ export default function RecipeForm({ recipe, onBack, onSave }) {
           lg:pr-[max(40px,calc((100vw-1400px)/2+40px))]
         "
       >
-        <button onClick={onBack} style={{
-          fontSize:'0.9rem', color:'#FFFFFF',
-          background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)'
-        }}>Cancel</button>
-
+        {/* Title — left */}
         <span style={{
           fontFamily:'var(--font-body)', fontSize:'1.1rem',
           fontWeight:400, color:'#FFFFFF'
         }}>{isEdit ? 'Edit recipe' : 'New recipe'}</span>
 
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        {/* Cancel + Save — right, together */}
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          {/* Cancel — white outline, secondary */}
+          <button onClick={onBack} style={{
+            background:'transparent', color:'#FFFFFF',
+            border:'1.5px solid rgba(255,255,255,0.55)',
+            borderRadius:'var(--r-full)', fontFamily:'var(--font-body)',
+            fontSize:'0.82rem', fontWeight:400, padding:'9px 22px',
+            cursor:'pointer',
+          }}>Cancel</button>
+
+          {/* Save — white fill, primary */}
           <button onClick={handleSave} disabled={saving}
             style={{
-              background:'transparent', color:'#FFFFFF',
-              border:'1.5px solid rgba(255,255,255,0.7)',
-              borderRadius:'var(--r-full)', fontFamily:'var(--font-body)',
-              fontSize:'0.82rem', fontWeight:500, padding:'9px 22px',
+              background:'#FFFFFF', color:'var(--green-primary)',
+              border:'none', borderRadius:'var(--r-full)',
+              fontFamily:'var(--font-body)', fontSize:'0.82rem',
+              fontWeight:600, padding:'9px 22px',
               cursor:'pointer', opacity: saving ? 0.6 : 1,
             }}>
             {saving ? 'Saving…' : 'Save'}
@@ -201,189 +207,204 @@ export default function RecipeForm({ recipe, onBack, onSave }) {
         </div>
       </div>
 
-      <div className="mx-4 mt-4 pb-10 lg:mx-10" style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      {/* ── Form body ──────────────────────────────────────────────────────────
+          Mobile:  single column, top-to-bottom
+          Desktop: two columns — metadata left, content right (v1.1)
+            Left:  Name + Notes · Cuisine / Dietary / Meal type · Time + Serves
+            Right: Ingredients · Steps
+      */}
+      <div className="mx-4 mt-4 pb-10 lg:mx-10">
+        {/* Error — Ruby Red (#a31621) is reserved exclusively for error/danger states */}
         {error && (
           <div style={{
-            background:'#FFF0F0', border:'1px solid #F5BABA', color:'#A03030',
-            fontSize:'0.85rem', padding:'12px 16px', borderRadius:8, fontFamily:'var(--font-body)'
+            background:'#fdf2f3', border:'1px solid #f5baba', color:'#a31621',
+            fontSize:'0.85rem', padding:'12px 16px', borderRadius:8,
+            fontFamily:'var(--font-body)', marginBottom:12
           }}>{error}</div>
         )}
 
-        {/* Name + Notes */}
-        <div style={card} className="space-y-4">
-          <div>
-            <label style={lbl}>Name</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)}
-              placeholder="Recipe name" style={inp} onFocus={focus} onBlur={blur} />
-          </div>
-          <div>
-            <label style={lbl}>Notes</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Any context, variations, or reminders…" rows={3}
-              style={{ ...inp, resize:'none', lineHeight:1.6 }} onFocus={focus} onBlur={blur} />
-          </div>
-        </div>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-x-5 lg:items-start">
 
-        {/* Cuisine + Dietary + Meal type */}
-        <div style={card}>
-          <div style={{ marginBottom:16 }}>
-            <label style={lbl}>Cuisine</label>
-            <input type="text" value={cuisine} onChange={e => setCuisine(e.target.value)}
-              placeholder="e.g. Italian, Indian, Japanese…"
-              style={inp} onFocus={focus} onBlur={blur} />
-          </div>
-          <div style={{ marginBottom:16 }}>
-            <label style={lbl}>Dietary</label>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:6 }}>
-              {['Vegetarian','Vegan','Pescatarian','Gluten free'].map(opt => {
-                const active = dietary.includes(opt)
-                return (
-                  <button key={opt} type="button"
-                    onClick={() => setDietary(active ? dietary.filter(d => d !== opt) : [...dietary, opt])}
-                    style={{
-                      padding:'6px 14px', borderRadius:'var(--r-full)',
-                      fontFamily:'var(--font-body)', fontSize:'0.78rem',
-                      fontWeight: active ? 500 : 400, cursor:'pointer', transition:'all 180ms',
-                      border:      active ? '1.5px solid var(--green-primary)' : '1.5px solid var(--border)',
-                      background:  active ? 'var(--green-light)' : 'var(--white)',
-                      color:       active ? 'var(--green-primary)' : 'var(--text-secondary)',
-                    }}
-                  >{opt}</button>
-                )
-              })}
+          {/* ── LEFT COLUMN (metadata) ── */}
+          <div className="flex flex-col gap-3">
+
+            {/* Name + Notes */}
+            <div style={card} className="space-y-4">
+              <div>
+                <label style={lbl}>Name</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)}
+                  placeholder="Recipe name" style={inp} onFocus={focus} onBlur={blur} />
+              </div>
+              <div>
+                <label style={lbl}>Notes</label>
+                <textarea value={description} onChange={e => setDescription(e.target.value)}
+                  placeholder="Any context, variations, or reminders…" rows={3}
+                  style={{ ...inp, resize:'none', lineHeight:1.6 }} onFocus={focus} onBlur={blur} />
+              </div>
             </div>
-          </div>
-          {/* Meal type — multi-select pill group, same visual style as Dietary */}
-          <div>
-            <label style={lbl}>Meal type</label>
-            <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', fontFamily:'var(--font-body)', marginBottom:8, marginTop:2 }}>
-              Select all that apply
-            </p>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-              {['Breakfast','Lunch','Dinner','Dessert','Snack'].map(opt => {
-                const active = mealType.includes(opt)
-                return (
-                  <button key={opt} type="button"
-                    onClick={() => setMealType(active ? mealType.filter(m => m !== opt) : [...mealType, opt])}
-                    style={{
-                      padding:'6px 14px', borderRadius:'var(--r-full)',
-                      fontFamily:'var(--font-body)', fontSize:'0.78rem',
-                      fontWeight: active ? 500 : 400, cursor:'pointer', transition:'all 180ms',
-                      border:      active ? '1.5px solid var(--green-primary)' : '1.5px solid var(--border)',
-                      background:  active ? 'var(--green-light)' : 'var(--white)',
-                      color:       active ? 'var(--green-primary)' : 'var(--text-secondary)',
-                    }}
-                  >{opt}</button>
-                )
-              })}
+
+            {/* Cuisine + Dietary + Meal type */}
+            <div style={card}>
+              <div style={{ marginBottom:16 }}>
+                <label style={lbl}>Cuisine</label>
+                <input type="text" value={cuisine} onChange={e => setCuisine(e.target.value)}
+                  placeholder="e.g. Italian, Indian, Japanese…"
+                  style={inp} onFocus={focus} onBlur={blur} />
+              </div>
+              {/* Dietary — Amber Gold active state, single-select (radio behaviour).
+                  Clicking an active option deselects it; clicking another replaces it.
+                  DB receives a one-item array (or empty) to stay schema-compatible. */}
+              <div style={{ marginBottom:16 }}>
+                <label style={lbl}>Dietary</label>
+                <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', fontFamily:'var(--font-body)', marginBottom:8, marginTop:2 }}>
+                  Select one
+                </p>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {['Vegetarian','Vegan','Pescatarian','Gluten free'].map(opt => {
+                    const active = dietary === opt
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => setDietary(active ? '' : opt)}
+                        style={{
+                          padding:'6px 14px', borderRadius:'var(--r-full)',
+                          fontFamily:'var(--font-body)', fontSize:'0.78rem',
+                          fontWeight: active ? 600 : 400, cursor:'pointer', transition:'all 180ms',
+                          border:     active ? '1.5px solid #fcba04' : '1.5px solid var(--border)',
+                          background: active ? '#fffbeb'             : 'var(--white)',
+                          color:      active ? '#7a5c00'             : 'var(--text-secondary)',
+                        }}
+                      >{opt}</button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Meal type — Graphite active state (#2c302e) */}
+              <div>
+                <label style={lbl}>Meal type</label>
+                <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', fontFamily:'var(--font-body)', marginBottom:8, marginTop:2 }}>
+                  Select all that apply
+                </p>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {['Breakfast','Lunch','Dinner','Dessert','Snack'].map(opt => {
+                    const active = mealType.includes(opt)
+                    return (
+                      <button key={opt} type="button"
+                        onClick={() => setMealType(active ? mealType.filter(m => m !== opt) : [...mealType, opt])}
+                        style={{
+                          padding:'6px 14px', borderRadius:'var(--r-full)',
+                          fontFamily:'var(--font-body)', fontSize:'0.78rem',
+                          fontWeight: active ? 600 : 400, cursor:'pointer', transition:'all 180ms',
+                          border:     active ? '1.5px solid #2c302e' : '1.5px solid var(--border)',
+                          background: active ? '#f2f3f2'             : 'var(--white)',
+                          color:      active ? '#2c302e'             : 'var(--text-secondary)',
+                        }}
+                      >{opt}</button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Time */}
-        <div style={card}>
-          <TimeSection
-            aH={aH} setAH={setAH} aM={aM} setAM={setAM}
-            tMinH={tMinH} setTMinH={setTMinH} tMinM={tMinM} setTMinM={setTMinM}
-            tMaxH={tMaxH} setTMaxH={setTMaxH} tMaxM={tMaxM} setTMaxM={setTMaxM}
-          />
-        </div>
-
-        {/* Ingredients + Serves
-            Dividers removed: the old code had borderTop on the optional section
-            and borderBottom on each IngRow. Spacing (gap + paddingTop) creates
-            visual separation without hard lines, keeping the form feeling open
-            and consistent with the rest of the card sections.
-        */}
-        <div style={card}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <label style={{ ...lbl, margin:0 }}>Ingredients</label>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)' }}>
-                Serves
-              </span>
-              <input type="number" value={serves} onChange={e => setServes(e.target.value)}
-                placeholder="—"
-                style={{
-                  width:52, background:'var(--cream)', border:'1.5px solid var(--border)',
-                  borderRadius:8, fontFamily:'var(--font-body)', fontSize:'0.9rem',
-                  color:'var(--text-primary)', padding:'6px 8px', outline:'none', textAlign:'center'
-                }}
-                onFocus={focus} onBlur={blur}
+            {/* Time + Serves */}
+            <div style={card}>
+              <TimeSection
+                aH={aH} setAH={setAH} aM={aM} setAM={setAM}
+                tMinH={tMinH} setTMinH={setTMinH} tMinM={tMinM} setTMinM={setTMinM}
+                tMaxH={tMaxH} setTMaxH={setTMaxH} tMaxM={tMaxM} setTMaxM={setTMaxM}
+                serves={serves} setServes={setServes}
               />
             </div>
-          </div>
 
-          {/* Required ingredients — no divider lines between items */}
-          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-            {ingredients.map((ing, i) => (
-              <div key={i}>
-                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                  <input ref={el => ingRefs.current[i] = el} type="text" value={ing.name}
-                    onChange={e => updateIng(i, 'name', e.target.value)} placeholder="Ingredient"
-                    style={{ ...inp, flex:1, fontSize:'0.9rem', padding:'9px 11px' }}
-                    onFocus={focus} onBlur={blur}
-                  />
-                  <input type="text" value={ing.amount}
-                    onChange={e => updateIng(i, 'amount', e.target.value)} placeholder="Amount"
-                    style={{ ...inp, width:82, fontSize:'0.9rem', padding:'9px 11px' }}
-                    onFocus={focus} onBlur={blur}
-                  />
-                  {ingredients.length > 1 && (
-                    <button onClick={() => removeIng(i)} style={{
-                      color:'var(--border)', background:'none', border:'none',
-                      cursor:'pointer', fontSize:'1.2rem', lineHeight:1, width:22, flexShrink:0
-                    }}>×</button>
-                  )}
-                </div>
-                {/* Optional checkbox — tucked under the row, no divider above */}
-                <label style={{
-                  display:'flex', alignItems:'center', gap:8, cursor:'pointer',
-                  width:'fit-content', marginLeft:2, marginTop:8
-                }}>
-                  <input type="checkbox" checked={ing.optional || false}
-                    onChange={e => updateIng(i, 'optional', e.target.checked)}
-                    style={{ width:16, height:16, accentColor:'var(--green-primary)', cursor:'pointer', flexShrink:0 }} />
-                  <span style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)' }}>
-                    Optional
-                  </span>
-                </label>
+          </div>
+          {/* ── end LEFT COLUMN ── */}
+
+          {/* ── RIGHT COLUMN (content) — mt-3 on mobile, no margin on desktop ── */}
+          <div className="flex flex-col gap-3 mt-3 lg:mt-0">
+
+            {/* Ingredients
+                CSS Grid for the input rows (v1.1): all Name columns align, all
+                Amount columns align, remove buttons align — cleaner than per-row flex.
+                gridColumn:'1 / -1' on the optional label spans all three columns.
+            */}
+            <div style={card}>
+              <label style={{ ...lbl, marginBottom:16 }}>Ingredients</label>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                {ingredients.map((ing, i) => (
+                  <div key={i}>
+                    <div style={{
+                      display:'grid',
+                      gridTemplateColumns:'1fr 82px 22px',
+                      columnGap:6,
+                      alignItems:'center',
+                    }}>
+                      <input
+                        ref={el => ingRefs.current[i] = el}
+                        type="text" value={ing.name}
+                        onChange={e => updateIng(i, 'name', e.target.value)}
+                        placeholder="Ingredient"
+                        style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
+                        onFocus={focus} onBlur={blur}
+                      />
+                      <input
+                        type="text" value={ing.amount}
+                        onChange={e => updateIng(i, 'amount', e.target.value)}
+                        placeholder="Amount"
+                        style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
+                        onFocus={focus} onBlur={blur}
+                      />
+                      {ingredients.length > 1 ? (
+                        <button onClick={() => removeIng(i)} style={{
+                          color:'var(--border)', background:'none', border:'none',
+                          cursor:'pointer', fontSize:'1.2rem', lineHeight:1,
+                          width:22, flexShrink:0, textAlign:'center'
+                        }}>×</button>
+                      ) : <div />}
+                    </div>
+                    <label style={{
+                      display:'flex', alignItems:'center', gap:8, cursor:'pointer',
+                      width:'fit-content', marginLeft:2, marginTop:8
+                    }}>
+                      <input type="checkbox" checked={ing.optional || false}
+                        onChange={e => updateIng(i, 'optional', e.target.checked)}
+                        style={{ width:16, height:16, accentColor:'var(--green-primary)', cursor:'pointer', flexShrink:0 }} />
+                      <span style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)' }}>
+                        Optional
+                      </span>
+                    </label>
+                  </div>
+                ))}
               </div>
-            ))}
+
+              <button onClick={addIng}
+                style={{ marginTop:16, fontSize:'0.82rem', color:'var(--text-secondary)',
+                  background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)' }}
+                onMouseEnter={e => e.target.style.color='var(--green-primary)'}
+                onMouseLeave={e => e.target.style.color='var(--text-secondary)'}>
+                + Add ingredient
+              </button>
+            </div>
+
+            {/* Steps */}
+            <div style={card}>
+              <label style={lbl}>Steps</label>
+              <textarea value={steps} onChange={e => setSteps(e.target.value)} rows={6}
+                placeholder={"Write each step on a new line…\n\nBoil pasta in salted water\nFry garlic in olive oil\nToss together and serve"}
+                style={{ ...inp, resize:'none', lineHeight:1.65 }} onFocus={focus} onBlur={blur}
+              />
+              <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', marginTop:6, fontFamily:'var(--font-body)' }}>
+                Each line becomes a numbered step
+              </p>
+            </div>
+
           </div>
+          {/* ── end RIGHT COLUMN ── */}
 
-          {/* Add ingredient — no divider above, just spacing */}
-          <button onClick={addIng}
-            style={{ marginTop:16, fontSize:'0.82rem', color:'var(--text-secondary)',
-              background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)' }}
-            onMouseEnter={e => e.target.style.color='var(--green-primary)'}
-            onMouseLeave={e => e.target.style.color='var(--text-secondary)'}>
-            + Add ingredient
-          </button>
         </div>
 
-        {/* Steps */}
-        <div style={card}>
-          <label style={lbl}>Steps</label>
-          <textarea value={steps} onChange={e => setSteps(e.target.value)} rows={6}
-            placeholder={"Write each step on a new line…\n\nBoil pasta in salted water\nFry garlic in olive oil\nToss together and serve"}
-            style={{ ...inp, resize:'none', lineHeight:1.65 }} onFocus={focus} onBlur={blur}
-          />
-          <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', marginTop:6, fontFamily:'var(--font-body)' }}>
-            Each line becomes a numbered step
-          </p>
-        </div>
-
-        {/* Bottom actions */}
-        <div style={{ display:'flex', gap:10, justifyContent:'flex-end', paddingBottom:8 }}>
-          <button onClick={onBack} style={btnGhost}>Cancel</button>
-          <button onClick={handleSave} disabled={saving}
-            style={{ ...btnPill, opacity:saving ? 0.6 : 1 }}
-            onMouseEnter={e => e.target.style.background='var(--green-mid)'}
-            onMouseLeave={e => e.target.style.background='var(--green-primary)'}>
-            {saving ? 'Saving…' : 'Save recipe'}
-          </button>
-        </div>
+        {/* Bottom actions removed — Cancel + Save live in the sticky nav header */}
+        <div style={{ height: 8 }} />
       </div>
     </div>
   )

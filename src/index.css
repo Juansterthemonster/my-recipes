@@ -6,24 +6,44 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
-  --green-primary:  #5E7C3F;
-  --green-dark:     #2C3D1C;
-  --green-mid:      #4A6230;
-  --green-light:    #EBF0E4;
-  --green-tint:     #F4F7F0;
-  --violet-accent:  #8661C1;
-  --violet-light:   #EDE8F7;
-  --amber-accent:   #FCBA04;
-  --amber-light:    #FFF6D6;
+  /* ── Primary — Dark Teal (#0C3D4E) ───────────────────────────────────
+     Used for: nav bar, primary buttons, active indicators, bullet points,
+     step numbers, toggle active state, focus rings, icon accents.
+     White / Ivory text on Dark Teal passes WCAG AA (12:1 contrast).    */
+  --green-primary:  #0C3D4E;
+  --green-dark:     #061E27;   /* Pressed / shadow states              */
+  --green-mid:      #1A5E75;   /* Hover states on Dark Teal elements   */
+  --green-light:    #E3EED6;   /* Light Muted Olive tint — thumbnails, decorative fills  */
+  --green-tint:     #F0F5E8;   /* Very light Muted Olive — tag backgrounds, subtle fills */
+
+  /* ── Secondary / Accent A — Blue Bell (#3E92BF) ─────────────────────
+     Used for: public recipe badges, links, secondary interactive highlights.
+     Replaces former violet/purple accent throughout the UI.             */
+  --violet-accent:  #3E92BF;
+  --violet-light:   #D4EBF6;   /* Light Blue Bell — badge backgrounds  */
+
+  /* ── Accent B — Saffron (#F1C203) ───────────────────────────────────
+     Used for: dietary badge active state, highlights, active toggles.   */
+  --amber-accent:   #F1C203;
+  --amber-light:    #FEF5BB;   /* Light Saffron — badge backgrounds    */
+
+  /* ── Surface / Background — Ivory (#FFFDEB) ─────────────────────────
+     Used for: page background, text on dark surfaces.                   */
   --white:          #FFFFFF;
-  --cream:          #F9F6F0;
-  --cream-mid:      #F2EDE4;
-  --text-primary:   #2C3D1C;
-  --text-secondary: #6B7A5A;
-  --text-tertiary:  #9EAB8C;
-  --text-on-dark:   #F9F6F0;
-  --border:         #C8C8C8;
-  --border-soft:    #E3E3E3;
+  --cream:          #FFFDEB;   /* Ivory — primary page background      */
+  --cream-mid:      #F5EFC0;   /* Warm straw — hover backgrounds, secondary surfaces */
+
+  /* ── Text — anchored on Dark Teal ───────────────────────────────────  */
+  --text-primary:   #0C3D4E;   /* Dark Teal — headings, body copy      */
+  --text-secondary: #3D7080;   /* Mid Teal — metadata, labels, hints   */
+  --text-tertiary:  #7DAAB6;   /* Light Teal — placeholders, tertiary  */
+  --text-on-dark:   #FFFDEB;   /* Ivory — text on dark/colored surfaces */
+
+  /* ── Borders ─────────────────────────────────────────────────────── */
+  --border:         #C5CDD0;   /* Teal-tinted neutral                  */
+  --border-soft:    #E0E8EA;   /* Very soft teal — card borders        */
+
+  /* ── Typography & Motion (unchanged) ────────────────────────────── */
   --font-display:   'Fraunces', Georgia, serif;
   --font-body:      'Plus Jakarta Sans', sans-serif;
   --r-sm: 8px; --r-md: 14px; --r-lg: 14px; --r-xl: 32px; --r-full: 999px;
@@ -42,3 +62,46 @@ body {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
+
+/* ── Masonry grid ───────────────────────────────────────────────────────── */
+/*
+  CSS-columns masonry: 2 cols mobile → 3 cols md → 4 cols lg.
+  Items pack tightly top-to-bottom within each column (no empty row gaps).
+  column-gap and item margin-bottom match the Tailwind gap-1.5/gap-3 scale.
+*/
+.masonry-grid {
+  column-count: 2;
+  column-gap: 0.75rem; /* gap-3 — doubled on mobile */
+}
+@media (min-width: 768px) {
+  .masonry-grid {
+    column-count: 3;
+    column-gap: 0.75rem; /* gap-3 */
+  }
+}
+@media (min-width: 1024px) {
+  .masonry-grid {
+    column-count: 4;
+  }
+}
+
+/* Each masonry item */
+.masonry-item {
+  break-inside: avoid;          /* prevent card splitting across columns   */
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;     /* legacy Safari                           */
+  display: block;
+  width: 100%;
+  margin-bottom: 0.75rem;       /* gap-3 — doubled on mobile               */
+}
+@media (min-width: 768px) {
+  .masonry-item {
+    margin-bottom: 0.75rem;     /* gap-3 on md+                            */
+  }
+}
+
+/* Search input placeholder — neutral grey */
+.search-input::placeholder {
+  color: #6B7280;
+  opacity: 1;
+}

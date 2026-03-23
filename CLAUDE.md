@@ -8,8 +8,8 @@
 
 **Mi Sazón** — a personal digital recipe book with social sharing. Mobile-first React app with a warm, editorial design system. Built as a personal project; live on Vercel and connected to Supabase.
 
-- **Live URL:** (add your Vercel URL here)
-- **GitHub:** (add your repo URL here)
+- **Live URL:** https://my-recipes-juansterthemonsters-projects.vercel.app (check Vercel dashboard for exact URL)
+- **GitHub:** https://github.com/Juansterthemonster/my-recipes
 - **Local dev:** `cd ~/Documents/projects/my-recipes && npm run dev` → http://localhost:5173
 
 ---
@@ -123,8 +123,21 @@ create table recipes (
   meal_type        text[],               -- ['Breakfast', 'Dinner', ...]
   photo_url        text,                 -- public URL from Supabase Storage
   is_public        boolean default false,
+  copied_from      uuid references recipes(id) on delete set null, -- v2: set when "Add to my recipes" copies a public recipe
   created_at       timestamptz default now()
 );
+```
+
+### likes table (added v2)
+```sql
+create table public.likes (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid references auth.users(id) on delete cascade,
+  recipe_id  uuid references recipes(id) on delete cascade,
+  created_at timestamptz default now(),
+  unique(user_id, recipe_id)
+);
+-- RLS: authenticated users can INSERT/DELETE their own rows; SELECT own rows
 ```
 
 ### profiles table (added v2 — run `supabase_migration_username.sql`)
@@ -167,8 +180,21 @@ create table public.profiles (
 - No server-side processing — direct browser → Supabase Storage upload
 
 ### Tabs & public recipes
-- Three tabs in Browse: **My recipes** (mine), **Liked** (favourites), **Explore** (all public)
+- Three tabs in Browse: **My recipes** (mine), **Liked** (favourites + liked public), **Explore** (all public)
 - Public recipe cards show `by @username` — fetched in a single `IN` query on `profiles` after loading public recipes, then merged into a profileMap
+
+### Likes system (v2 — Option A: separate `likes` table)
+- `fetchAll` in Browse runs three parallel queries: myRecipes, pubRecipes, `likes` (for current user)
+- Builds a `likedIds` Set from the likes query; stamps `is_liked` onto each public recipe object
+- `toggleLike` does optimistic UI update then insert/delete on `likes` table
+- **Liked tab** shows `myFavs` (my recipes with `is_favourite: true`) + `likedPublicFiltered` (public recipes I've liked)
+- Mixed card rendering in Liked tab: `recipe.user_id === session.user.id ? <MyRecipeCard> : <PublicRecipeCard>`
+- Chose separate table over reusing `is_favourite` so liked-but-not-owned recipes stay out of My recipes and to enable future like counts
+
+### "Add to my recipes" (v2)
+- Non-owner viewing a public recipe sees "Add to my recipes" button in the nav header (styled identical to Edit button)
+- `handleAddToMyRecipes` strips client-side fields (`author_username`, `is_liked`), inserts a copy with `copied_from: recipe.id`, `is_public: false`, `user_id: session.user.id`
+- Button transitions to "Added ✓" (muted, disabled) after first click — checked on mount via `.maybeSingle()` query for existing `copied_from` row
 
 ### Styling approach
 - Tailwind for layout/responsive breakpoints
@@ -212,14 +238,28 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - `EmptyMyRecipes`: plus-circle SVG, clickable card that triggers onAdd
 - `EmptyLiked`: heart SVG (`#D7191D`), static message
 - `EmptyExplore`: compass SVG, static message
+- **Card top-row alignment:** All four card variants (MyRecipeCard image/no-image, PublicRecipeCard image/no-image) use `alignItems: 'center'` on their top-row flex container so the prep-time tag and heart icon stay vertically centred
+- **PublicRecipeCard:** Has its own heart icon (red fill when liked) wired to `onToggleLike`. No bookmark/add-to-recipes action on the card — that lives in Detail nav
+- **Attribution colour:** on-photo cards use `rgba(255,255,255,0.55)` (semi-opaque white); no-photo cards use `var(--text-tertiary)`
 
 ### Detail.jsx
 - `photoInputRef` + `uploading` state for photo upload without navigating to edit
 - No-photo state (owner): `#EFEFED` button, `height: 100px`, camera icon, "Add photo" — with blurBtn heart overlaid
 - Heart fill colour: `#D7191D`
+- **Owner vs non-owner heart:** Owner sees their bookmark heart; non-owner sees a like heart (`isLiked` / `handleToggleLike`) — both use `blurBtn` style on photo, positioned identically
+- **Non-owner nav:** "Add to my recipes" button sits next to the back arrow in the header nav, styled identically to the Edit button (same font, padding, border, radius, colour `#0C3D4E`). Shows "Added ✓" in muted state after clicking
+- **`by @username` byline:** Renders below `<h1>` at `0.82rem`, `var(--text-tertiary)` — replaces the old "🌍 Public recipe" violet pill badge
+- **On-mount fetch for non-owners:** Parallel `.maybeSingle()` queries for `likes` and `recipes(copied_from)` to seed `isLiked` and `isAdded` state
 
 ### RecipeForm.jsx
 - Photo remove button: trash SVG icon (not ×)
+- **Ingredient focus-scroll fix:** Uses `pendingFocusRef = useRef(null)` + a dependency-free `useEffect` that runs after every render. `addIng` sets `pendingFocusRef.current = ingredients.length` before calling `setIngredients`; the effect fires post-DOM-commit, calls `el.focus({ preventScroll: true })` then `el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })`. Replaced the old `setTimeout(..., 30)` hack which was firing before the DOM updated.
+
+### Favicon
+- `public/favicon.svg`: dark teal `#0C3D4E` circle, white bold "MS" centered (`dominant-baseline="central"`, `text-anchor="middle"`, `font-size="17"`, `letter-spacing="1"`)
+- `public/favicon-16x16.png`, `favicon-32x32.png`, `favicon-48x48.png`: generated with Python Pillow (RGBA, anti-aliased DejaVuSans-Bold)
+- `public/favicon.ico`: multi-size ICO bundle
+- `index.html`: full link tag stack for all sizes + `<title>Mi Sazón</title>`
 
 ---
 
@@ -250,7 +290,7 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - Form: two-col desktop layout, dietary single-select (Amber Gold), meal type multi-select (Graphite), Ruby Red errors
 - Design tokens: Amber Gold, Ruby Red, Graphite added
 
-### v2.0 — Social + Auth (shipped ✓)
+### v2.0 — Social + Auth (shipped ✓, commit `6a0a7eb`)
 
 **Auth system**
 - Email/password sign-in and sign-up
@@ -264,19 +304,36 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 **Browse**
 - Three tabs: My recipes / Liked / Explore
 - Masonry grid (CSS columns)
-- Public recipe cards with `by @username` attribution
+- Public recipe cards with `by @username` attribution and like heart
 - Profile enrichment via batch `IN` query
 - Empty states for all three tabs with on-brand SVG icons
 - Heart fill colour changed to `#D7191D`
 - Wordmark size increased to `1.45rem`
+- Card top-row flex changed to `alignItems: 'center'` (all 4 variants) — prep-time tag and heart vertically centred
+- Liked tab renders both own favourites and liked public recipes (mixed card types)
+
+**Likes (new `likes` table — Option A)**
+- Separate `likes` table (user_id, recipe_id, unique constraint)
+- Three parallel queries in `fetchAll`: myRecipes, pubRecipes, likes → builds `likedIds` Set
+- Optimistic toggle on heart icon in Explore + Detail
+- Liked tab shows union of `myFavs` and `likedPublicFiltered`
 
 **Detail**
 - Direct photo upload from detail view (no edit navigation required)
 - "Add photo" placeholder for recipes without a photo (owner only)
-- Like/bookmark actions with frosted-glass overlay buttons on photos
+- Like/bookmark with frosted-glass overlay buttons on photos; non-owner heart wired to `likes` table
+- `by @username` byline (quiet, `var(--text-tertiary)`) replaces "🌍 Public recipe" pill badge
+- "Add to my recipes" button in nav header (styled like Edit); copies recipe with `copied_from` field; shows "Added ✓" after use
+- Removed extra like/add CTA from the info card section
 
 **RecipeForm**
 - Trash icon replaces × on photo remove button
+- Ingredient focus-after-add scroll fix: `pendingFocusRef` + `useEffect` replaces `setTimeout` hack
+
+**Favicon**
+- New `public/favicon.svg`: dark teal `#0C3D4E` circle with centered white "MS"
+- PNG exports: 16×16, 32×32, 48×48 (Python Pillow); `.ico` bundle
+- `index.html` title set to "Mi Sazón"; full favicon link tag stack added
 
 **Auth screens**
 - Consistent header style matching post-login nav (same bg, wordmark colour)
@@ -287,8 +344,9 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 **New files**
 - `AuthScreen.jsx` — complete rewrite (was not present in v1)
 - `ResetPassword.jsx` — new
-- `supabase_migration_username.sql` — new
+- `supabase_migration_username.sql` — new (profiles table + likes table)
 - `STYLEGUIDE_v2.md` — new
+- `CLAUDE.md` — new (this file)
 
 ---
 

@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 
 const pill = {
-  fontSize: '0.72rem', padding: '5px 13px', borderRadius: 'var(--r-full)',
+  fontSize: '0.72rem', padding: '6px 13px', borderRadius: 'var(--r-full)',
   background: 'var(--green-light)', color: 'var(--green-primary)',
   border: 'none', fontFamily: 'var(--font-body)', fontWeight: 500,
 }
@@ -93,13 +93,15 @@ function IngredientCard({ ingredients }) {
 }
 
 /* ─── DETAIL ───────────────────────────────────────────────────────────────── */
-export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete, session }) {
+export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete, onAddedToMyRecipes, session }) {
   const [recipe, setRecipe]     = useState(initialRecipe)
   const [menuOpen, setMenuOpen]   = useState(false)
   const [uploading, setUploading] = useState(false)
   // Non-owner interaction state
-  const [isLiked, setIsLiked] = useState(initialRecipe.is_liked ?? false)
-  const [isAdded, setIsAdded] = useState(false)
+  const [isLiked, setIsLiked]         = useState(initialRecipe.is_liked ?? false)
+  const [isAdded, setIsAdded]         = useState(false)
+  const [adding, setAdding]           = useState(false)
+  const [originalAuthor, setOriginalAuthor] = useState(null)
   const menuRef       = useRef(null)
   const photoInputRef = useRef(null)
 
@@ -112,6 +114,20 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  // If this recipe was copied from another, fetch the original author's username
+  useEffect(() => {
+    if (!recipe.copied_from) return
+    async function fetchOriginalAuthor() {
+      const { data: orig } = await supabase
+        .from('recipes').select('user_id').eq('id', recipe.copied_from).maybeSingle()
+      if (!orig) return
+      const { data: prof } = await supabase
+        .from('profiles').select('username').eq('id', orig.user_id).maybeSingle()
+      if (prof?.username) setOriginalAuthor(prof.username)
+    }
+    fetchOriginalAuthor()
+  }, [recipe.copied_from])
 
   // For non-owners: fetch whether user has liked or already copied this recipe
   useEffect(() => {
@@ -178,18 +194,23 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
   }
 
   async function handleAddToMyRecipes() {
-    if (isAdded) return
-    setIsAdded(true)
+    if (isAdded || adding) return
+    setAdding(true)
     // Strip client-side-only fields before inserting
     const { id, created_at, updated_at, author_username, is_liked: _liked, ...rest } = recipe
-    await supabase.from('recipes').insert({
+    const { data, error } = await supabase.from('recipes').insert({
       ...rest,
       user_id: session.user.id,
       is_public: false,
       is_favourite: false,
       copied_from: recipe.id,
       is_modified: false,
-    })
+    }).select().single()
+    setAdding(false)
+    if (!error && data) {
+      setIsAdded(true)
+      onAddedToMyRecipes?.(data)
+    }
   }
 
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : []
@@ -242,21 +263,30 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
             }}>Edit</button>
           )}
 
-          {/* Add to my recipes — non-owners only */}
-          {!isOwner && (
+          {/* "Already saved" label — non-owners only, shown once added */}
+          {!isOwner && isAdded && (
+            <span style={{
+              fontSize: '0.78rem', color: 'var(--text-secondary)',
+              fontFamily: 'var(--font-body)', fontStyle: 'italic',
+            }}>
+              Saved to my recipes
+            </span>
+          )}
+
+          {/* Add to my recipes — non-owners only, hidden once already added */}
+          {!isOwner && !isAdded && (
             <button
               onClick={handleAddToMyRecipes}
-              disabled={isAdded}
+              disabled={adding}
               style={{
                 fontSize: '0.82rem', fontWeight: 500, padding: '7px 18px',
                 borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
-                background: 'transparent', color: isAdded ? 'var(--text-tertiary)' : '#0C3D4E',
-                borderColor: isAdded ? 'var(--border-soft)' : '#0C3D4E',
-                cursor: isAdded ? 'default' : 'pointer', fontFamily: 'var(--font-body)',
-                transition: 'color 150ms, border-color 150ms',
+                background: 'transparent', color: '#0C3D4E',
+                cursor: adding ? 'default' : 'pointer', fontFamily: 'var(--font-body)',
+                opacity: adding ? 0.6 : 1, transition: 'opacity 150ms',
               }}
             >
-              {isAdded ? 'Added ✓' : 'Add to my recipes'}
+              {adding ? 'Adding…' : 'Add to my recipes'}
             </button>
           )}
 
@@ -299,8 +329,8 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
                       border: 'none', borderBottom: '1px solid var(--border-soft)',
                       cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                   >
                     {recipe.is_public ? 'Make recipe private' : 'Make recipe public'}
                   </button>
@@ -310,10 +340,10 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
                     style={{
                       display: 'block', width: '100%', padding: '13px 18px', textAlign: 'left',
                       fontSize: '0.9rem', color: '#C0392B', background: 'none', border: 'none',
-                      cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                      cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms, color 150ms',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#F43F5E'; e.currentTarget.style.color = '#F9F6F0' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#C0392B' }}
                   >Delete recipe</button>
                 </div>
               )}
@@ -433,20 +463,6 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
           </>
         )}
 
-        {/* Modification notice — shown if this recipe was copied and then edited */}
-        {recipe.copied_from && recipe.is_modified && (
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'var(--cream-mid)', borderRadius: 'var(--r-full)',
-            padding: '5px 12px', marginBottom: 14,
-            fontSize: '0.75rem', fontFamily: 'var(--font-body)',
-            color: 'var(--text-secondary)',
-          }}>
-            ✏️ You've made some changes to the original recipe
-          </div>
-        )}
-
-
         {recipe.meal_type && (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).length > 0 && (
           <div style={{
             fontSize: '0.62rem', fontWeight: 500, letterSpacing: '0.1em',
@@ -462,9 +478,22 @@ export default function Detail({ recipe: initialRecipe, onBack, onEdit, onDelete
           style={{
             fontFamily: 'var(--font-display)', fontWeight: 400,
             color: 'var(--text-primary)', lineHeight: 1.15,
-            marginBottom: recipe.author_username && !isOwner ? 6 : 10,
+            marginBottom: (recipe.author_username && !isOwner) || (recipe.copied_from && recipe.is_modified) ? 6 : 10,
             letterSpacing: '-0.01em',
           }}>{recipe.name}</h1>
+
+        {/* Modification notice — directly under recipe name */}
+        {recipe.copied_from && recipe.is_modified && (
+          <p style={{
+            fontSize: '0.78rem', fontFamily: 'var(--font-body)',
+            color: 'var(--text-secondary)', marginBottom: 14,
+            fontStyle: 'italic', lineHeight: 1.4,
+          }}>
+            {originalAuthor
+              ? `Original recipe by @${originalAuthor} edited by you`
+              : 'You\'ve made changes to the original recipe'}
+          </p>
+        )}
 
         {/* Attribution — shown on other users' public recipes */}
         {!isOwner && recipe.author_username && (

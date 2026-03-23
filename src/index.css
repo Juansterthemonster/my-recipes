@@ -67,16 +67,19 @@ input[type=number] { -moz-appearance: textfield; }
 /*
   CSS-columns masonry: 2 cols mobile → 3 cols md → 4 cols lg.
   Items pack tightly top-to-bottom within each column (no empty row gaps).
-  column-gap and item margin-bottom match the Tailwind gap-1.5/gap-3 scale.
+
+  .masonry-item uses display:inline-block + vertical-align:top.
+  This is the canonical fix for iOS Safari's column-top stagger bug, where
+  display:block items can receive a phantom top gap in the first column slot.
+  vertical-align:top ensures inline-block items anchor to the column top.
 */
 .masonry-grid {
   column-count: 2;
-  column-gap: 0.75rem; /* gap-3 — doubled on mobile */
+  column-gap: 0.75rem;
 }
 @media (min-width: 768px) {
   .masonry-grid {
     column-count: 3;
-    column-gap: 0.75rem; /* gap-3 */
   }
 }
 @media (min-width: 1024px) {
@@ -87,17 +90,17 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* Each masonry item */
 .masonry-item {
-  break-inside: avoid;          /* prevent card splitting across columns   */
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;     /* legacy Safari                           */
-  display: block;
+  display: inline-block;              /* fixes iOS Safari column-top stagger */
+  vertical-align: top;                /* anchor to column top, not baseline  */
   width: 100%;
-  margin-bottom: 0.75rem;       /* gap-3 — doubled on mobile               */
+  margin-bottom: 0.75rem;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
 }
-@media (min-width: 768px) {
-  .masonry-item {
-    margin-bottom: 0.75rem;     /* gap-3 on md+                            */
-  }
+
+/* Hide scrollbar on pill rows (iOS Safari) */
+.pill-row::-webkit-scrollbar {
+  display: none;
 }
 
 /* Search input placeholder — neutral grey */

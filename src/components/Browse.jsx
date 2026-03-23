@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
-function Nav({ onAdd, session, onSignOut }) {
+function Nav({ onAdd, session, onSignOut, username }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -66,9 +66,7 @@ function Nav({ onAdd, session, onSignOut }) {
                 fontFamily: 'var(--font-body)', borderBottom: '1px solid var(--border-soft)',
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200,
               }}>
-                {session?.user?.user_metadata?.username
-                  ? `@${session.user.user_metadata.username}`
-                  : session?.user?.email}
+                {username ? `@${username}` : session?.user?.email}
               </div>
               <button
                 onClick={() => { setMenuOpen(false); onSignOut() }}
@@ -77,8 +75,8 @@ function Nav({ onAdd, session, onSignOut }) {
                   fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
                   border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--cream)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
               >Sign out</button>
             </div>
           )}
@@ -88,8 +86,30 @@ function Nav({ onAdd, session, onSignOut }) {
   )
 }
 
+/* ─── FILTER ICON ───────────────────────────────────────────────────────────── */
+function FilterIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      {/* Row 1 — handle at left */}
+      <line x1="4" y1="6" x2="6.5" y2="6" />
+      <circle cx="9" cy="6" r="2.5" />
+      <line x1="11.5" y1="6" x2="20" y2="6" />
+      {/* Row 2 — handle at right */}
+      <line x1="4" y1="12" x2="12.5" y2="12" />
+      <circle cx="15" cy="12" r="2.5" />
+      <line x1="17.5" y1="12" x2="20" y2="12" />
+      {/* Row 3 — handle at left */}
+      <line x1="4" y1="18" x2="6.5" y2="18" />
+      <circle cx="9" cy="18" r="2.5" />
+      <line x1="11.5" y1="18" x2="20" y2="18" />
+    </svg>
+  )
+}
+
 /* ─── SEARCH BAR ───────────────────────────────────────────────────────────── */
-function SearchBar({ search, onSearch }) {
+function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFilters }) {
+  const filterActive = filtersOpen || hasActiveFilters
   return (
     <div
       style={{ background: '#F9F6F0' }}
@@ -100,20 +120,119 @@ function SearchBar({ search, onSearch }) {
         px-5 py-3
       "
     >
-      <div className="w-full lg:max-w-2xl">
+      <div className="w-full lg:max-w-2xl" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <input
           type="text" placeholder="Search recipes…"
           value={search} onChange={e => onSearch(e.target.value)}
           className="search-input"
           style={{
-            display: 'block', width: '100%',
+            flex: 1, minWidth: 0,
             background: '#FFFFFF', border: '1.5px solid var(--border-soft)',
             borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
             fontSize: '0.95rem', color: '#6B7280',
             padding: '10px 18px', outline: 'none',
           }}
         />
+        <button
+          onClick={onToggleFilters}
+          aria-label={filtersOpen ? 'Close filters' : 'Open filters'}
+          style={{
+            flexShrink: 0,
+            width: 42, height: 42,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: filterActive ? '#0C3D4E' : '#FFFFFF',
+            border: `1.5px solid ${filterActive ? '#0C3D4E' : 'var(--border-soft)'}`,
+            borderRadius: 'var(--r-full)',
+            color: filterActive ? '#F9F6F0' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'background 150ms, border-color 150ms, color 150ms',
+          }}
+        >
+          <FilterIcon />
+        </button>
       </div>
+    </div>
+  )
+}
+
+/* ─── FILTER CONSTANTS ──────────────────────────────────────────────────────── */
+const DIETARY_FILTERS   = ['Vegetarian', 'Vegan', 'Pescatarian', 'Gluten free', 'Keto']
+const MEAL_TYPE_FILTERS = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Side']
+const TIME_FILTERS      = [
+  { label: 'Under 15 mins', maxMins: 15 },
+  { label: 'Under 30 mins', maxMins: 30 },
+  { label: 'Under 1 h',     maxMins: 60 },
+]
+
+/* ─── FILTER BAR ───────────────────────────────────────────────────────────── */
+function PillGroup({ label, options, active, onToggle }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{
+        fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em',
+        textTransform: 'uppercase', color: 'var(--text-tertiary)',
+        fontFamily: 'var(--font-body)', marginBottom: 8,
+      }}>{label}</div>
+      <div className="pill-row -mr-5 lg:mr-0" style={{
+        display: 'flex', gap: 8, flexWrap: 'nowrap',
+        overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+        msOverflowStyle: 'none', scrollbarWidth: 'none',
+      }}>
+        {options.map(opt => {
+          const isActive = active.includes(opt)
+          return (
+            <button
+              key={opt}
+              onClick={() => onToggle(opt)}
+              style={{
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                padding: '8px 14px',
+                borderRadius: 'var(--r-full)',
+                border: isActive ? '1.5px solid #0C3D4E' : '1.5px solid var(--border-soft)',
+                background: isActive ? '#0C3D4E' : 'var(--white)',
+                color: isActive ? '#F9F6F0' : 'var(--text-secondary)',
+                fontSize: '0.78rem', fontWeight: isActive ? 600 : 400,
+                fontFamily: 'var(--font-body)', cursor: 'pointer',
+                transition: 'background 150ms, color 150ms, border-color 150ms',
+              }}
+            >{opt}</button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function FilterBar({ activeDietary, activeMealTypes, activeTime, onToggleDietary, onToggleMealType, onToggleTime }) {
+  return (
+    <div
+      style={{ background: '#F9F6F0' }}
+      className="
+        lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
+        lg:pl-[max(40px,calc((100vw-1400px)/2+40px))]
+        lg:pr-[max(40px,calc((100vw-1400px)/2+40px))]
+        px-5 pt-1 pb-2
+      "
+    >
+      <PillGroup
+        label="Dietary"
+        options={DIETARY_FILTERS}
+        active={activeDietary}
+        onToggle={onToggleDietary}
+      />
+      <PillGroup
+        label="Meal type"
+        options={MEAL_TYPE_FILTERS}
+        active={activeMealTypes}
+        onToggle={onToggleMealType}
+      />
+      <PillGroup
+        label="Time"
+        options={TIME_FILTERS.map(t => t.label)}
+        active={activeTime}
+        onToggle={onToggleTime}
+      />
     </div>
   )
 }
@@ -128,7 +247,13 @@ const TABS = [
 function TabBar({ active, onChange }) {
   return (
     <div
-      style={{ background: '#F9F6F0' }}
+      style={{
+        background: '#F9F6F0',
+        position: 'sticky',
+        top: 62,
+        zIndex: 9,
+        borderBottom: '5px solid #F9F6F0',
+      }}
       className="
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
         lg:pl-[max(40px,calc((100vw-1400px)/2+40px))]
@@ -263,7 +388,7 @@ function PrepTimePill({ mins, onPhoto = false }) {
     <span style={{
       ...bgStyle, color: accent,
       border: `1.5px solid ${accent}`,
-      borderRadius: 'var(--r-full)', padding: '6px 12px',
+      borderRadius: 'var(--r-full)', padding: '8px 12px',
       fontSize: '0.72rem', fontWeight: 500,
       fontFamily: 'var(--font-body)', lineHeight: 1,
       whiteSpace: 'nowrap',
@@ -651,12 +776,44 @@ function EmptyExplore() {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, onSignOut }) {
+export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username }) {
   const [myRecipes, setMyRecipes]         = useState([])
   const [publicRecipes, setPublicRecipes] = useState([])
   const [loading, setLoading]             = useState(true)
   const [search, setSearch]               = useState('')
-  const [activeTab, setActiveTab]         = useState('mine')
+  const [activeDietary,   setActiveDietary]   = useState([])
+  const [activeMealTypes, setActiveMealTypes] = useState([])
+  const [activeTime,      setActiveTime]      = useState([])
+  const [filtersOpen, setFiltersOpen]         = useState(false)
+
+  // Generic pill toggle — adds the tag if absent, removes it if present
+  function makeToggle(setter) {
+    return tag => setter(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+  }
+
+  function matchesFilters(recipe) {
+    // Dietary — AND: recipe must carry every selected dietary tag
+    if (activeDietary.length > 0) {
+      const tags = Array.isArray(recipe.dietary) ? recipe.dietary : []
+      if (!activeDietary.every(f => tags.includes(f))) return false
+    }
+    // Meal type — OR: recipe must match at least one selected type
+    if (activeMealTypes.length > 0) {
+      const types = Array.isArray(recipe.meal_type)
+        ? recipe.meal_type
+        : recipe.meal_type ? [recipe.meal_type] : []
+      if (!activeMealTypes.some(t => types.includes(t))) return false
+    }
+    // Time — OR: recipe's total time must be within the broadest selected range
+    if (activeTime.length > 0) {
+      const maxMins = Math.max(
+        ...activeTime.map(lbl => TIME_FILTERS.find(t => t.label === lbl)?.maxMins ?? 0)
+      )
+      const recipeTime = recipe.total_time_min ?? recipe.total_time_max
+      if (!recipeTime || recipeTime > maxMins) return false
+    }
+    return true
+  }
 
   useEffect(() => { fetchAll() }, [])
 
@@ -723,19 +880,31 @@ export default function Browse({ onSelect, onAdd, session, onSignOut }) {
 
   // Derived state
   const q = search.toLowerCase()
-  const myFiltered          = myRecipes.filter(r => r.name.toLowerCase().includes(q))
+  const myFiltered          = myRecipes.filter(r => r.name.toLowerCase().includes(q) && matchesFilters(r))
   const myFavs              = myFiltered.filter(r => r.is_favourite)
-  const pubFiltered         = publicRecipes.filter(r => r.name.toLowerCase().includes(q))
-  const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && r.name.toLowerCase().includes(q))
+  const pubFiltered         = publicRecipes.filter(r => r.name.toLowerCase().includes(q) && matchesFilters(r))
+  const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && r.name.toLowerCase().includes(q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
 
   /* Masonry grid — columns defined in index.css .masonry-grid */
 
   return (
     <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
-      <Nav onAdd={onAdd} session={session} onSignOut={onSignOut} />
-      <SearchBar search={search} onSearch={setSearch} />
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      <Nav onAdd={onAdd} session={session} onSignOut={onSignOut} username={username} />
+      <SearchBar
+        search={search} onSearch={setSearch}
+        filtersOpen={filtersOpen}
+        onToggleFilters={() => setFiltersOpen(o => !o)}
+        hasActiveFilters={activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0}
+      />
+      {filtersOpen && (
+        <FilterBar
+          activeDietary={activeDietary}   onToggleDietary={makeToggle(setActiveDietary)}
+          activeMealTypes={activeMealTypes} onToggleMealType={makeToggle(setActiveMealTypes)}
+          activeTime={activeTime}           onToggleTime={makeToggle(setActiveTime)}
+        />
+      )}
+      <TabBar active={activeTab} onChange={onTabChange} />
 
       <div className="px-4 pt-6 pb-10 lg:px-10">
         {loading ? (

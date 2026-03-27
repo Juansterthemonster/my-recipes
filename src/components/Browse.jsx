@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
-function Nav({ onAdd, session, onSignOut, username }) {
+function Nav({ onAdd, session, onSignOut, username, onProfile }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -68,6 +68,17 @@ function Nav({ onAdd, session, onSignOut, username }) {
               }}>
                 {username ? `@${username}` : session?.user?.email}
               </div>
+              <button
+                onClick={() => { setMenuOpen(false); onProfile() }}
+                style={{
+                  display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left',
+                  fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+                  border: 'none', borderBottom: '1px solid var(--border-soft)',
+                  cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+              >Profile &amp; settings</button>
               <button
                 onClick={() => { setMenuOpen(false); onSignOut() }}
                 style={{
@@ -368,8 +379,11 @@ function fmtTime(mins) {
   No-image cards: no aspect ratio (height = content), Ivory bg, Dark Teal text.
 */
 
-/* Overlay for image cards only: bottom-1/3 gradient. */
-const OVERLAY_IMAGE = 'linear-gradient(to top, #000000E8 0%, #00000099 50%, #00000000 100%)'
+/* Overlay for image cards only: concentrated in the bottom quarter.
+   The top ~55 % of the photo is completely clear; the scrim fades in
+   steeply over the lower ~40 % so text at the bottom stays readable. */
+const OVERLAY_IMAGE =
+  'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.80) 12%, rgba(0,0,0,0.28) 30%, rgba(0,0,0,0) 44%)'
 
 /*
   Prep-time pill — shown on all recipe cards instead of the dietary tag.
@@ -453,7 +467,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
           {mealTypeLabel && (
             <div style={{
               fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-              textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)',
+              textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)',
               fontFamily: 'var(--font-body)', marginBottom: 5,
             }}>{mealTypeLabel}</div>
           )}
@@ -464,7 +478,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{recipe.name}</div>
           {dietaryLabel && (
-            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--font-body)' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}>
               {dietaryLabel}
             </div>
           )}
@@ -574,7 +588,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
           {mealTypeLabel && (
             <div style={{
               fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-              textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)',
+              textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)',
               fontFamily: 'var(--font-body)', marginBottom: 5,
             }}>{mealTypeLabel}</div>
           )}
@@ -585,7 +599,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{recipe.name}</div>
           {dietaryLabel && (
-            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--font-body)' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}>
               {dietaryLabel}
             </div>
           )}
@@ -776,7 +790,7 @@ function EmptyExplore() {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username }) {
+export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile }) {
   const [myRecipes, setMyRecipes]         = useState([])
   const [publicRecipes, setPublicRecipes] = useState([])
   const [loading, setLoading]             = useState(true)
@@ -890,7 +904,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   return (
     <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
-      <Nav onAdd={onAdd} session={session} onSignOut={onSignOut} username={username} />
+      <Nav onAdd={onAdd} session={session} onSignOut={onSignOut} username={username} onProfile={onProfile} />
       <SearchBar
         search={search} onSearch={setSearch}
         filtersOpen={filtersOpen}

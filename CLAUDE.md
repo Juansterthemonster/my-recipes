@@ -47,7 +47,8 @@ my-recipes/
       Profile.jsx          Account settings: stats, change username, change password, sign out
     utils/
       scaleIngredient.js   Pure scaling utility — parses cooking amounts, returns scaled string
-  supabase_migration_username.sql   SQL to create profiles table (run once in Supabase SQL editor)
+  supabase_migration_username.sql          SQL to create profiles + likes tables (run once in Supabase SQL editor)
+  supabase_migration_activity_counts.sql   SQL for get_recipe_activity_counts RPC — needed for "Others' activity" stats (run once)
   vercel.json             SPA rewrite rule for /recipe/:id deep links
   vite.config.js          Vite config — server.host:true for WiFi local dev
   CLAUDE.md               ← this file
@@ -294,6 +295,17 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - `cost_usd` column exists in DB but is not exposed in the UI
 - **Share link read-only view** has no loading skeleton — brief blank while recipe fetches on first visit
 - **`scaleIngredient`** returns `unscalable: true` for purely descriptive amounts ("a pinch", "to taste") — this is correct; ⚠ icon is shown next to those ingredients when scaling is active
+- **"Others' activity" stats require the RPC migration** — `theirCopiedCount` and `theirLikedCount` in Profile.jsx use `supabase.rpc('get_recipe_activity_counts')`. If the function hasn't been created yet (run `supabase_migration_activity_counts.sql` in the Supabase SQL editor), both counters will show 0. The "Your stats" block is unaffected.
+
+---
+
+## Architecture note: RLS and cross-user counts
+
+Direct Supabase client queries cannot count other users' private rows — RLS blocks them by design:
+- `recipes` copied by others are `is_public: false` and invisible to the original author
+- `likes` SELECT policy is scoped to `user_id = auth.uid()` (own rows only)
+
+Any counter that needs to aggregate data across users must use a `SECURITY DEFINER` Postgres function (RPC). These functions run with database-owner privileges server-side and return only the aggregate — no raw rows are exposed. See `get_recipe_activity_counts` as the pattern to follow.
 
 ---
 

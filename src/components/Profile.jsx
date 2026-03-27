@@ -182,16 +182,25 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       const myIds = (myRecipes || []).map(r => r.id)
       const totalCount = myIds.length
 
-      // Others' activity — only meaningful if I have at least one recipe
+      // Others' activity — requires a SECURITY DEFINER RPC to bypass RLS.
+      //
+      // WHY: two RLS policies block direct client queries:
+      //   • recipes — other users' copies are private (is_public=false) so
+      //     they're invisible to the recipe owner via a normal SELECT.
+      //   • likes   — SELECT is restricted to the current user's own rows
+      //     (user_id = auth.uid()), so counting others' likes on my recipes
+      //     always returns 0 from the client.
+      //
+      // The RPC function `get_recipe_activity_counts` runs SECURITY DEFINER
+      // (bypasses RLS) and returns only aggregate counts — no raw rows leak.
+      // SQL: supabase_migration_activity_counts.sql
       let theirCopiedCount = 0
       let theirLikedCount  = 0
-      if (myIds.length > 0) {
-        const [{ count: cc }, { count: lc }] = await Promise.all([
-          supabase.from('recipes').select('*', { count: 'exact', head: true }).in('copied_from', myIds),
-          supabase.from('likes').select('*', { count: 'exact', head: true }).in('recipe_id', myIds),
-        ])
-        theirCopiedCount = cc || 0
-        theirLikedCount  = lc || 0
+      const { data: activityData } = await supabase
+        .rpc('get_recipe_activity_counts', { p_user_id: userId })
+      if (activityData && activityData.length > 0) {
+        theirCopiedCount = Number(activityData[0].their_copied_count) || 0
+        theirLikedCount  = Number(activityData[0].their_liked_count)  || 0
       }
 
       setStats({

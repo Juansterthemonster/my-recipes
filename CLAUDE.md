@@ -40,11 +40,16 @@ my-recipes/
       AuthScreen.jsx       Sign in, sign up, forgot password, email verification — all auth modes
       ResetPassword.jsx    Password reset form (shown after clicking email reset link)
       Browse.jsx           Nav, tabs (My recipes / Liked / Explore), masonry grid, empty states
-      Detail.jsx           Recipe detail view, photo upload, like/bookmark actions, kebab menu
+      Detail.jsx           Recipe detail view, photo upload, like/bookmark actions, kebab menu, scaling
       RecipeForm.jsx       Add/edit form with photo upload, ingredients, steps, time/serves
       TimePicker.jsx       toMins(), fromMins(), formatTime() helpers
       Toast.jsx            Animated bottom-left success toast
+      Profile.jsx          Account settings: stats, change username, change password, sign out
+    utils/
+      scaleIngredient.js   Pure scaling utility — parses cooking amounts, returns scaled string
   supabase_migration_username.sql   SQL to create profiles table (run once in Supabase SQL editor)
+  vercel.json             SPA rewrite rule for /recipe/:id deep links
+  vite.config.js          Vite config — server.host:true for WiFi local dev
   CLAUDE.md               ← this file
   STYLEGUIDE_v2.md        Full design system reference (colours, type, icons, components)
   README.md               Public-facing setup docs
@@ -247,9 +252,13 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - No-photo state (owner): `#EFEFED` button, `height: 100px`, camera icon, "Add photo" — with blurBtn heart overlaid
 - Heart fill colour: `#D7191D`
 - **Owner vs non-owner heart:** Owner sees their bookmark heart; non-owner sees a like heart (`isLiked` / `handleToggleLike`) — both use `blurBtn` style on photo, positioned identically
-- **Non-owner nav:** "Add to my recipes" button sits next to the back arrow in the header nav, styled identically to the Edit button (same font, padding, border, radius, colour `#0C3D4E`). Shows "Added ✓" in muted state after clicking
+- **Non-owner nav:** "Add to my recipes" button sits next to the back arrow in the header nav, styled identically to the Edit button (same font, padding, border, radius, colour `#0C3D4E`). Shows "Saved to my recipes" in muted italic after clicking
 - **`by @username` byline:** Renders below `<h1>` at `0.82rem`, `var(--text-tertiary)` — replaces the old "🌍 Public recipe" violet pill badge
 - **On-mount fetch for non-owners:** Parallel `.maybeSingle()` queries for `likes` and `recipes(copied_from)` to seed `isLiked` and `isAdded` state
+- **Read-only mode** (`readOnly` prop): nav shows wordmark + "Sign in to save"; heart, photo upload, add-to-recipes all hidden; used for share-link visitors
+- **Recipe scaling:** `scaledServings` state + `scaleFactor = scaledServings / recipe.serves`; `+`/`−` stepper (square, SVG icons, dark teal active); "Reset" dotted link when active; `WarnIcon` (amber ⚠) on unscalable amounts
+- **Share icon (`ShareBtn`):** 44×44, Android share icon, `#0C3D4E`; lives in the **eyebrow row** alongside the meal-type label (`marginRight: -12` keeps right edge 12px from card edge); toggles to checkmark for 2 s after copy; `handleCopyLink` uses 3-tier fallback: native share sheet → Clipboard API → `execCommand`
+- **Eyebrow row:** Flex row (`justifyContent: space-between`) containing meal-type label (left) and share icon (right); rendered whenever either element is needed; omitted entirely if neither applies
 
 ### RecipeForm.jsx
 - Photo remove button: trash SVG icon (not ×)
@@ -261,6 +270,20 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - `public/favicon.ico`: multi-size ICO bundle
 - `index.html`: full link tag stack for all sizes + `<title>Mi Sazón</title>`
 
+### Profile.jsx (v3 — new)
+- Props: `session`, `username`, `onBack`, `onSignOut`, `onUsernameChange`
+- Stats: Fraunces `2rem` numerals for public recipe count + times-copied count; fetched via `count: 'exact', head: true` + `IN` aggregate on `copied_from`
+- Change username: 400 ms debounced uniqueness check; `usernameStatus: null | 'checking' | 'available' | 'taken' | 'invalid'`; updates both `profiles` table and `auth.user_metadata`; calls `onUsernameChange` to update nav immediately
+- Change password: two `PasswordField` components (eye toggle); `supabase.auth.updateUser({ password })`; green success banner
+- Sign out: outline button, hover border lifts to `#0C3D4E`
+- Reuses `EyeIcon` + `PasswordField` patterns from AuthScreen
+
+### scaleIngredient.js (v3 — new)
+- Pure utility, no React dependencies
+- `parseLeading(str)`: handles mixed+vulgar (`1½`), lone vulgar (`½`), ranges (`2–3`), mixed slash (`1 1/2`), slash fraction (`1/2`), plain number
+- `toDisplayString(n)`: rounds to nearest cooking fraction via `FRAC_DISPLAY` lookup; falls back to 1 decimal if >0.08 off
+- `scaleIngredient(amount, factor)` → `{ result: string, unscalable: boolean }`
+
 ---
 
 ## Known issues / things to watch
@@ -269,6 +292,8 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - Vite/Rolldown build (`npx vite build`) fails in the Cowork Linux VM — Rolldown's native binary is incompatible with the VM architecture. The real build runs fine on the user's Mac and on Vercel. Use a Node.js syntax check as a proxy
 - **Password reset on localhost:** Supabase blocks the redirect unless `http://localhost:5173` and `http://localhost:5173/` are added in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
 - `cost_usd` column exists in DB but is not exposed in the UI
+- **Share link read-only view** has no loading skeleton — brief blank while recipe fetches on first visit
+- **`scaleIngredient`** returns `unscalable: true` for purely descriptive amounts ("a pinch", "to taste") — this is correct; ⚠ icon is shown next to those ingredients when scaling is active
 
 ---
 
@@ -347,6 +372,32 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - `supabase_migration_username.sql` — new (profiles table + likes table)
 - `STYLEGUIDE_v2.md` — new
 - `CLAUDE.md` — new (this file)
+
+### v3.0 — Scaling, sharing, and profiles (shipped ✓, commit `855b944`, 2026-03-26)
+
+**Recipe scaling**
+- `src/utils/scaleIngredient.js` — pure utility handles mixed numbers, vulgar fractions, slash fractions, ranges
+- Serves stepper (`+`/`−`) in Detail header card; `scaleFactor` applied to all ingredients live
+- Stepper buttons: square (`borderRadius: 6`), SVG stroke icons, dark teal active state
+- Amber ⚠ icon on ingredients whose amounts couldn't be parsed/scaled
+- "Reset" dotted link appears only when scaling is active
+
+**Share public links**
+- `vercel.json` rewrite rule: all paths → `/index.html` (required for SPA deep links on Vercel)
+- `/recipe/:id` route parsed on mount in `App.jsx` via pathname regex
+- Read-only `Detail` view for logged-out visitors ("Sign in to save" nav)
+- Logged-in users auto-redirected from share URL to normal Detail view
+- `handleCopyLink`: 3-tier fallback (native share sheet → Clipboard API → execCommand)
+- "Recipe link copied" toast on clipboard success; share icon toggles to checkmark for 2 s
+- Share icon (`ShareBtn`): 44×44, Android style, `#0C3D4E`; lives in eyebrow row with meal-type label
+
+**User profiles**
+- New `Profile.jsx` view: stats (public recipes, times copied), change username, change password, sign out
+- Debounced username uniqueness check (400 ms); updates both `profiles` table and `user_metadata`
+- Browse nav dropdown: "Profile & settings" option added above "Sign out"
+
+**Other**
+- `vite.config.js`: `server.host: true` for WiFi local network dev
 
 ---
 

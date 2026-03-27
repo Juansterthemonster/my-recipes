@@ -473,13 +473,25 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
           )}
           <div style={{
             fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
-            color: '#fff', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
+            color: '#fff', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
             display: '-webkit-box', WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{recipe.name}</div>
-          {dietaryLabel && (
-            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}>
-              {dietaryLabel}
+          {(dietaryLabel || recipe.is_public) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {recipe.is_public && (
+                <span style={{
+                  fontSize: '0.72rem', fontWeight: 600, fontFamily: 'var(--font-body)',
+                  background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.9)',
+                  borderRadius: 999, padding: '2px 8px',
+                  backdropFilter: 'blur(4px)',
+                }}>Public</span>
+              )}
+              {dietaryLabel && (
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}>
+                  {dietaryLabel}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -528,13 +540,24 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
         )}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
-          color: '#0C3D4E', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
+          color: '#0C3D4E', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
           display: '-webkit-box', WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
-        {dietaryLabel && (
-          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
-            {dietaryLabel}
+        {(dietaryLabel || recipe.is_public) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {recipe.is_public && (
+              <span style={{
+                fontSize: '0.72rem', fontWeight: 600, fontFamily: 'var(--font-body)',
+                background: 'var(--green-light)', color: 'var(--green-primary)',
+                borderRadius: 999, padding: '2px 8px',
+              }}>Public</span>
+            )}
+            {dietaryLabel && (
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
+                {dietaryLabel}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -829,6 +852,23 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     return true
   }
 
+  /* ── Search matching ────────────────────────────────────────────────────────
+     Checks the recipe name first (fast path), then falls back to scanning
+     ingredient names. Both are treated with equal weight — a recipe surfaces
+     if either its title OR any ingredient contains the query string.
+     No scoring: simple OR logic keeps the implementation readable and fast
+     since all data is already in memory.                                      */
+  function matchesSearch(recipe, q) {
+    if (!q) return true
+    if (recipe.name.toLowerCase().includes(q)) return true
+    if (Array.isArray(recipe.ingredients)) {
+      return recipe.ingredients.some(
+        ing => ing.name && ing.name.toLowerCase().includes(q)
+      )
+    }
+    return false
+  }
+
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
@@ -894,10 +934,10 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   // Derived state
   const q = search.toLowerCase()
-  const myFiltered          = myRecipes.filter(r => r.name.toLowerCase().includes(q) && matchesFilters(r))
+  const myFiltered          = myRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
   const myFavs              = myFiltered.filter(r => r.is_favourite)
-  const pubFiltered         = publicRecipes.filter(r => r.name.toLowerCase().includes(q) && matchesFilters(r))
-  const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && r.name.toLowerCase().includes(q) && matchesFilters(r))
+  const pubFiltered         = publicRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
+  const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
 
   /* Masonry grid — columns defined in index.css .masonry-grid */

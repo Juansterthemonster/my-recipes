@@ -99,10 +99,46 @@ function PasswordField({ label, value, onChange, autoComplete }) {
   )
 }
 
+/* ─── STAT GRID ───────────────────────────────────────────────────────────── */
+/* Reusable 2-column grid of labelled stats tiles.                             */
+function StatGrid({ items }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {items.map(({ value, label }) => (
+        <div key={label} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', textAlign: 'center',
+          background: 'var(--green-tint)', borderRadius: 'var(--r-md)',
+          padding: '16px 12px', minHeight: 88,
+        }}>
+          <div style={{
+            fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-body)', marginBottom: 8,
+          }}>{label}</div>
+          <div style={{
+            fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 400,
+            color: 'var(--text-primary)', lineHeight: 1,
+          }}>
+            {value === null ? '—' : value}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ─── PROFILE ─────────────────────────────────────────────────────────────── */
 export default function Profile({ session, username, onBack, onSignOut, onUsernameChange }) {
   // ── Stats
-  const [stats, setStats] = useState({ publicCount: null, copiedCount: null })
+  const [stats, setStats] = useState({
+    totalCount:       null, // all my recipes (including private, copied, etc.)
+    publicCount:      null, // my recipes marked is_public
+    myCopiedCount:    null, // public recipes from others I've added to my recipes
+    myLikedCount:     null, // public recipes from others I've liked
+    theirCopiedCount: null, // times others copied my recipes
+    theirLikedCount:  null, // times others liked my recipes
+  })
 
   // ── Change username
   const [newUsername,   setNewUsername]   = useState(username || '')
@@ -123,30 +159,49 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     async function fetchStats() {
       const userId = session.user.id
 
-      // Count public recipes
-      const { count: publicCount } = await supabase
-        .from('recipes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('is_public', true)
-
-      // Count times any of my recipes have been copied by others
-      const { data: myRecipes } = await supabase
-        .from('recipes')
-        .select('id')
-        .eq('user_id', userId)
+      // Run independent queries in parallel
+      const [
+        { count: publicCount },
+        { data: myRecipes },
+        { count: myCopiedCount },  // public recipes I copied from others
+        { count: myLikedCount },   // public recipes I have liked
+      ] = await Promise.all([
+        // My public recipes
+        supabase.from('recipes').select('*', { count: 'exact', head: true })
+          .eq('user_id', userId).eq('is_public', true),
+        // All my recipe IDs (for total count + others' activity queries)
+        supabase.from('recipes').select('id').eq('user_id', userId),
+        // Recipes I copied from others (copied_from is set = came from a public recipe)
+        supabase.from('recipes').select('*', { count: 'exact', head: true })
+          .eq('user_id', userId).not('copied_from', 'is', null),
+        // Recipes I have liked (my rows in the likes table)
+        supabase.from('likes').select('*', { count: 'exact', head: true })
+          .eq('user_id', userId),
+      ])
 
       const myIds = (myRecipes || []).map(r => r.id)
-      let copiedCount = 0
+      const totalCount = myIds.length
+
+      // Others' activity — only meaningful if I have at least one recipe
+      let theirCopiedCount = 0
+      let theirLikedCount  = 0
       if (myIds.length > 0) {
-        const { count } = await supabase
-          .from('recipes')
-          .select('*', { count: 'exact', head: true })
-          .in('copied_from', myIds)
-        copiedCount = count || 0
+        const [{ count: cc }, { count: lc }] = await Promise.all([
+          supabase.from('recipes').select('*', { count: 'exact', head: true }).in('copied_from', myIds),
+          supabase.from('likes').select('*', { count: 'exact', head: true }).in('recipe_id', myIds),
+        ])
+        theirCopiedCount = cc || 0
+        theirLikedCount  = lc || 0
       }
 
-      setStats({ publicCount: publicCount || 0, copiedCount })
+      setStats({
+        totalCount,
+        publicCount:      publicCount      || 0,
+        myCopiedCount:    myCopiedCount    || 0,
+        myLikedCount:     myLikedCount     || 0,
+        theirCopiedCount,
+        theirLikedCount,
+      })
     }
     fetchStats()
   }, [session.user.id])
@@ -307,34 +362,25 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           }}
         >@{username}</h1>
 
-        {/* Stats row */}
-        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 400,
-              color: 'var(--text-primary)', lineHeight: 1,
-            }}>
-              {stats.publicCount === null ? '—' : stats.publicCount}
-            </div>
-            <div style={{
-              marginTop: 4, fontSize: '0.78rem', fontFamily: 'var(--font-body)',
-              color: 'var(--text-secondary)', fontWeight: 500,
-            }}>Public recipes</div>
-          </div>
-          <div style={{ width: 1, background: 'var(--border-soft)', flexShrink: 0, alignSelf: 'stretch' }} />
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 400,
-              color: 'var(--text-primary)', lineHeight: 1,
-            }}>
-              {stats.copiedCount === null ? '—' : stats.copiedCount}
-            </div>
-            <div style={{
-              marginTop: 4, fontSize: '0.78rem', fontFamily: 'var(--font-body)',
-              color: 'var(--text-secondary)', fontWeight: 500,
-            }}>Times copied</div>
-          </div>
-        </div>
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 0 18px' }} />
+
+        {/* ── My stats ── */}
+        <div style={sectionLabel}>Your stats</div>
+        <StatGrid items={[
+          { value: stats.totalCount,    label: 'Total recipes'      },
+          { value: stats.publicCount,   label: 'Public recipes'     },
+          { value: stats.myCopiedCount, label: "Recipes I've copied" },
+          { value: stats.myLikedCount,  label: "Recipes I've liked"  },
+        ]} />
+
+        {/* ── Others' activity ── */}
+        <div style={{ height: 1, background: 'var(--border-soft)', margin: '20px 0 18px' }} />
+        <div style={sectionLabel}>Others' activity on your recipes</div>
+        <StatGrid items={[
+          { value: stats.theirCopiedCount, label: 'Times copied' },
+          { value: stats.theirLikedCount,  label: 'Times liked'  },
+        ]} />
       </div>
 
       {/* ── Change username card ── */}

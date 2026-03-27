@@ -399,6 +399,36 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 **Other**
 - `vite.config.js`: `server.host: true` for WiFi local network dev
 
+### v3.1 — Public badge, ingredient search, stats overhaul (shipped ✓, 2026-03-27)
+
+**Public badge on My Recipe cards (Browse.jsx)**
+- `MyRecipeCard` (both photo and no-photo variants) now shows a "Public" pill when `recipe.is_public === true`; nothing shown for private recipes
+- Pill renders first in the label row, before the dietary tag, in a `display: flex` row with `gap: 6`
+- Photo card style: `rgba(255,255,255,0.18)` bg + `backdropFilter: blur(4px)` — matches frosted-glass pattern
+- No-photo card style: `var(--green-light)` bg / `var(--green-primary)` text — consistent with teal palette
+- Same `0.72rem` / weight 600 / `border-radius: 999px` as dietary label
+
+**Ingredient search (Browse.jsx)**
+- Added `matchesSearch(recipe, q)` helper alongside `matchesFilters`
+- Logic: returns `true` immediately when query is empty; checks `recipe.name` first (fast-path short-circuit); if name misses, scans `ingredients[].name` via `.some()`
+- OR logic, equal weight — a recipe surfaces if name **or** any ingredient name contains the query
+- Applied to all three filtered lists: `myFiltered`, `pubFiltered`, `likedPublicFiltered`
+- Purely client-side on already-fetched data; no added network requests
+
+**Profile stats overhaul (Profile.jsx)**
+- Added `StatGrid` reusable component: 2-col CSS grid, `var(--green-tint)` tiles, label above number, `minHeight: 88` for tap targets
+- State expanded from 2 to 6 counters — all null until resolved (renders `—` while loading):
+  - `totalCount` — all my recipes
+  - `publicCount` — my recipes marked `is_public`
+  - `myCopiedCount` — recipes where `user_id = me AND copied_from IS NOT NULL` (public recipes I added)
+  - `myLikedCount` — rows in `likes` where `user_id = me` (recipes I've liked)
+  - `theirCopiedCount` — recipes where `copied_from IN myIds` (others who copied mine)
+  - `theirLikedCount` — rows in `likes` where `recipe_id IN myIds` (others who liked mine)
+- First `Promise.all` fetches the four "my activity" queries in parallel; second `Promise.all` (gated on `myIds.length > 0`) fetches others' activity
+- Two stat blocks in the profile card:
+  - **"Your stats"** — Total recipes / Public recipes / Recipes I've copied / Recipes I've liked
+  - **"Others' activity on your recipes"** — Times copied / Times liked (separated by `var(--border-soft)` divider + `sectionLabel`)
+
 ---
 
 ## How to work with Claude (Cowork)

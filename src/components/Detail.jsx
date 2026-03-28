@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
+import { compressImage } from '../utils/compressImage'
 
 const pill = {
   fontSize: '0.72rem', padding: '6px 13px', borderRadius: 'var(--r-full)',
@@ -254,11 +255,11 @@ export default function Detail({
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    const ext  = file.name.split('.').pop().toLowerCase()
-    const path = `${session.user.id}/${Date.now()}.${ext}`
+    const compressed = await compressImage(file)
+    const path = `${session.user.id}/${recipe.id}.webp`
     const { error: uploadErr } = await supabase.storage
       .from('recipe-photos')
-      .upload(path, file, { upsert: true })
+      .upload(path, compressed, { upsert: true, contentType: 'image/webp' })
     if (uploadErr) { setUploading(false); return }
     const { data: { publicUrl } } = supabase.storage
       .from('recipe-photos')

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { toMins, fromMins } from './TimePicker'
+import { compressImage } from '../utils/compressImage'
 
 /* ─── PHOTO UPLOAD CARD ─────────────────────────────────────────────────────── */
 function PhotoUpload({ preview, onFileChange, onRemove, fileInputRef }) {
@@ -252,14 +253,19 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     if (!name.trim()) { setError('Please add a recipe name.'); return }
     setSaving(true); setError('')
 
-    // Upload new photo if one was selected
+    // For new recipes, generate the UUID now so the storage path and DB row
+    // share the same ID from the start — photo can never be matched to the
+    // wrong recipe even if something goes wrong mid-save.
+    const recipeId = isEdit ? recipe.id : crypto.randomUUID()
+
+    // Upload new photo if one was selected — compress to WebP first
     let finalPhotoUrl = photoUrl
     if (photoFile) {
-      const ext = photoFile.name.split('.').pop().toLowerCase()
-      const path = `${session.user.id}/${Date.now()}.${ext}`
+      const compressed = await compressImage(photoFile)
+      const path = `${session.user.id}/${recipeId}.webp`
       const { error: uploadErr } = await supabase.storage
         .from('recipe-photos')
-        .upload(path, photoFile, { upsert: true })
+        .upload(path, compressed, { upsert: true, contentType: 'image/webp' })
       if (uploadErr) { setError('Failed to upload photo. Please try again.'); setSaving(false); return }
       const { data: { publicUrl } } = supabase.storage
         .from('recipe-photos')
@@ -289,7 +295,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       if (recipe.copied_from) payload.is_modified = true
       ;({ error:err } = await supabase.from('recipes').update(payload).eq('id', recipe.id))
     } else {
-      ({ error:err } = await supabase.from('recipes').insert({ ...payload, user_id: session.user.id }))
+      ({ error:err } = await supabase.from('recipes').insert({ ...payload, id: recipeId, user_id: session.user.id }))
     }
     setSaving(false)
     if (err) { setError('Something went wrong. Please try again.'); return }

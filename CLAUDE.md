@@ -441,6 +441,26 @@ Any counter that needs to aggregate data across users must use a `SECURITY DEFIN
   - **"Your stats"** — Total recipes / Public recipes / Recipes I've copied / Recipes I've liked
   - **"Others' activity on your recipes"** — Times copied / Times liked (separated by `var(--border-soft)` divider + `sectionLabel`)
 
+### v3.2 — Photo compression, WebP conversion, and recipe-anchored storage (shipped ✓, 2026-03-28)
+
+**Photo compression pipeline (`src/utils/compressImage.js` — new)**
+- Pure browser utility using Canvas API — no npm dependency
+- Resizes to max 1800px on the longest edge (`withoutEnlargement`), converts to WebP at quality 0.82
+- EXIF orientation handled correctly: modern browsers apply EXIF when rendering `<img>` to canvas, so the drawn pixels are already correctly oriented before `toBlob()`
+- Used by both Detail.jsx (direct upload) and RecipeForm.jsx (add/edit form)
+
+**Recipe-anchored storage paths**
+- Storage path changed from `{user_id}/{Date.now()}.webp` to `{user_id}/{recipe_id}.webp`
+- Photo filename IS the recipe ID — impossible to assign a photo to the wrong recipe
+- Replacing a photo overwrites the same path (`upsert: true`) — no orphaned files accumulate
+- New recipes call `crypto.randomUUID()` client-side before the DB insert so the storage path and DB row share the same ID from the first write
+
+**Migration scripts (`scripts/` — new, run from local Mac, not bundled)**
+- `migratePhotos.mjs` — one-time script to compress all existing Storage photos and update `photo_url` in the DB; uses `sharp` + `.rotate()` for EXIF-correct orientation
+- `fixPhotoOrientation.mjs` — dry-run + `--commit` script; re-processes original (non-webp) files still in Storage with correct orientation; matches each to its recipe via greedy timestamp-proximity assignment (original upload timestamp vs recipe `created_at`); handles partial matches when one recipe has no original
+- `fixOnePhoto.mjs` — targeted single-recipe fix by `--recipe <id>` and `--file <filename>`; useful for recipes owned by other users
+- `sharp` added as `devDependency` — used by scripts only, never bundled into the Vite build
+
 ---
 
 ## How to work with Claude (Cowork)

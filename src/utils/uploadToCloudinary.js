@@ -25,7 +25,7 @@ export async function uploadToCloudinary(blob, publicId) {
   formData.append('file', blob)
   formData.append('upload_preset', UPLOAD_PRESET)
   formData.append('folder', 'mi-sazon')
-  if (publicId) formData.append('public_id', publicId)
+  if (publicId) formData.append('public_id', `${publicId}_${Date.now()}`)
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,

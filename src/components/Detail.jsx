@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
 import { compressImage } from '../utils/compressImage'
+import { uploadToCloudinary } from '../utils/uploadToCloudinary'
 
 const pill = {
   fontSize: '0.72rem', padding: '6px 13px', borderRadius: 'var(--r-full)',
@@ -256,16 +257,16 @@ export default function Detail({
     if (!file) return
     setUploading(true)
     const compressed = await compressImage(file)
-    const path = `${session.user.id}/${recipe.id}.webp`
-    const { error: uploadErr } = await supabase.storage
-      .from('recipe-photos')
-      .upload(path, compressed, { upsert: true, contentType: 'image/webp' })
-    if (uploadErr) { setUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage
-      .from('recipe-photos')
-      .getPublicUrl(path)
-    await supabase.from('recipes').update({ photo_url: publicUrl }).eq('id', recipe.id)
-    setRecipe(r => ({ ...r, photo_url: publicUrl }))
+    let photoUrl
+    try {
+      photoUrl = await uploadToCloudinary(compressed, recipe.id)
+    } catch (e) {
+      console.error('Photo upload failed:', e)
+      setUploading(false)
+      return
+    }
+    await supabase.from('recipes').update({ photo_url: photoUrl }).eq('id', recipe.id)
+    setRecipe(r => ({ ...r, photo_url: photoUrl }))
     setUploading(false)
   }
 

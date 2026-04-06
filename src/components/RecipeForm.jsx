@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { toMins, fromMins } from './TimePicker'
 import { compressImage } from '../utils/compressImage'
+import { uploadToCloudinary } from '../utils/uploadToCloudinary'
 
 /* ─── PHOTO UPLOAD CARD ─────────────────────────────────────────────────────── */
 function PhotoUpload({ preview, onFileChange, onRemove, fileInputRef }) {
@@ -262,15 +263,14 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     let finalPhotoUrl = photoUrl
     if (photoFile) {
       const compressed = await compressImage(photoFile)
-      const path = `${session.user.id}/${recipeId}.webp`
-      const { error: uploadErr } = await supabase.storage
-        .from('recipe-photos')
-        .upload(path, compressed, { upsert: true, contentType: 'image/webp' })
-      if (uploadErr) { setError('Failed to upload photo. Please try again.'); setSaving(false); return }
-      const { data: { publicUrl } } = supabase.storage
-        .from('recipe-photos')
-        .getPublicUrl(path)
-      finalPhotoUrl = publicUrl
+      try {
+        finalPhotoUrl = await uploadToCloudinary(compressed, recipeId)
+      } catch (e) {
+        console.error('Photo upload failed:', e)
+        setError('Failed to upload photo. Please try again.')
+        setSaving(false)
+        return
+      }
     }
 
     const payload = {

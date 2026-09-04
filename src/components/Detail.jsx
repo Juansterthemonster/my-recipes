@@ -169,6 +169,313 @@ function IngredientCard({ ingredients, scaleFactor }) {
   )
 }
 
+/* ─── COLLECTION SHEET ──────────────────────────────────────────────────────
+   Bottom sheet that lets the owner add / remove a recipe from their collections.
+   Fetches both the user's collections and this recipe's existing memberships on
+   mount so checkboxes are pre-populated correctly.
+   ─────────────────────────────────────────────────────────────────────────── */
+function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
+  const [collections,  setCollections]  = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [originalIds,  setOriginalIds]  = useState(new Set())
+  const [checkedIds,   setCheckedIds]   = useState(new Set())
+  const [saving,       setSaving]       = useState(false)
+  const [newColName,   setNewColName]   = useState('')
+  const [showInput,    setShowInput]    = useState(false)
+  const [creating,     setCreating]     = useState(false)
+  const newColRef = useRef(null)
+
+  useEffect(() => {
+    async function fetchData() {
+      const [colRes, memberRes] = await Promise.all([
+        supabase.from('collections').select('id, name')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false }),
+        supabase.from('collection_recipes').select('collection_id')
+          .eq('recipe_id', recipeId),
+      ])
+      const memberIds = new Set((memberRes.data || []).map(r => r.collection_id))
+      setCollections(colRes.data || [])
+      setOriginalIds(memberIds)
+      setCheckedIds(new Set(memberIds))
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
+
+  // Focus the new-collection input when it appears
+  useEffect(() => {
+    if (showInput && newColRef.current) newColRef.current.focus()
+  }, [showInput])
+
+  function toggleCheck(id) {
+    setCheckedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function handleCreate() {
+    const name = newColName.trim()
+    if (!name) return
+    setCreating(true)
+    const { data, error } = await supabase
+      .from('collections')
+      .insert({ user_id: session.user.id, name })
+      .select().single()
+    if (!error && data) {
+      setCollections(prev => [data, ...prev])
+      setCheckedIds(prev => new Set([...prev, data.id]))
+    }
+    setNewColName('')
+    setShowInput(false)
+    setCreating(false)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    const toAdd    = [...checkedIds].filter(id => !originalIds.has(id))
+    const toRemove = [...originalIds].filter(id => !checkedIds.has(id))
+    await Promise.all([
+      toAdd.length > 0
+        ? supabase.from('collection_recipes')
+            .insert(toAdd.map(id => ({ collection_id: id, recipe_id: recipeId })))
+        : Promise.resolve(),
+      ...toRemove.map(id =>
+        supabase.from('collection_recipes').delete()
+          .eq('collection_id', id).eq('recipe_id', recipeId)
+      ),
+    ])
+    setSaving(false)
+    onSaved?.(checkedIds.size > 0)
+    onClose()
+    onToast?.('Collections updated')
+  }
+
+  const hasChanges = (
+    [...checkedIds].some(id => !originalIds.has(id)) ||
+    [...originalIds].some(id => !checkedIds.has(id))
+  )
+
+  /* ── Shared menu-item button style ── */
+  const menuItemStyle = {
+    display: 'flex', alignItems: 'center', gap: 12,
+    width: '100%', padding: '14px 20px', textAlign: 'left',
+    fontSize: '0.95rem', color: 'var(--text-primary)',
+    background: 'none', border: 'none', borderBottom: '1px solid var(--border-soft)',
+    cursor: 'pointer', fontFamily: 'var(--font-body)',
+  }
+
+  return (
+    <>
+      {/* ── Backdrop ── */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.4)',
+          zIndex: 200,
+        }}
+      />
+
+      {/* ── Sheet ── */}
+      {/*
+        Responsive sizing:
+        • Mobile  (<640 px)  — full width, flush to bottom, rounded top corners only.
+        • Desktop (≥640 px)  — centred, capped at 520 px, small gap from bottom,
+                               fully rounded so it floats above the viewport edge.
+      */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: 520,
+        zIndex: 201,
+        background: '#F9F6F0',
+        borderRadius: '22px 22px 0 0',
+        boxShadow: '0 -4px 32px rgba(0,0,0,0.14)',
+        maxHeight: '80vh',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 14, paddingBottom: 4, flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+        </div>
+
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 20px 16px', flexShrink: 0,
+          borderBottom: '1px solid var(--border-soft)',
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}>Add to collection</span>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-secondary)', padding: 4, borderRadius: 6,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Scrollable list */}
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+
+          {/* ＋ New collection */}
+          {showInput ? (
+            <div style={{
+              padding: '12px 20px', borderBottom: '1px solid var(--border-soft)',
+              display: 'flex', gap: 8, alignItems: 'center',
+            }}>
+              <input
+                ref={newColRef}
+                value={newColName}
+                onChange={e => setNewColName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowInput(false); setNewColName('') } }}
+                placeholder="Collection name…"
+                maxLength={60}
+                style={{
+                  flex: 1, minWidth: 0,
+                  background: 'var(--white)', border: '1.5px solid var(--border-soft)',
+                  borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-body)',
+                  fontSize: '0.9rem', color: 'var(--text-primary)',
+                  padding: '9px 14px', outline: 'none',
+                }}
+                onFocus={e => e.target.style.borderColor = 'var(--green-primary)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border-soft)'}
+              />
+              <button
+                onClick={handleCreate}
+                disabled={!newColName.trim() || creating}
+                style={{
+                  flexShrink: 0, padding: '9px 16px',
+                  borderRadius: 'var(--r-full)',
+                  background: newColName.trim() ? 'var(--green-primary)' : 'var(--border-soft)',
+                  color: newColName.trim() ? '#fff' : 'var(--text-tertiary)',
+                  border: 'none', cursor: newColName.trim() ? 'pointer' : 'default',
+                  fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
+                  transition: 'background 150ms, color 150ms',
+                }}
+              >{creating ? 'Creating…' : 'Create'}</button>
+              <button
+                onClick={() => { setShowInput(false); setNewColName('') }}
+                style={{
+                  flexShrink: 0, background: 'none', border: 'none',
+                  cursor: 'pointer', color: 'var(--text-secondary)', padding: 4,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowInput(true)}
+              style={{
+                ...menuItemStyle,
+                color: 'var(--green-primary)', fontWeight: 500,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              New collection
+            </button>
+          )}
+
+          {/* Collection list */}
+          {loading ? (
+            <div style={{
+              padding: '32px 20px', textAlign: 'center',
+              fontSize: '0.9rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
+            }}>Loading…</div>
+          ) : collections.length === 0 ? (
+            <div style={{
+              padding: '32px 20px', textAlign: 'center',
+              fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
+            }}>Create your first collection above.</div>
+          ) : (
+            collections.map(col => {
+              const checked = checkedIds.has(col.id)
+              return (
+                <button
+                  key={col.id}
+                  onClick={() => toggleCheck(col.id)}
+                  style={{
+                    ...menuItemStyle,
+                    justifyContent: 'space-between',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--green-light)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                    {col.name}
+                  </span>
+                  {/* Custom checkbox */}
+                  <span style={{
+                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                    border: `2px solid ${checked ? 'var(--green-primary)' : 'var(--border)'}`,
+                    background: checked ? 'var(--green-primary)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 150ms, border-color 150ms',
+                  }}>
+                    {checked && (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                        stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+
+        {/* Footer — Save button */}
+        <div style={{
+          padding: '16px 20px',
+          borderTop: '1px solid var(--border-soft)',
+          flexShrink: 0,
+          background: '#F9F6F0',
+        }}>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              width: '100%', padding: '14px',
+              borderRadius: 'var(--r-full)',
+              background: hasChanges ? 'var(--green-primary)' : 'var(--border-soft)',
+              color: hasChanges ? '#fff' : 'var(--text-tertiary)',
+              border: 'none',
+              cursor: hasChanges ? 'pointer' : 'default',
+              fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
+              transition: 'background 150ms, color 150ms',
+              opacity: saving ? 0.7 : 1,
+            }}
+          >{saving ? 'Saving…' : 'Save'}</button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 /* ─── DETAIL ───────────────────────────────────────────────────────────────── */
 export default function Detail({
   recipe: initialRecipe,
@@ -183,15 +490,17 @@ export default function Detail({
 }) {
   const [recipe, setRecipe]               = useState(initialRecipe)
   const [menuOpen, setMenuOpen]           = useState(false)
+  const [sheetOpen, setSheetOpen]         = useState(false)
   const [uploading, setUploading]         = useState(false)
   const [scaledServings, setScaledServings] = useState(initialRecipe.serves || null)
   const [linkCopied, setLinkCopied]       = useState(false)
 
   // Non-owner interaction state
-  const [isLiked, setIsLiked]             = useState(initialRecipe.is_liked ?? false)
-  const [isAdded, setIsAdded]             = useState(false)
-  const [adding, setAdding]               = useState(false)
-  const [originalAuthor, setOriginalAuthor] = useState(null)
+  const [isLiked, setIsLiked]                 = useState(initialRecipe.is_liked ?? false)
+  const [isAdded, setIsAdded]                 = useState(false)
+  const [adding, setAdding]                   = useState(false)
+  const [originalAuthor, setOriginalAuthor]   = useState(null)
+  const [isInAnyCollection, setIsInAnyCollection] = useState(false)
 
   const menuRef       = useRef(null)
   const photoInputRef = useRef(null)
@@ -240,10 +549,30 @@ export default function Detail({
     fetchInteractionStatus()
   }, [recipe.id, isOwner])
 
+  // For owners: check if this recipe belongs to any collection
+  useEffect(() => {
+    if (!isOwner) return
+    async function checkCollectionMembership() {
+      const { data } = await supabase
+        .from('collection_recipes')
+        .select('collection_id')
+        .eq('recipe_id', recipe.id)
+        .limit(1)
+      setIsInAnyCollection(!!(data && data.length > 0))
+    }
+    checkCollectionMembership()
+  }, [recipe.id, isOwner])
+
   async function handleDelete() {
     if (!window.confirm(`Delete "${recipe.name}"?`)) return
     await supabase.from('recipes').delete().eq('id', recipe.id)
     onDelete()
+  }
+
+  async function handleRemoveFromCollections() {
+    await supabase.from('collection_recipes').delete().eq('recipe_id', recipe.id)
+    setIsInAnyCollection(false)
+    onToast?.('Removed from collections')
   }
 
   async function handleToggleFavourite() {
@@ -475,6 +804,32 @@ export default function Detail({
                       borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
                       minWidth: 170, zIndex: 100, overflow: 'hidden',
                     }}>
+                      {/* Add / Remove collection */}
+                      {isInAnyCollection ? (
+                        <button
+                          onClick={() => { setMenuOpen(false); handleRemoveFromCollections() }}
+                          style={{
+                            display: 'block', width: '100%', padding: '13px 18px', textAlign: 'left',
+                            fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+                            border: 'none', borderBottom: '1px solid var(--border-soft)',
+                            cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                        >Remove from collection</button>
+                      ) : (
+                        <button
+                          onClick={() => { setMenuOpen(false); setSheetOpen(true) }}
+                          style={{
+                            display: 'block', width: '100%', padding: '13px 18px', textAlign: 'left',
+                            fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+                            border: 'none', borderBottom: '1px solid var(--border-soft)',
+                            cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                        >Add to collection</button>
+                      )}
                       {/* Make public / Make private */}
                       <button
                         onClick={handleTogglePublic}
@@ -531,6 +886,50 @@ export default function Detail({
                     {adding ? 'Adding…' : 'Add to my recipes'}
                   </button>
                 )}
+
+                {/* Kebab menu — Add to collection */}
+                <div ref={menuRef} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setMenuOpen(o => !o)}
+                    aria-label="More options"
+                    style={{
+                      width: 34, height: 34,
+                      background: 'none', border: 'none',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', flexShrink: 0, color: '#0C3D4E',
+                      borderRadius: 6, transition: 'background 150ms',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <circle cx="12" cy="5"  r="1.75" />
+                      <circle cx="12" cy="12" r="1.75" />
+                      <circle cx="12" cy="19" r="1.75" />
+                    </svg>
+                  </button>
+
+                  {menuOpen && (
+                    <div style={{
+                      position: 'absolute', right: 0, top: 'calc(100% + 8px)',
+                      background: 'var(--white)', border: '1px solid var(--border-soft)',
+                      borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+                      minWidth: 170, zIndex: 100, overflow: 'hidden',
+                    }}>
+                      <button
+                        onClick={() => { setMenuOpen(false); setSheetOpen(true) }}
+                        style={{
+                          display: 'block', width: '100%', padding: '13px 18px', textAlign: 'left',
+                          fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+                          border: 'none', cursor: 'pointer',
+                          fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                      >Add to collection</button>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -853,6 +1252,17 @@ export default function Detail({
       )}
 
       <div style={{ height: 40 }} />
+
+      {/* ── Collection bottom sheet ── */}
+      {sheetOpen && (
+        <CollectionSheet
+          recipeId={recipe.id}
+          session={session}
+          onClose={() => setSheetOpen(false)}
+          onToast={onToast}
+          onSaved={setIsInAnyCollection}
+        />
+      )}
     </div>
   )
 }

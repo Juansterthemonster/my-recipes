@@ -21,7 +21,7 @@
 | Frontend    | React 19 + Vite 8                               |
 | Styling     | Tailwind CSS 3 + CSS custom properties (tokens) |
 | Database    | Supabase (Postgres, free tier)                  |
-| Storage     | Supabase Storage (`recipe-photos` bucket)       |
+| Storage     | Cloudinary (free tier, `mi-sazon` folder)       |
 | Auth        | Supabase Auth (email/password)                  |
 | Fonts       | Fraunces (display) + Plus Jakarta Sans (body/UI)|
 | Hosting     | Vercel                                          |
@@ -47,6 +47,7 @@ my-recipes/
       Profile.jsx          Account settings: stats, change username, change password, sign out
     utils/
       scaleIngredient.js   Pure scaling utility — parses cooking amounts, returns scaled string
+      uploadToCloudinary.js  Uploads compressed blob to Cloudinary via unsigned preset; appends timestamp to public_id for replacement support
   supabase_migration_username.sql          SQL to create profiles + likes tables (run once in Supabase SQL editor)
   supabase_migration_activity_counts.sql   SQL for get_recipe_activity_counts RPC — needed for "Others' activity" stats (run once)
   vercel.json             SPA rewrite rule for /recipe/:id deep links
@@ -127,7 +128,7 @@ create table recipes (
   cuisine          text,
   dietary          text[],               -- ['Vegetarian', 'Gluten free', ...]
   meal_type        text[],               -- ['Breakfast', 'Dinner', ...]
-  photo_url        text,                 -- public URL from Supabase Storage
+  photo_url        text,                 -- public URL from Cloudinary
   is_public        boolean default false,
   copied_from      uuid references recipes(id) on delete set null, -- v2: set when "Add to my recipes" copies a public recipe
   created_at       timestamptz default now()
@@ -158,10 +159,14 @@ create table public.profiles (
 -- RLS: public SELECT (anon reads for uniqueness checks), authenticated INSERT/UPDATE own row
 ```
 
-### Supabase Storage
-- **Bucket:** `recipe-photos` (public)
-- **Path pattern:** `{user_id}/{timestamp}.{ext}`
-- Upload uses `upsert: true`; public URL retrieved with `getPublicUrl(path)`
+### Cloudinary (photo storage — migrated from Supabase Storage in v3.3)
+- **Cloud name:** `dkv15gp0t`
+- **Folder:** `mi-sazon`
+- **Upload preset:** `mi-sazon` (unsigned)
+- **Public ID pattern:** `{recipeId}_{timestamp}` — timestamp suffix ensures replacements always create a new asset (Cloudinary unsigned presets do not support overwrite)
+- Upload handled by `src/utils/uploadToCloudinary.js` — compresses via `compressImage` first, then POSTs to Cloudinary upload API
+- `photo_url` in DB stores the Cloudinary `secure_url` (https://res.cloudinary.com/...)
+- Env vars required: `VITE_CLOUDINARY_CLOUD_NAME`, `VITE_CLOUDINARY_UPLOAD_PRESET` (in both `.env` and Vercel)
 
 ---
 
@@ -183,7 +188,7 @@ create table public.profiles (
 ### Photo uploads
 - Detail page: hidden `<input type="file">` + `useRef`. Clicking the "Add photo" placeholder triggers it
 - RecipeForm: same pattern for add/edit flow
-- No server-side processing — direct browser → Supabase Storage upload
+- No server-side processing — direct browser → Cloudinary upload via unsigned preset
 
 ### Tabs & public recipes
 - Three tabs in Browse: **My recipes** (mine), **Liked** (favourites + liked public), **Explore** (all public)
@@ -440,6 +445,24 @@ Any counter that needs to aggregate data across users must use a `SECURITY DEFIN
 - Two stat blocks in the profile card:
   - **"Your stats"** — Total recipes / Public recipes / Recipes I've copied / Recipes I've liked
   - **"Others' activity on your recipes"** — Times copied / Times liked (separated by `var(--border-soft)` divider + `sectionLabel`)
+
+### v3.3 — Migrate photo storage from Supabase to Cloudinary (shipped ✓, 2026-04-05)
+
+**Motivation:** Supabase free tier egress quota exceeded (Cached Egress Exceeded warning). Photos were the dominant source of egress.
+
+**Changes**
+- `src/utils/uploadToCloudinary.js` — new upload utility; POSTs compressed blob to Cloudinary unsigned upload API; appends `_${Date.now()}` to public_id to support photo replacement (unsigned presets do not allow overwrite)
+- `Detail.jsx` + `RecipeForm.jsx` — swapped Supabase Storage upload calls for `uploadToCloudinary()`; Supabase Storage no longer used anywhere in the frontend
+- `scripts/migrateToCloudinary.mjs` — one-time migration script; downloads all existing photos from Supabase Storage, uploads to Cloudinary, updates `photo_url` in DB; safe to re-run (skips already-migrated rows)
+- All 62 existing recipe photos migrated successfully; `photo_url` values now point to `res.cloudinary.com`
+- Supabase Storage bucket `recipe-photos` can be emptied to reclaim egress headroom
+
+**Env vars added**
+- `VITE_CLOUDINARY_CLOUD_NAME=dkv15gp0t`
+- `VITE_CLOUDINARY_UPLOAD_PRESET=mi-sazon`
+- Added to both `.env` (local) and Vercel environment variables
+
+---
 
 ### v3.2 — Photo compression, WebP conversion, and recipe-anchored storage (shipped ✓, 2026-03-28)
 

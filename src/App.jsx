@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import Browse from './components/Browse'
 import Detail from './components/Detail'
+import CollectionDetail from './components/CollectionDetail'
 import RecipeForm from './components/RecipeForm'
 import Toast from './components/Toast'
 import AuthScreen from './components/AuthScreen'
@@ -12,6 +13,7 @@ export default function App() {
   const [session, setSession] = useState(undefined) // undefined = loading, null = signed out
   const [view, setView]       = useState('browse')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
+  const [selectedCollection, setSelectedCollection] = useState(null)
   const [toast, setToast]     = useState({ visible: false, message: {} })
   const [activeTab, setActiveTab] = useState('mine')
   const [username, setUsername]   = useState(null)
@@ -61,10 +63,14 @@ export default function App() {
     function handlePop(e) {
       const s = e.state
       if (!s) { setSelectedRecipe(null); setView('browse'); setActiveTab('mine'); return }
-      if (s.view === 'detail' && s.recipe) { setSelectedRecipe(s.recipe); setView('detail') }
-      else if (s.view === 'edit' && s.recipe) { setSelectedRecipe(s.recipe); setView('edit') }
-      else if (s.view === 'add')             { setSelectedRecipe(null);    setView('add') }
-      else if (s.view === 'profile')         { setView('profile') }
+      if (s.view === 'detail' && s.recipe)         { setSelectedRecipe(s.recipe); setView('detail') }
+      else if (s.view === 'edit' && s.recipe)     { setSelectedRecipe(s.recipe); setView('edit') }
+      else if (s.view === 'add')                  { setSelectedRecipe(null);     setView('add') }
+      else if (s.view === 'profile')              { setView('profile') }
+      else if (s.view === 'collection' && s.collection) {
+        setSelectedCollection(s.collection)
+        setView('collection')
+      }
       else {
         setSelectedRecipe(null)
         setView('browse')
@@ -188,6 +194,11 @@ export default function App() {
     window.history.pushState({ view: 'profile', tab: activeTab, recipe: null }, '', '#profile')
     setView('profile')
   }
+  function openCollection(collection) {
+    window.history.pushState({ view: 'collection', tab: activeTab, collection }, '', '#collection')
+    setSelectedCollection(collection)
+    setView('collection')
+  }
 
   function goBack() {
     window.history.back()
@@ -305,6 +316,15 @@ export default function App() {
             activeTab={activeTab} onTabChange={openTab}
             username={username}
             onProfile={openProfile}
+            onSelectCollection={openCollection}
+          />
+        )}
+        {view === 'collection' && selectedCollection && (
+          <CollectionDetail
+            collection={selectedCollection}
+            session={session}
+            onBack={goBack}
+            onSelect={openDetail}
           />
         )}
         {view === 'detail' && (

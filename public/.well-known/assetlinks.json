@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.misazon.app",
-        "sha256_cert_fingerprints": ["4C:8E:1F:C9:25:3C:C2:D0:2D:2E:34:30:62:E8:2B:72:F9:11:23:C5:47:65:91:3E:4F:6B:33:B6:55:AD:6C:1C"]
+        "sha256_cert_fingerprints": [
+          "0A:98:FF:40:F7:95:E2:D2:0F:79:4F:EA:41:45:72:10:B5:2E:FF:D9:1C:3C:F8:8D:C6:0D:9B:1E:3F:B7:CC:F1",
+          "4C:8E:1F:C9:25:3C:C2:D0:2D:2E:34:30:62:E8:2B:72:F9:11:23:C5:47:65:91:3E:4F:6B:33:B6:55:AD:6C:1C"
+        ]
       }
     }]

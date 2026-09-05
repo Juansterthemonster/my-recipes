@@ -4,6 +4,11 @@ import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
 import { compressImage } from '../utils/compressImage'
 import { uploadToCloudinary } from '../utils/uploadToCloudinary'
+import { slugify } from '../utils/slugify'
+
+// Must match the MAX_PHOTOS check in RecipeForm.jsx — same cap, enforced on
+// both places a photo can be added to a recipe.
+const MAX_PHOTOS = 6
 
 const pill = {
   fontSize: '0.72rem', padding: '6px 13px', borderRadius: 'var(--r-full)',
@@ -121,15 +126,40 @@ function IngRow({ ing, scaledAmount, warn }) {
   )
 }
 
+/* ─── INGREDIENT GROUPING ──────────────────────────────────────────────────── */
+// Buckets the flat `ingredients` array (each item optionally carrying a
+// `group` string, set by RecipeForm's ingredient-group editor) by that
+// group, preserving the order groups first appear in. A recipe with no
+// `group` keys at all — every pre-v4 recipe — collapses back into exactly
+// one unlabeled group, so its layout is unchanged from before grouping existed.
+function bucketByGroup(ingredients) {
+  const groups = []
+  const byLabel = new Map()
+  for (const item of ingredients) {
+    const label = item.group || ''
+    let g = byLabel.get(label)
+    if (!g) {
+      g = { label, items: [] }
+      byLabel.set(label, g)
+      groups.push(g)
+    }
+    g.items.push(item)
+  }
+  return groups
+}
+
 /* ─── INGREDIENT CARD ──────────────────────────────────────────────────────── */
 function IngredientCard({ ingredients, scaleFactor }) {
-  const factor   = scaleFactor ?? 1
-  const required = ingredients.filter(i => !i.optional)
-  const optional = ingredients.filter(i => i.optional)
+  const factor = scaleFactor ?? 1
+  const groups = bucketByGroup(ingredients)
   const sectionLabelStyle = {
     fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em',
     textTransform: 'uppercase', color: 'var(--text-secondary)',
     marginBottom: 12, fontFamily: 'var(--font-body)',
+  }
+  const groupHeadingStyle = {
+    fontSize: '0.95rem', fontWeight: 600, fontFamily: 'var(--font-display)',
+    color: 'var(--text-primary)', marginBottom: 12,
   }
 
   function IngList({ items }) {
@@ -158,13 +188,22 @@ function IngredientCard({ ingredients, scaleFactor }) {
       border: '1px solid var(--border-soft)', padding: '20px 24px',
     }}>
       <div style={{ ...sectionLabelStyle, color: 'var(--text-tertiary)', marginBottom: 14 }}>Ingredients</div>
-      <IngList items={required} />
-      {optional.length > 0 && (
-        <div style={{ marginTop: 28 }}>
-          <div style={sectionLabelStyle}>Optional ingredients</div>
-          <IngList items={optional} />
-        </div>
-      )}
+      {groups.map((group, gi) => {
+        const required = group.items.filter(i => !i.optional)
+        const optional = group.items.filter(i => i.optional)
+        return (
+          <div key={group.label + gi} style={{ marginTop: gi > 0 ? 28 : 0 }}>
+            {group.label && <div style={groupHeadingStyle}>{group.label}</div>}
+            <IngList items={required} />
+            {optional.length > 0 && (
+              <div style={{ marginTop: 28 }}>
+                <div style={sectionLabelStyle}>Optional ingredients</div>
+                <IngList items={optional} />
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -506,6 +545,36 @@ export default function Detail({
   const photoInputRef = useRef(null)
 
   const isOwner    = !readOnly && recipe.user_id === session?.user?.id
+  // Gallery: falls back to the single legacy photo_url for older recipes that
+  // predate the photos[] column, so nothing needs a data migration.
+  const photos = recipe.photos?.length ? recipe.photos : (recipe.photo_url ? [recipe.photo_url] : [])
+  const [activePhoto, setActivePhoto] = useState(0)
+  // Belt-and-suspenders alongside the `lg:hidden` Tailwind class on the dots
+  // and prev/next arrows below: those controls only make sense against the
+  // mobile carousel, never the desktop "all photos at once" grid. Tracking
+  // the breakpoint in JS too means they can't end up shown on desktop even
+  // if a CSS class fails to apply for some reason.
+  const [isDesktopPhotoView, setIsDesktopPhotoView] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const onChange = e => setIsDesktopPhotoView(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  const photoScrollRef = useRef(null)
+  function handlePhotoScroll(e) {
+    const el = e.currentTarget
+    if (!el.clientWidth) return
+    setActivePhoto(Math.round(el.scrollLeft / el.clientWidth))
+  }
+  function scrollToPhoto(index) {
+    const el = photoScrollRef.current
+    if (!el) return
+    const clamped = Math.max(0, Math.min(index, photos.length - 1))
+    el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' })
+  }
   // Compute scale factor — only when serves is known and the user has adjusted it
   const scaleFactor = recipe.serves && scaledServings
     ? scaledServings / recipe.serves
@@ -582,20 +651,25 @@ export default function Detail({
   }
 
   async function handlePhotoUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const room = MAX_PHOTOS - photos.length
+    if (room <= 0) { e.target.value = ''; return }
     setUploading(true)
-    const compressed = await compressImage(file)
-    let photoUrl
-    try {
-      photoUrl = await uploadToCloudinary(compressed, recipe.id)
-    } catch (e) {
-      console.error('Photo upload failed:', e)
-      setUploading(false)
-      return
+    const uploaded = []
+    for (const file of files.slice(0, room)) {
+      try {
+        const compressed = await compressImage(file)
+        uploaded.push(await uploadToCloudinary(compressed, recipe.id))
+      } catch (err) {
+        console.error('Photo upload failed:', err)
+      }
     }
-    await supabase.from('recipes').update({ photo_url: photoUrl }).eq('id', recipe.id)
-    setRecipe(r => ({ ...r, photo_url: photoUrl }))
+    if (uploaded.length) {
+      const newPhotos = [...photos, ...uploaded]
+      await supabase.from('recipes').update({ photos: newPhotos, photo_url: newPhotos[0] }).eq('id', recipe.id)
+      setRecipe(r => ({ ...r, photos: newPhotos, photo_url: newPhotos[0] }))
+    }
     setUploading(false)
   }
 
@@ -637,7 +711,11 @@ export default function Detail({
   }
 
   async function handleCopyLink() {
-    const url = `${window.location.origin}/recipe/${recipe.id}`
+    // Slug is cosmetic only — App.jsx's share-link regex never reads it back
+    // out, so a recipe renamed after sharing doesn't break the old link, and
+    // a name with no a-z0-9 characters at all just falls back to no slug.
+    const slug = slugify(recipe.name)
+    const url = `${window.location.origin}/recipe/${slug ? `${slug}/` : ''}${recipe.id}`
 
     /* ── Tier 1: native share sheet (iOS Safari, Android Chrome, etc.) ──────
        navigator.share() works on mobile over HTTP as well as HTTPS, so it's
@@ -939,20 +1017,147 @@ export default function Detail({
 
       {/* ── Header card ── */}
       <div className="mx-4 mt-4 lg:mx-10" style={{
-        background: recipe.photo_url ? 'var(--white)' : '#FFFFFF',
+        background: photos.length > 0 ? 'var(--white)' : '#FFFFFF',
         borderRadius: 'var(--r-lg)',
-        border: recipe.photo_url ? '1px solid var(--border-soft)' : '1px solid #D1D5DB',
+        border: photos.length > 0 ? '1px solid var(--border-soft)' : '1px solid #D1D5DB',
         padding: '24px',
         position: 'relative',
       }}>
 
-        {recipe.photo_url ? (
-          /* Photo present — heart sits top-right over the image (blur style) */
+        {photos.length > 0 ? (
+          /* Photo(s) present — heart sits top-right over the image (blur style).
+             A swipeable carousel with dot indicators renders only when there is
+             more than one photo; a single photo renders exactly as before. */
           <div style={{ position: 'relative', margin: '-24px -24px 20px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}>
-            <img
-              src={recipe.photo_url} alt={recipe.name}
-              style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
-            />
+            {photos.length > 1 ? (
+              <>
+                {/* Mobile/tablet (below lg): swipeable carousel — unchanged. */}
+                <div className="lg:hidden">
+                  <div
+                    ref={photoScrollRef}
+                    onScroll={handlePhotoScroll}
+                    className="pill-row"
+                    style={{
+                      display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory',
+                      WebkitOverflowScrolling: 'touch',
+                    }}
+                  >
+                    {photos.map((url, i) => (
+                      <div key={url + i} style={{ flex: '0 0 100%', scrollSnapAlign: 'start' }}>
+                        <img
+                          src={url} alt={`${recipe.name} photo ${i + 1}`}
+                          style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Desktop (lg and up): show every photo at once — a bigger
+                    cover photo (photo 1) plus the rest in a grid alongside
+                    it. The grid always fills completely with no empty cells:
+                    the last grid photo spans both columns whenever the
+                    remaining count is odd (e.g. 4 total → 1 side photo
+                    spans full width under 2 others; 6 total → same, under
+                    2 rows of 2). */}
+                <div className="hidden lg:flex" style={{ gap: 4, height: 420 }}>
+                  <img
+                    src={photos[0]} alt={`${recipe.name} photo 1`}
+                    style={{
+                      flex: photos.length > 2 ? '1.4 1 0' : '1 1 0', minWidth: 0,
+                      width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                    }}
+                  />
+                  {photos.length > 2 ? (
+                    <div style={{
+                      flex: '1 1 0', minWidth: 0, minHeight: 0, height: '100%', display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)', gridAutoRows: '1fr', gap: 4,
+                    }}>
+                      {photos.slice(1).map((url, i, rest) => (
+                        <img
+                          key={url + i} src={url} alt={`${recipe.name} photo ${i + 2}`}
+                          style={{
+                            width: '100%', height: '100%', minHeight: 0, objectFit: 'cover', display: 'block',
+                            gridColumn: rest.length % 2 === 1 && i === rest.length - 1 ? 'span 2' : undefined,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <img
+                      src={photos[1]} alt={`${recipe.name} photo 2`}
+                      style={{ flex: '1 1 0', minWidth: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <img
+                src={photos[0]} alt={recipe.name}
+                style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
+              />
+            )}
+
+            {/* Dots + arrows only make sense against the mobile carousel above
+                — the desktop grid shows every photo at once, so both are
+                hidden at the lg breakpoint (and gated in JS via
+                isDesktopPhotoView too — see its declaration above for why). */}
+            {photos.length > 1 && !isDesktopPhotoView && (
+              <div className="lg:hidden" style={{
+                position: 'absolute', bottom: 12, left: 0, right: 0,
+                display: 'flex', justifyContent: 'center', gap: 6,
+              }}>
+                {photos.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => scrollToPhoto(i)}
+                    aria-label={`Go to photo ${i + 1}`}
+                    style={{
+                      width: 6, height: 6, borderRadius: '50%', padding: 0, border: 'none',
+                      background: i === activePhoto ? '#fff' : 'rgba(255,255,255,0.45)',
+                      transition: 'background 150ms', cursor: 'pointer',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Prev/next arrows — hidden on touch-only devices (mobile already has
+                swipe); shown only where a precise, hover-capable pointer exists
+                (desktop mouse/trackpad) AND below the lg breakpoint, since lg+
+                shows the all-at-once grid instead of the carousel these control. */}
+            {photos.length > 1 && !isDesktopPhotoView && activePhoto > 0 && (
+              <button
+                type="button"
+                className="carousel-arrow lg:hidden"
+                onClick={() => scrollToPhoto(activePhoto - 1)}
+                aria-label="Previous photo"
+                style={{ ...blurBtn, position: 'absolute', top: '50%', left: 10, transform: 'translateY(-50%)', width: 34, height: 34, color: '#fff' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            )}
+            {photos.length > 1 && !isDesktopPhotoView && activePhoto < photos.length - 1 && (
+              <button
+                type="button"
+                className="carousel-arrow lg:hidden"
+                onClick={() => scrollToPhoto(activePhoto + 1)}
+                aria-label="Next photo"
+                style={{ ...blurBtn, position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', width: 34, height: 34, color: '#fff' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            )}
+
             {!readOnly && (
               isOwner ? (
                 <button
@@ -978,13 +1183,14 @@ export default function Detail({
                 </button>
               ) : null
             )}
+
           </div>
         ) : (
           /* No photo */
           <>
             <input
               ref={photoInputRef}
-              type="file" accept="image/*"
+              type="file" accept="image/*" multiple
               style={{ display: 'none' }}
               onChange={handlePhotoUpload}
             />

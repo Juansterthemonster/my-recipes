@@ -19,12 +19,15 @@ export default function App() {
   const [username, setUsername]   = useState(null)
 
   // ── Share link state ──────────────────────────────────────────────────────
-  // shareRecipeId is extracted from /recipe/:id on first load.
+  // shareRecipeId is extracted from /recipe/:id or /recipe/:slug/:id on first
+  // load. The optional slug segment (added in v4.2) is purely cosmetic — it's
+  // never read back out here, so a link shared before v4.2, or a recipe
+  // renamed after being shared, both still resolve correctly off the ID alone.
   // shareRecipe is the fetched recipe data (null until loaded).
   // shareLoading tracks whether the fetch is in progress.
   // shareError is true if the recipe was not found or is not public.
   const [shareRecipeId, setShareRecipeId] = useState(() => {
-    const m = window.location.pathname.match(/^\/recipe\/([0-9a-f-]{36})$/i)
+    const m = window.location.pathname.match(/^\/recipe\/(?:[^/]+\/)?([0-9a-f-]{36})$/i)
     return m ? m[1] : null
   })
   const [shareRecipe,  setShareRecipe]  = useState(null)

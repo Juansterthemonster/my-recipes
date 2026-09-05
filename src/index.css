@@ -103,6 +103,19 @@ input[type=number] { -moz-appearance: textfield; }
   display: none;
 }
 
+/* Recipe photo carousel prev/next arrows — hidden by default since mobile
+   swipe already covers navigation there; shown only on devices with a
+   precise, hover-capable pointer (desktop mouse/trackpad), where there was
+   previously no way to move past the first photo. */
+.carousel-arrow {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .carousel-arrow {
+    display: flex;
+  }
+}
+
 /* Search input placeholder — neutral grey */
 .search-input::placeholder {
   color: #6B7280;

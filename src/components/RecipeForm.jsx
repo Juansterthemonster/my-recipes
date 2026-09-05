@@ -4,66 +4,134 @@ import { toMins, fromMins } from './TimePicker'
 import { compressImage } from '../utils/compressImage'
 import { uploadToCloudinary } from '../utils/uploadToCloudinary'
 
+// Generates a UUID, falling back to a manual v4 implementation when
+// crypto.randomUUID isn't available — it requires a secure context (HTTPS or
+// localhost), so it's missing when testing over the local network at a plain
+// http://<lan-ip> address (e.g. from a phone during WiFi dev). Using this
+// everywhere instead of calling crypto.randomUUID() directly means adding a
+// photo — or saving a brand-new recipe — doesn't crash during that kind of testing.
+function newId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
+// Must match the MAX_PHOTOS check in Detail.jsx's handlePhotoUpload — same
+// cap, enforced on both places a photo can be added to a recipe.
+const MAX_PHOTOS = 6
+
+// Buckets a recipe's flat `ingredients` array (each item optionally carrying
+// a `group` string) into the shape the form edits: an array of named groups,
+// each with its own ingredient rows. Groups are ordered by first appearance
+// of their label, so a legacy recipe with no `group` keys at all collapses
+// back into exactly one unlabeled group — identical to the pre-groups UI.
+function groupsFromFlat(flat) {
+  if (!flat?.length) {
+    return [{ id: newId(), label: '', items: [{ name: '', amount: '', optional: false }] }]
+  }
+  const groups = []
+  const byLabel = new Map()
+  for (const item of flat) {
+    const label = item.group || ''
+    let g = byLabel.get(label)
+    if (!g) {
+      g = { id: newId(), label, items: [] }
+      byLabel.set(label, g)
+      groups.push(g)
+    }
+    g.items.push({ name: item.name, amount: item.amount, optional: item.optional || false })
+  }
+  return groups
+}
+
 /* ─── PHOTO UPLOAD CARD ─────────────────────────────────────────────────────── */
-function PhotoUpload({ preview, onFileChange, onRemove, fileInputRef }) {
+function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
   return (
     <div>
       <label style={{
         display: 'block', fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.08em',
         textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 10,
         fontFamily: 'var(--font-body)',
-      }}>Photo</label>
+      }}>{photos.length > 1 ? 'Photos' : 'Photo'}</label>
 
-      {/* Hidden file input */}
+      {/* Hidden file input — accepts multiple photos at once */}
       <input
         ref={fileInputRef}
-        type="file" accept="image/*"
-        onChange={onFileChange}
+        type="file" accept="image/*" multiple
+        onChange={onFilesAdded}
         style={{ display: 'none' }}
       />
 
-      {preview ? (
+      {photos.length > 0 ? (
         <div>
-          <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-            <img
-              src={preview} alt="Recipe photo"
-              style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
-            />
-            <button
-              type="button" onClick={onRemove}
-              aria-label="Remove photo"
-              style={{
-                position: 'absolute', top: 8, right: 8,
-                background: 'rgba(0,0,0,0.55)', border: 'none',
-                borderRadius: '50%', width: 32, height: 32,
-                color: '#fff', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 150ms',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.75)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.55)'}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-              </svg>
-            </button>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} className="pill-row">
+            {photos.map((p, i) => (
+              <div key={p.key} style={{ position: 'relative', flex: '0 0 92px', borderRadius: 8, overflow: 'hidden' }}>
+                <img
+                  src={p.preview} alt={`Recipe photo ${i + 1}`}
+                  style={{ width: 92, height: 92, objectFit: 'cover', display: 'block' }}
+                />
+                {i === 0 && (
+                  <span style={{
+                    position: 'absolute', bottom: 4, left: 4,
+                    background: 'rgba(0,0,0,0.55)', color: '#fff',
+                    fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.04em',
+                    textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
+                  }}>Cover</span>
+                )}
+                <button
+                  type="button" onClick={() => onRemove(p.key)}
+                  aria-label="Remove photo"
+                  style={{
+                    position: 'absolute', top: 4, right: 4,
+                    background: 'rgba(0,0,0,0.55)', border: 'none',
+                    borderRadius: '50%', width: 24, height: 24,
+                    color: '#fff', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 150ms',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.75)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.55)'}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <button
+                type="button" onClick={() => fileInputRef.current?.click()}
+                aria-label="Add another photo"
+                style={{
+                  flex: '0 0 92px', height: 92,
+                  background: 'var(--cream)', border: '2px dashed var(--border)',
+                  borderRadius: 8, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--text-secondary)', transition: 'border-color 150ms, color 150ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--green-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+            )}
           </div>
-          <button
-            type="button" onClick={() => fileInputRef.current?.click()}
-            style={{
-              marginTop: 8, fontSize: '0.78rem', color: 'var(--text-secondary)',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-body)', padding: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--green-primary)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >Change photo</button>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: 6, fontFamily: 'var(--font-body)' }}>
+            {photos.length}/{MAX_PHOTOS} photos{photos.length > 1 ? ' — the first is used as the cover' : ''}
+          </p>
         </div>
       ) : (
         <button
@@ -84,7 +152,7 @@ function PhotoUpload({ preview, onFileChange, onRemove, fileInputRef }) {
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
           </svg>
-          <span style={{ fontSize: '0.82rem' }}>Add a photo</span>
+          <span style={{ fontSize: '0.82rem' }}>Add photos</span>
         </button>
       )}
     </div>
@@ -198,17 +266,16 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     : recipe?.meal_type ? [recipe.meal_type]
     : []
   )
-  const [ingredients, setIngredients] = useState(
-    recipe?.ingredients?.length ? recipe.ingredients : [{ name:'', amount:'', optional:false }]
-  )
+  const [ingredientGroups, setIngredientGroups] = useState(() => groupsFromFlat(recipe?.ingredients))
   const [steps, setSteps]     = useState(recipe?.steps?.join('\n') || '')
   const [isPublic, setIsPublic] = useState(recipe?.is_public || false)
-  const [photoUrl, setPhotoUrl]       = useState(recipe?.photo_url || null)
-  const [photoFile, setPhotoFile]     = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(recipe?.photo_url || null)
+  const initialPhotoUrls = recipe?.photos?.length ? recipe.photos : (recipe?.photo_url ? [recipe.photo_url] : [])
+  const [photos, setPhotos] = useState(
+    initialPhotoUrls.map((url, i) => ({ key: `existing-${i}`, url, file: null, preview: url }))
+  )
   const [saving, setSaving]   = useState(false)
   const [error, setError]     = useState('')
-  const ingRefs        = useRef([])
+  const ingRefs        = useRef({})  // keyed by "groupIdx:itemIdx"
   const pendingFocusRef = useRef(null)
 
   // After a new ingredient row is committed to the DOM, focus its name input
@@ -225,29 +292,63 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
   })
   const fileInputRef = useRef(null)
 
-  function handlePhotoChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
-  }
-
-  function removePhoto() {
-    setPhotoFile(null)
-    setPhotoPreview(null)
-    setPhotoUrl(null)
+  function handlePhotosAdded(e) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setPhotos(p => {
+      const room = MAX_PHOTOS - p.length
+      if (room <= 0) return p
+      return [
+        ...p,
+        ...files.slice(0, room).map(file => ({
+          key: newId(), url: null, file, preview: URL.createObjectURL(file),
+        })),
+      ]
+    })
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  function updateIng(i, field, value) {
-    const u = [...ingredients]; u[i] = { ...u[i], [field]:value }; setIngredients(u)
+  function removePhotoAt(key) {
+    setPhotos(p => p.filter(ph => ph.key !== key))
   }
-  function addIng() {
-    pendingFocusRef.current = ingredients.length  // index the new row will get
-    setIngredients(p => [...p, { name:'', amount:'', optional:false }])
+
+  function updateIng(gi, ii, field, value) {
+    setIngredientGroups(gs => {
+      const next = [...gs]
+      const items = [...next[gi].items]
+      items[ii] = { ...items[ii], [field]: value }
+      next[gi] = { ...next[gi], items }
+      return next
+    })
   }
-  function removeIng(i) {
-    if (ingredients.length > 1) setIngredients(ingredients.filter((_,idx) => idx !== i))
+  function addIng(gi) {
+    pendingFocusRef.current = `${gi}:${ingredientGroups[gi].items.length}`  // key the new row will get
+    setIngredientGroups(gs => {
+      const next = [...gs]
+      next[gi] = { ...next[gi], items: [...next[gi].items, { name:'', amount:'', optional:false }] }
+      return next
+    })
+  }
+  function removeIng(gi, ii) {
+    setIngredientGroups(gs => {
+      if (gs[gi].items.length <= 1) return gs
+      const next = [...gs]
+      next[gi] = { ...next[gi], items: next[gi].items.filter((_, idx) => idx !== ii) }
+      return next
+    })
+  }
+  function updateGroupLabel(gi, label) {
+    setIngredientGroups(gs => {
+      const next = [...gs]
+      next[gi] = { ...next[gi], label }
+      return next
+    })
+  }
+  function addGroup() {
+    setIngredientGroups(gs => [...gs, { id: newId(), label: '', items: [{ name:'', amount:'', optional:false }] }])
+  }
+  function removeGroup(gi) {
+    setIngredientGroups(gs => gs.length > 1 ? gs.filter((_, idx) => idx !== gi) : gs)
   }
 
   async function handleSave() {
@@ -257,17 +358,20 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     // For new recipes, generate the UUID now so the storage path and DB row
     // share the same ID from the start — photo can never be matched to the
     // wrong recipe even if something goes wrong mid-save.
-    const recipeId = isEdit ? recipe.id : crypto.randomUUID()
+    const recipeId = isEdit ? recipe.id : newId()
 
-    // Upload new photo if one was selected — compress to WebP first
-    let finalPhotoUrl = photoUrl
-    if (photoFile) {
-      const compressed = await compressImage(photoFile)
+    // Upload any newly-added photos — compress to WebP first. Existing
+    // (already-uploaded) photos just carry their URL straight through, in
+    // the order they appear — the first photo is always the cover.
+    const finalPhotos = []
+    for (const p of photos) {
+      if (p.url) { finalPhotos.push(p.url); continue }
+      const compressed = await compressImage(p.file)
       try {
-        finalPhotoUrl = await uploadToCloudinary(compressed, recipeId)
+        finalPhotos.push(await uploadToCloudinary(compressed, recipeId))
       } catch (e) {
         console.error('Photo upload failed:', e)
-        setError('Failed to upload photo. Please try again.')
+        setError('Failed to upload one or more photos. Please try again.')
         setSaving(false)
         return
       }
@@ -282,12 +386,16 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       cuisine: cuisine.trim() || null,
       dietary: dietary ? [dietary] : [],
       meal_type: mealType.length > 0 ? mealType : null,
-      ingredients: ingredients.filter(i => i.name.trim()).map(i => ({
-        name: i.name.trim(), amount: i.amount.trim(), optional: i.optional || false
-      })),
+      ingredients: ingredientGroups.flatMap(g => {
+        const label = g.label.trim() || null
+        return g.items.filter(i => i.name.trim()).map(i => ({
+          name: i.name.trim(), amount: i.amount.trim(), optional: i.optional || false, group: label,
+        }))
+      }),
       steps: steps.split('\n').map(s => s.trim()).filter(Boolean),
       is_public: isPublic,
-      photo_url: finalPhotoUrl,
+      photos: finalPhotos,
+      photo_url: finalPhotos[0] || null,
     }
     let err
     if (isEdit) {
@@ -298,7 +406,11 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       ({ error:err } = await supabase.from('recipes').insert({ ...payload, id: recipeId, user_id: session.user.id }))
     }
     setSaving(false)
-    if (err) { setError('Something went wrong. Please try again.'); return }
+    if (err) {
+      console.error('Save recipe failed:', err)
+      setError('Something went wrong. Please try again.')
+      return
+    }
     onSave()
   }
 
@@ -384,10 +496,10 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
 
             {/* Photo — below name/notes */}
             <div style={card}>
-              <PhotoUpload
-                preview={photoPreview}
-                onFileChange={handlePhotoChange}
-                onRemove={removePhoto}
+              <PhotoGridUpload
+                photos={photos}
+                onFilesAdded={handlePhotosAdded}
+                onRemove={removePhotoAt}
                 fileInputRef={fileInputRef}
               />
             </div>
@@ -474,63 +586,105 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                 CSS Grid for the input rows (v1.1): all Name columns align, all
                 Amount columns align, remove buttons align — cleaner than per-row flex.
                 gridColumn:'1 / -1' on the optional label spans all three columns.
+
+                Groups (v4): ingredientGroups is normally a single unlabeled
+                group and the form looks exactly like the pre-groups UI — the
+                group-name field and "Remove group" control only appear once
+                there's more than one group, so a simple recipe's form is
+                unchanged until you actually add a second list.
             */}
             <div style={card}>
               <label style={{ ...lbl, marginBottom:16 }}>Ingredients</label>
 
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                {ingredients.map((ing, i) => (
-                  <div key={i}>
-                    <div style={{
-                      display:'grid',
-                      gridTemplateColumns:'1fr 82px 22px',
-                      columnGap:6,
-                      alignItems:'center',
-                    }}>
-                      <input
-                        ref={el => ingRefs.current[i] = el}
-                        type="text" value={ing.name}
-                        onChange={e => updateIng(i, 'name', e.target.value)}
-                        placeholder="Ingredient"
-                        style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
-                        onFocus={focus} onBlur={blur}
-                      />
-                      <input
-                        type="text" value={ing.amount}
-                        onChange={e => updateIng(i, 'amount', e.target.value)}
-                        placeholder="Amount"
-                        style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
-                        onFocus={focus} onBlur={blur}
-                      />
-                      {ingredients.length > 1 ? (
-                        <button onClick={() => removeIng(i)} style={{
-                          color:'var(--border)', background:'none', border:'none',
-                          cursor:'pointer', fontSize:'1.2rem', lineHeight:1,
-                          width:22, flexShrink:0, textAlign:'center'
-                        }}>×</button>
-                      ) : <div />}
+              <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
+                {ingredientGroups.map((group, gi) => (
+                  <div key={group.id}>
+                    {ingredientGroups.length > 1 && (
+                      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                        <input
+                          type="text" value={group.label}
+                          onChange={e => updateGroupLabel(gi, e.target.value)}
+                          placeholder={`Group ${gi + 1} name (e.g. Sauce)`}
+                          style={{ ...inp, fontSize:'0.82rem', padding:'7px 10px', fontWeight:600, flex:1 }}
+                          onFocus={focus} onBlur={blur}
+                        />
+                        <button type="button" onClick={() => removeGroup(gi)}
+                          style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', background:'none',
+                            border:'none', cursor:'pointer', fontFamily:'var(--font-body)', whiteSpace:'nowrap' }}
+                          onMouseEnter={e => e.target.style.color='var(--text-secondary)'}
+                          onMouseLeave={e => e.target.style.color='var(--text-tertiary)'}>
+                          Remove group
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                      {group.items.map((ing, ii) => (
+                        <div key={ii}>
+                          <div style={{
+                            display:'grid',
+                            gridTemplateColumns:'1fr 82px 22px',
+                            columnGap:6,
+                            alignItems:'center',
+                          }}>
+                            <input
+                              ref={el => ingRefs.current[`${gi}:${ii}`] = el}
+                              type="text" value={ing.name}
+                              onChange={e => updateIng(gi, ii, 'name', e.target.value)}
+                              placeholder="Ingredient"
+                              style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
+                              onFocus={focus} onBlur={blur}
+                            />
+                            <input
+                              type="text" value={ing.amount}
+                              onChange={e => updateIng(gi, ii, 'amount', e.target.value)}
+                              placeholder="Amount"
+                              style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
+                              onFocus={focus} onBlur={blur}
+                            />
+                            {group.items.length > 1 ? (
+                              <button onClick={() => removeIng(gi, ii)} style={{
+                                color:'var(--border)', background:'none', border:'none',
+                                cursor:'pointer', fontSize:'1.2rem', lineHeight:1,
+                                width:22, flexShrink:0, textAlign:'center'
+                              }}>×</button>
+                            ) : <div />}
+                          </div>
+                          <label style={{
+                            display:'flex', alignItems:'center', gap:8, cursor:'pointer',
+                            width:'fit-content', marginLeft:2, marginTop:8
+                          }}>
+                            <input type="checkbox" checked={ing.optional || false}
+                              onChange={e => updateIng(gi, ii, 'optional', e.target.checked)}
+                              style={{ width:16, height:16, accentColor:'var(--green-primary)', cursor:'pointer', flexShrink:0 }} />
+                            <span style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)' }}>
+                              Optional
+                            </span>
+                          </label>
+                        </div>
+                      ))}
                     </div>
-                    <label style={{
-                      display:'flex', alignItems:'center', gap:8, cursor:'pointer',
-                      width:'fit-content', marginLeft:2, marginTop:8
-                    }}>
-                      <input type="checkbox" checked={ing.optional || false}
-                        onChange={e => updateIng(i, 'optional', e.target.checked)}
-                        style={{ width:16, height:16, accentColor:'var(--green-primary)', cursor:'pointer', flexShrink:0 }} />
-                      <span style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)' }}>
-                        Optional
-                      </span>
-                    </label>
+
+                    <button type="button" onClick={() => addIng(gi)}
+                      style={{ marginTop:12, fontSize:'0.82rem', color:'var(--text-secondary)',
+                        background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)' }}
+                      onMouseEnter={e => e.target.style.color='var(--green-primary)'}
+                      onMouseLeave={e => e.target.style.color='var(--text-secondary)'}>
+                      + Add ingredient
+                    </button>
                   </div>
                 ))}
               </div>
 
-              <button onClick={addIng}
-                style={{ marginTop:16, fontSize:'0.82rem', color:'var(--text-secondary)',
-                  background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)' }}
+              <button type="button" onClick={addGroup}
+                style={{
+                  marginTop:20, fontSize:'0.78rem', color:'var(--text-tertiary)',
+                  background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)',
+                  borderTop:'1px dashed var(--border-soft)', paddingTop:14, width:'100%', textAlign:'left',
+                }}
                 onMouseEnter={e => e.target.style.color='var(--green-primary)'}
-                onMouseLeave={e => e.target.style.color='var(--text-secondary)'}>
-                + Add ingredient
+                onMouseLeave={e => e.target.style.color='var(--text-tertiary)'}>
+                + Add ingredient group (e.g. "Sauce", "Marinade")
               </button>
             </div>
 

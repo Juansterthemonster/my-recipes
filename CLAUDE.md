@@ -129,6 +129,7 @@ create table recipes (
   dietary          text[],               -- ['Vegetarian', 'Gluten free', ...]
   meal_type        text[],               -- ['Breakfast', 'Dinner', ...]
   photo_url        text,                 -- public URL from Cloudinary
+  photos           jsonb default '[]',   -- v4: ordered photo gallery; photo_url always mirrors photos[0]
   is_public        boolean default false,
   copied_from      uuid references recipes(id) on delete set null, -- v2: set when "Add to my recipes" copies a public recipe
   created_at       timestamptz default now()
@@ -189,6 +190,7 @@ create table public.profiles (
 - Detail page: hidden `<input type="file">` + `useRef`. Clicking the "Add photo" placeholder triggers it
 - RecipeForm: same pattern for add/edit flow
 - No server-side processing — direct browser → Cloudinary upload via unsigned preset
+- **v4:** both spots now accept multiple files (`multiple` attribute) and manage an ordered `photos` array; `photo_url` always mirrors `photos[0]` as the cover so every card/collage view is unaffected
 
 ### Tabs & public recipes
 - Three tabs in Browse: **My recipes** (mine), **Liked** (favourites + liked public), **Explore** (all public)
@@ -265,9 +267,11 @@ Handles 5 modes via `mode` state: `'signin' | 'signup' | 'verify' | 'forgot' | '
 - **Recipe scaling:** `scaledServings` state + `scaleFactor = scaledServings / recipe.serves`; `+`/`−` stepper (square, SVG icons, dark teal active); "Reset" dotted link when active; `WarnIcon` (amber ⚠) on unscalable amounts
 - **Share icon (`ShareBtn`):** 44×44, Android share icon, `#0C3D4E`; lives in the **eyebrow row** alongside the meal-type label (`marginRight: -12` keeps right edge 12px from card edge); toggles to checkmark for 2 s after copy; `handleCopyLink` uses 3-tier fallback: native share sheet → Clipboard API → `execCommand`
 - **Eyebrow row:** Flex row (`justifyContent: space-between`) containing meal-type label (left) and share icon (right); rendered whenever either element is needed; omitted entirely if neither applies
+- **Photo carousel (v4):** header image becomes a swipeable horizontal-scroll carousel with dot indicators when `recipe.photos.length > 1`; single photo renders unchanged. Owner's "Add photo" control now multi-selects and appends rather than replaces
 
 ### RecipeForm.jsx
 - Photo remove button: trash SVG icon (not ×)
+- **Multi-photo picker (v4):** `PhotoGridUpload` replaces the single-photo `PhotoUpload` — thumbnail strip + "+" add tile, `multiple` file input, first photo = cover (auto, no manual override in v1)
 - **Ingredient focus-scroll fix:** Uses `pendingFocusRef = useRef(null)` + a dependency-free `useEffect` that runs after every render. `addIng` sets `pendingFocusRef.current = ingredients.length` before calling `setIngredients`; the effect fires post-DOM-commit, calls `el.focus({ preventScroll: true })` then `el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })`. Replaced the old `setTimeout(..., 30)` hack which was firing before the DOM updated.
 
 ### Favicon
@@ -483,6 +487,102 @@ Any counter that needs to aggregate data across users must use a `SECURITY DEFIN
 - `fixPhotoOrientation.mjs` — dry-run + `--commit` script; re-processes original (non-webp) files still in Storage with correct orientation; matches each to its recipe via greedy timestamp-proximity assignment (original upload timestamp vs recipe `created_at`); handles partial matches when one recipe has no original
 - `fixOnePhoto.mjs` — targeted single-recipe fix by `--recipe <id>` and `--file <filename>`; useful for recipes owned by other users
 - `sharp` added as `devDependency` — used by scripts only, never bundled into the Vite build
+
+---
+### v4.0 — Multiple photos per recipe (shipped ✓, 2026-09-04)
+
+**Motivation:** first of three planned v4 features — see the "Mi Sazon app" Claude Project doc `HANDOFF_v4_planning.md` for the full plan (ingredient groups and named share links are still to come).
+
+**Schema**
+- `recipes.photos jsonb default '[]'` — new column, ordered array of Cloudinary URLs (`supabase_migration_photos.sql`, run once in the Supabase SQL editor)
+- `photo_url` is unchanged and always kept in sync as `photos[0]` (or `null`) — every other place that reads `photo_url` (RecipeCards.jsx, CollectionDetail.jsx's collage) needed zero changes
+- Migration backfills `photos = [photo_url]` for any existing recipe that already has a photo
+
+**RecipeForm.jsx**
+- `PhotoUpload` → `PhotoGridUpload`: horizontal thumbnail strip + trailing dashed "+" tile, replacing the old single "Add a photo / Change photo" control
+- File input now has the `multiple` attribute; newly-picked files append to the strip as local blob previews
+- First thumbnail carries a small "Cover" pill (bottom-left) — whichever photo is first becomes the recipe's cover; no separate "set as cover" control in v1, order comes from add/remove only
+- Each thumbnail's trash-icon remove button matches the existing removal style exactly (same SVG, same circular dark overlay)
+- On save: existing (already-uploaded) photo URLs pass straight through; new files are compressed (`compressImage`) and uploaded (`uploadToCloudinary`) in order, then written as `photos` (full array) + `photo_url` (`photos[0]`)
+
+**Detail.jsx**
+- Header image renders a swipeable horizontal-scroll carousel with dot indicators only when `recipe.photos.length > 1`; a single photo still renders exactly as before — no carousel chrome added for it
+- Active dot tracked via `activePhoto` state, updated from the scroll container's `onScroll` (`handlePhotoScroll`, rounds `scrollLeft / clientWidth`)
+- Owner's inline "Add photo" control (small circular button bottom-right once a photo exists, or the full-width `#EFEFED` zone when there are none) now accepts multiple files and appends to the gallery rather than replacing it; `handlePhotoUpload` loops the selection, uploading each before writing the combined array back to Supabase
+- Removing an individual photo is still an Edit-flow-only action (via `PhotoGridUpload` in RecipeForm) — Detail only adds, matching the pre-v4 precedent where Detail's inline photo control was always additive/replace-only, never a remove
+
+**Cloudinary**
+- `uploadToCloudinary.js`: `public_id` suffix changed from `${publicId}_${Date.now()}` to `${publicId}_${Date.now()}_${random 6-char string}` — guards against collisions when several photos for the same recipe upload in quick succession
+
+**Files changed**
+
+| File | Status | Notes |
+|---|---|---|
+| `src/components/RecipeForm.jsx` | Modified | `PhotoGridUpload` component, multi-file state/upload |
+| `src/components/Detail.jsx` | Modified | Carousel + dots, multi-file `handlePhotoUpload` |
+| `src/utils/uploadToCloudinary.js` | Modified | Collision-proof `public_id` suffix |
+| `supabase_migration_photos.sql` | **New** | Adds `photos` column + backfill |
+
+**Post-ship fix (same day):** selecting a photo in RecipeForm crashed to a blank screen. Root cause: the new photo-picker generated its React `key` with `crypto.randomUUID()`, called inside a `setPhotos(prev => ...)` updater — React invokes that updater during the render phase, so the exception was a render-phase crash (unmounts the whole app with no error boundary in place), not just a failed event handler. `crypto.randomUUID` throws outside a secure context (HTTPS or `localhost`) — exactly the case for `vite.config.js`'s WiFi local-dev setup (`server.host: true`), where the app is reached over plain `http://<lan-ip>` from a phone. Fix: added a `newId()` helper (RecipeForm.jsx) that calls `crypto.randomUUID()` when available and falls back to a manual UUID v4 string otherwise; replaced both call sites (the new photo-key generator and the pre-existing `recipeId` generator in `handleSave`). Also hardened `Detail.jsx`'s `handlePhotoUpload` to wrap `compressImage()` in the same `try/catch` as the upload call, so a bad/corrupt image file can't leave `uploading` stuck `true` forever.
+
+**Post-ship fix:** desktop couldn't navigate a multi-photo carousel — the dot indicators showed but there was no swipe gesture or scrollbar to act on (mobile touch-scroll worked fine, since swiping is native there). Fixed by making the dots clickable (`scrollToPhoto(index)`, calls `scrollTo` with smooth behavior on the carousel container) and adding hover-only prev/next arrow buttons, shown via a new `.carousel-arrow` CSS rule gated on `@media (hover: hover) and (pointer: fine)` so they stay hidden on touch-only devices where swipe already works.
+
+**Post-ship addition:** capped recipes at `MAX_PHOTOS = 6` — a plain module-level constant duplicated in both `RecipeForm.jsx` and `Detail.jsx` (same pattern as the `DIETARY_FILTERS`/`MEAL_TYPE_FILTERS` constants that must match between `Browse.jsx` and `RecipeForm.jsx`). In `RecipeForm.jsx`'s `PhotoGridUpload`, the "+" add tile disappears at the cap and a `"n/6 photos"` hint replaces the old cover-only note; `handlePhotosAdded` clamps a multi-file selection to whatever room is left rather than rejecting the whole batch. In `Detail.jsx`, the owner's "add more photos" button hides at the cap and `handlePhotoUpload` clamps the same way.
+
+**Known issues / watch points**
+- No reorder control for photos yet (append-only order); no "remove from Detail" — both by design for v1, see `HANDOFF_v4_planning.md`
+- No optional "N photos" badge on masonry cards yet — flagged as a nice-to-have, not built
+
+---
+
+### v4.1 — Ingredient groups (shipped ✓, 2026-09-04)
+
+**Motivation:** second of the three planned v4 features (see `HANDOFF_v4_planning.md`) — lets a recipe with e.g. a main dish and a sauce show two separate ingredient lists instead of one flat one.
+
+**Schema:** no new column. Each item in the existing `ingredients` jsonb array gained one more optional key: `group` (string, e.g. `"Sauce"`), absent/`null` for ungrouped items. `scaleIngredient.js` only ever reads `amount`, so scaling is completely unaffected. A recipe with no `group` keys at all — every recipe that existed before this shipped — behaves exactly as before.
+
+**RecipeForm.jsx**
+- Ingredient editing state changed from a flat array to `ingredientGroups`: `[{ id, label, items: [{ name, amount, optional }] }]`. `groupsFromFlat()` reconstructs this from a recipe's flat `ingredients` on load, bucketing by each item's `group` in order of first appearance — a legacy recipe collapses into exactly one group with an empty label.
+- The group-name input and its "Remove group" button only render once `ingredientGroups.length > 1` — so the form looks completely unchanged for a recipe that only ever has one list. Clicking **"+ Add ingredient group"** (a dashed-divider link below the ingredient list) is what first reveals them, for both the original group and the new one.
+- No drag-reorder for groups — matches the ingredient-row UX, which also has no reorder. Delete and re-add to change order if ever needed.
+- `newId()` (already added for photos) is reused for group ids — same insecure-context-safe UUID helper.
+- On save, `ingredientGroups.flatMap(...)` flattens back to one array, stamping each item with `group: label.trim() || null`.
+
+**Detail.jsx**
+- New `bucketByGroup()` groups the flat `ingredients` array the same way, by order of first appearance.
+- `IngredientCard` now maps over the resulting groups: each with a label renders it as a heading (`var(--font-display)`, `0.95rem`, weight 600 — a step up from the uppercase micro-labels, since a group name like "Sauce" reads more like a section title than a filter tag) above its own required/optional split; the unlabeled default group renders with no heading, identical to pre-v4.1 output.
+- Scaling, the ⚠ unscalable icon, and the required/optional split are all untouched — they just now run per-group instead of over one flat list.
+
+**Files changed:** `src/components/RecipeForm.jsx`, `src/components/Detail.jsx`. No new files, no migration.
+
+---
+
+### v4.2 — Recipe name in the share URL (shipped ✓, 2026-09-04)
+
+**Motivation:** third and final planned v4 feature (see `HANDOFF_v4_planning.md`) — share links go from `/recipe/<uuid>` to `/recipe/<name-slug>/<uuid>`, e.g. `/recipe/chicken-tikka-masala/3f9a1c2e-...`.
+
+**New file: `src/utils/slugify.js`** — pure function, `slugify(name)`: `.normalize('NFKD')` to split accented characters into base + combining mark, strips the combining marks (`\u0300`–`\u036f`) so "é" becomes "e" rather than being dropped, lowercases, replaces every run of non-`a-z0-9` characters with a single hyphen, trims leading/trailing hyphens. A name with no latin/ascii-reducible characters at all (e.g. pure CJK) slugifies to `''`.
+
+**`Detail.jsx`** → `handleCopyLink`: builds the slug from `recipe.name` and only inserts it (with a trailing `/`) when non-empty — `` `${origin}/recipe/${slug ? `${slug}/` : ''}${recipe.id}` `` — so a recipe whose name slugifies to nothing still gets a valid `/recipe/<uuid>` link instead of a broken `/recipe//<uuid>`.
+
+**`App.jsx`** → the share-link regex parsed on mount changed from `^/recipe/([0-9a-f-]{36})$` to `^/recipe/(?:[^/]+/)?([0-9a-f-]{36})$`. The slug segment is optional and is never read back out for anything — only the UUID (always the last segment) is used to look up the recipe. Verified against both formats plus edge cases (trailing slash, garbage, empty double-slash) with a quick Node script before shipping.
+
+**Why this is safe:**
+- Every link already shared (`/recipe/<uuid>`, no slug) keeps resolving — the regex still matches with the slug segment absent.
+- Renaming a recipe after sharing doesn't break the old link — the slug was never authoritative.
+- No DB migration, no slug uniqueness/canonicalization needed — it's generated fresh from `recipe.name` every time a link is copied, never stored.
+
+**Files changed:** `src/utils/slugify.js` (new), `src/components/Detail.jsx`, `src/App.jsx`.
+
+---
+
+**Post-ship fix (v4.0 follow-up):** the small "+" button added to the carousel corner (for a recipe that already has a photo) never actually did anything — the hidden `<input type="file">` it clicked only existed in the *other* branch of the photo/no-photo ternary (the empty-state one), so once a recipe had a photo, `photoInputRef.current` was always `null` and the click silently no-opped. Removed the button entirely rather than wiring up a second hidden input: Detail's inline photo control is now scoped to its original purpose — adding the *first* photo to a recipe that has none — and adding more once a recipe already has at least one goes through Edit (`RecipeForm.jsx`), which was always the fully-working path anyway. `handlePhotoUpload`, `uploading`, `photoInputRef`, and `MAX_PHOTOS` are all still used by that empty-state button; nothing else changed.
+
+**Post-ship enhancement (v4.0 follow-up) — desktop "see all photos" layout:** below the `lg` breakpoint (1024px, same cutoff the rest of the app already uses for its own desktop treatment), the photo header is unchanged — same swipeable carousel, dots, and hover arrows. At `lg` and up, when a recipe has 2+ photos, it now shows all of them at once instead of one at a time (`className="hidden lg:block"` sibling to a `className="lg:hidden"` wrapper around the existing carousel markup — both driven by Tailwind's default breakpoints, no JS viewport detection). The dots and prev/next arrows are hidden at `lg` and up (`lg:hidden` added alongside the existing `.carousel-arrow` class) since they control the now-hidden carousel and would otherwise float uselessly over the grid.
+
+**Post-ship saga (v4.0 follow-up) — desktop grid, four rounds:** round 1 built one rule for every count ≥3 (cover on the left + remaining photos in a 2-column grid on the right, last photo spanning both columns when the remaining count is odd) — reported as "does not work for 4 photos or more." Round 2 assumed this was a symmetry problem and special-cased 4 and 6 photos as plain equal grids (2×2 / 3×2) with no cover — but the user then reported a *different* recipe with 6 photos rendering only 3, with the mobile carousel's dots and arrow visibly present on a screenshot taken on a maximized, 100%-zoom, 1440px-wide browser window. Live DevTools checks (`window.matchMedia('(min-width: 1024px)').matches`, computed `display`/`marginLeft` on the actual elements) walked through confirming desktop width, confirming the media query matches, ruling out zoom, and ruling out stale HMR (persisted through a hard reload) — and then, on the *next* check, everything suddenly read correctly (`lg:mx-10` margin at 40px, the grid at `display: block`, the carousel at `display: none`). That dead end was a real but separate hiccup (likely a transient stale Vite style-injection state); round 3 reverted to the round-1 cover+grid design since the user explicitly wanted "all 6 visible, first one a bit bigger." Round 4 then hit the *actual* bug, visible in a screenshot: 2 of 6 photos cut off mid-image at the bottom of the card. Root cause: the "remaining photos" grid panel (`display: grid, gridTemplateColumns: repeat(2, 1fr), gridAutoRows: '1fr'`) had no explicit height of its own — it relied on flex "stretch" from its parent row for its cross-size, and CSS grid items default to `min-height: auto`, which resolves to the *content's* natural size when the percentage-height chain is ambiguous like this. With real (non-flat-color) photos, each `<img style={{height:'100%'}}>` fell back to its natural aspect-ratio height instead of 1/3 of 420px, so the grid's true content height blew past the intended 420px and the excess (rows 2 and 3) got sliced off by the outer `overflow: hidden` wrapper. A synthetic Playwright reproduction with flat colored `<div>`s never caught this — divs have no intrinsic size to trigger the quirk, only real `<img>` content does, which is why the earlier "it should work" verification was wrong. Fix: explicit `height: '100%'` on the grid container plus `minHeight: 0` on it and every image inside it, forcing the grid to actually respect its 420px budget instead of sizing off image content. **Lesson for next time a nested flex/grid photo layout misbehaves: verify with real, varying-aspect-ratio images, not flat color blocks — and check for a missing explicit height anywhere a grid or flex child's cross-size is left to "stretch" implicitly.**
+
+**Post-ship hardening:** once every photo displayed correctly on desktop, the carousel's dots and prev/next arrows became pure clutter there (all photos are already visible at once, nothing to page through) — asked to be hidden on desktop only, kept on mobile. They already carried `lg:hidden`, but given this exact class had one unexplained episode earlier in this same session (see above), that alone wasn't good enough to promise as "already fixed." Added a JS-level backstop: `isDesktopPhotoView` state (`useState` + a `window.matchMedia('(min-width: 1024px)')` listener in a `useEffect`) additionally gates the dots and both arrow buttons, so they can never render on desktop even if a CSS class fails to apply for some reason. Mobile behavior (`lg:hidden`, `.carousel-arrow`) is untouched — this is a second, independent guard on top of the existing one, not a replacement.
 
 ---
 

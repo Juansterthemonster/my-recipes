@@ -21,7 +21,7 @@
 | Frontend    | React 19 + Vite 8                               |
 | Styling     | Tailwind CSS 3 + CSS custom properties (tokens) |
 | Database    | Supabase (Postgres, free tier)                  |
-| Storage     | Cloudinary (free tier, `mi-sazon` folder)       |
+| Storage     | Cloudflare R2 (free tier, `mi-sazon-photos` bucket) |
 | Auth        | Supabase Auth (email/password)                  |
 | Fonts       | Fraunces (display) + Plus Jakarta Sans (body/UI)|
 | Hosting     | Vercel                                          |
@@ -128,7 +128,7 @@ create table recipes (
   cuisine          text,
   dietary          text[],               -- ['Vegetarian', 'Gluten free', ...]
   meal_type        text[],               -- ['Breakfast', 'Dinner', ...]
-  photo_url        text,                 -- public URL from Cloudinary
+  photo_url        text,                 -- public URL from Cloudflare R2
   photos           jsonb default '[]',   -- v4: ordered photo gallery; photo_url always mirrors photos[0]
   is_public        boolean default false,
   copied_from      uuid references recipes(id) on delete set null, -- v2: set when "Add to my recipes" copies a public recipe
@@ -160,14 +160,18 @@ create table public.profiles (
 -- RLS: public SELECT (anon reads for uniqueness checks), authenticated INSERT/UPDATE own row
 ```
 
-### Cloudinary (photo storage — migrated from Supabase Storage in v3.3)
-- **Cloud name:** `dkv15gp0t`
-- **Folder:** `mi-sazon`
-- **Upload preset:** `mi-sazon` (unsigned)
-- **Public ID pattern:** `{recipeId}_{timestamp}` — timestamp suffix ensures replacements always create a new asset (Cloudinary unsigned presets do not support overwrite)
-- Upload handled by `src/utils/uploadToCloudinary.js` — compresses via `compressImage` first, then POSTs to Cloudinary upload API
-- `photo_url` in DB stores the Cloudinary `secure_url` (https://res.cloudinary.com/...)
-- Env vars required: `VITE_CLOUDINARY_CLOUD_NAME`, `VITE_CLOUDINARY_UPLOAD_PRESET` (in both `.env` and Vercel)
+### Cloudflare R2 (photo storage — migrated from Cloudinary in v4.3)
+- **Bucket:** `mi-sazon-photos` (Account API token, scoped to Object Read & Write on this bucket only)
+- **Key pattern:** `mi-sazon/{recipeId}_{timestamp}_{random6}.{ext}` — random suffix guards against collisions when several photos for the same recipe upload in quick succession
+- **Public access:** via the bucket's R2.dev public development URL (`VITE_R2_PUBLIC_URL`) — not a custom domain yet; fine for current traffic, revisit if `r2.dev`'s rate limit ever becomes a problem
+- Upload is a two-step presigned-URL flow, not a direct unsigned POST like Cloudinary was:
+  1. Browser calls `POST /api/presign-upload` (Vercel serverless function, `api/presign-upload.js`) with `{ publicId, contentType }`
+  2. That function (holds the only copy of the R2 secret keys, server-side only) returns a short-lived (60s) presigned PUT URL + the final public URL
+  3. Browser PUTs the already-compressed blob straight to R2 — `src/utils/uploadToR2.js` does both steps, same `uploadToR2(blob, publicId) -> Promise<string>` signature the old `uploadToCloudinary.js` had
+- Objects are uploaded with `Cache-Control: public, max-age=31536000, immutable` — safe because every key is unique per upload, never overwritten
+- `photo_url` in DB stores the R2 public URL (`https://pub-<id>.r2.dev/mi-sazon/...`)
+- Env vars required (in both `.env` and Vercel): `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `VITE_R2_PUBLIC_URL`
+- `src/utils/uploadToCloudinary.js` and `VITE_CLOUDINARY_*` env vars are left in place, unused, for rollback reference — nothing imports them anymore
 
 ---
 
@@ -189,7 +193,7 @@ create table public.profiles (
 ### Photo uploads
 - Detail page: hidden `<input type="file">` + `useRef`. Clicking the "Add photo" placeholder triggers it
 - RecipeForm: same pattern for add/edit flow
-- No server-side processing — direct browser → Cloudinary upload via unsigned preset
+- **v4.3:** upload now goes through a presigned-URL round trip (see Cloudflare R2 section above) instead of a direct unsigned POST — the only server-side involvement is generating the 60-second presigned URL, the actual file bytes still go straight from browser to storage
 - **v4:** both spots now accept multiple files (`multiple` attribute) and manage an ordered `photos` array; `photo_url` always mirrors `photos[0]` as the cover so every card/collage view is unaffected
 
 ### Tabs & public recipes
@@ -583,6 +587,37 @@ Any counter that needs to aggregate data across users must use a `SECURITY DEFIN
 **Post-ship saga (v4.0 follow-up) — desktop grid, four rounds:** round 1 built one rule for every count ≥3 (cover on the left + remaining photos in a 2-column grid on the right, last photo spanning both columns when the remaining count is odd) — reported as "does not work for 4 photos or more." Round 2 assumed this was a symmetry problem and special-cased 4 and 6 photos as plain equal grids (2×2 / 3×2) with no cover — but the user then reported a *different* recipe with 6 photos rendering only 3, with the mobile carousel's dots and arrow visibly present on a screenshot taken on a maximized, 100%-zoom, 1440px-wide browser window. Live DevTools checks (`window.matchMedia('(min-width: 1024px)').matches`, computed `display`/`marginLeft` on the actual elements) walked through confirming desktop width, confirming the media query matches, ruling out zoom, and ruling out stale HMR (persisted through a hard reload) — and then, on the *next* check, everything suddenly read correctly (`lg:mx-10` margin at 40px, the grid at `display: block`, the carousel at `display: none`). That dead end was a real but separate hiccup (likely a transient stale Vite style-injection state); round 3 reverted to the round-1 cover+grid design since the user explicitly wanted "all 6 visible, first one a bit bigger." Round 4 then hit the *actual* bug, visible in a screenshot: 2 of 6 photos cut off mid-image at the bottom of the card. Root cause: the "remaining photos" grid panel (`display: grid, gridTemplateColumns: repeat(2, 1fr), gridAutoRows: '1fr'`) had no explicit height of its own — it relied on flex "stretch" from its parent row for its cross-size, and CSS grid items default to `min-height: auto`, which resolves to the *content's* natural size when the percentage-height chain is ambiguous like this. With real (non-flat-color) photos, each `<img style={{height:'100%'}}>` fell back to its natural aspect-ratio height instead of 1/3 of 420px, so the grid's true content height blew past the intended 420px and the excess (rows 2 and 3) got sliced off by the outer `overflow: hidden` wrapper. A synthetic Playwright reproduction with flat colored `<div>`s never caught this — divs have no intrinsic size to trigger the quirk, only real `<img>` content does, which is why the earlier "it should work" verification was wrong. Fix: explicit `height: '100%'` on the grid container plus `minHeight: 0` on it and every image inside it, forcing the grid to actually respect its 420px budget instead of sizing off image content. **Lesson for next time a nested flex/grid photo layout misbehaves: verify with real, varying-aspect-ratio images, not flat color blocks — and check for a missing explicit height anywhere a grid or flex child's cross-size is left to "stretch" implicitly.**
 
 **Post-ship hardening:** once every photo displayed correctly on desktop, the carousel's dots and prev/next arrows became pure clutter there (all photos are already visible at once, nothing to page through) — asked to be hidden on desktop only, kept on mobile. They already carried `lg:hidden`, but given this exact class had one unexplained episode earlier in this same session (see above), that alone wasn't good enough to promise as "already fixed." Added a JS-level backstop: `isDesktopPhotoView` state (`useState` + a `window.matchMedia('(min-width: 1024px)')` listener in a `useEffect`) additionally gates the dots and both arrow buttons, so they can never render on desktop even if a CSS class fails to apply for some reason. Mobile behavior (`lg:hidden`, `.carousel-arrow`) is untouched — this is a second, independent guard on top of the existing one, not a replacement.
+
+### v4.3 — Migrate photo storage from Cloudinary to Cloudflare R2 (shipped ✓, commit `6580486`, 2026-09-18)
+
+**Motivation:** Cloudinary's bandwidth usage had already hit 118% of the 25-credit free-tier allowance in a 30-day window (29.71 GB bandwidth, pulled directly from the Cloudinary dashboard), with a $99/mo plan as the only way to keep growing on that platform. Cloudflare R2 gives free, unlimited egress at any scale — it removes the bandwidth cost problem structurally instead of just buying more headroom. AWS S3 was ruled out for the same reason Cloudinary was a dead end: S3 still meters egress (~$0.09/GB), so it would eventually recreate the exact same cost curve.
+
+**What moved:**
+- New file `api/presign-upload.js` — Vercel serverless function (Node, AWS SDK v3 `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` configured against R2's S3-compatible endpoint). Generates a 60-second presigned PUT URL per upload so the R2 secret keys never reach the browser. Validates content type against a small allowlist (webp/jpeg/png), builds the object key server-side, sets `CacheControl: public, max-age=31536000, immutable` on the PutObjectCommand.
+- New file `src/utils/uploadToR2.js` — drop-in replacement for `uploadToCloudinary.js`, same `uploadToR2(blob, publicId) -> Promise<string>` signature. Calls the presign endpoint, then PUTs the blob directly to the returned URL.
+- `RecipeForm.jsx`, `Detail.jsx` — swapped the `uploadToCloudinary` import/call for `uploadToR2`; nothing else in either upload flow changed (still `compressImage()` first, same call sites).
+- `Browse.jsx`, `RecipeCards.jsx` — added `loading="lazy" decoding="async"` to the masonry grid card photos (the highest-traffic view, most of it off-screen while scrolling) to cut wasted bandwidth. Detail view's hero/gallery photos were deliberately left eager, since lazy-loading an already-in-viewport LCP image can hurt perceived load time for no benefit.
+- New file `scripts/migrateCloudinaryToR2.mjs` — one-time migration script (`--dry-run` supported). For each recipe still holding a `cloudinary.com` URL anywhere in `photo_url`/`photos`, downloads the original, re-compresses through `sharp` using the exact same settings as `compressImage.js` (1800px longest edge, WebP quality 82), uploads to R2, and rewrites `photos`/`photo_url` — preserving array order by writing to `newUrls[index]` rather than pushing, and never touching any recipe but the one it just downloaded from (no separate matching/pairing step, unlike the older `fixPhotoOrientation.mjs`, which had real matching bugs). Old Cloudinary files are left alone, never deleted by this script.
+- `package.json` — added `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`.
+
+**Cloudflare setup (one-time, done in the dashboard, not in code):** bucket `mi-sazon-photos` created (Automatic/Eastern North America, Standard class), Public Development URL enabled, CORS policy allowing `GET/PUT/HEAD` from `localhost:5173`, the production Vercel domain, and `*.vercel.app` previews. Account-scoped API token created with Object Read & Write permission, scoped to just this one bucket.
+
+**Migration result:** ran once against production — all 110 recipes that had a photo were confirmed migrated (0 remaining on `cloudinary.com`, checked against every one of the 190 rows in the table, not a sample). That first real run happened before the `sharp` re-compression step above existed yet, so the migrated files kept whatever format they already had (`.png`/`.jpg`/`.webp` mixed) rather than being normalized — acceptable, since every photo had already been through the browser-side `compressImage()` step at its original upload time, long before Cloudinary was ever involved. Decision: leave those as-is rather than re-touch all 110 again; the thing that actually mattered (new uploads being optimized) was independently verified by reading the current `RecipeForm.jsx`/`Detail.jsx` code path.
+
+**Verified before calling this done:**
+- Every recipe's `photo_url`/`photos` resolves to `.r2.dev`, zero to `cloudinary.com`, full-table check (not a sample)
+- No other table/column in the schema stores a photo/avatar/cover-image URL — `recipes.photo_url`/`photos` are the only place a Cloudinary reference could have been hiding
+- New-upload compression path (`compressImage()` → `uploadToR2()`) untouched by this migration, confirmed by reading both call sites directly
+
+**Files changed:** `api/presign-upload.js` (new), `src/utils/uploadToR2.js` (new), `scripts/migrateCloudinaryToR2.mjs` (new), `src/components/RecipeForm.jsx`, `src/components/Detail.jsx`, `src/components/Browse.jsx`, `src/components/RecipeCards.jsx`, `package.json`/`package-lock.json`. `src/utils/uploadToCloudinary.js` and the `VITE_CLOUDINARY_*` env vars were left in place, unused, in case of rollback.
+
+**Known issues / watch points**
+- `r2.dev` is Cloudflare's shared public dev URL, explicitly rate-limited and "not recommended for production" per their own dashboard warning. Fine at current traffic; if it ever becomes a bottleneck, the fix is pointing a custom domain at the bucket (needs Mi Sazón to have a custom domain first — currently only on `my-recipes-sigma.vercel.app`).
+- The 110 already-migrated photos are not uniformly re-compressed WebP — mixed original formats/sizes, left that way deliberately (see migration result above). A follow-up normalization pass was offered and declined for now.
+
+---
+
+## How to work with Claude (Cowork)
 
 ---
 

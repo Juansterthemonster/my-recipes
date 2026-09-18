@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
 import { compressImage } from '../utils/compressImage'
-import { uploadToCloudinary } from '../utils/uploadToCloudinary'
+import { uploadToR2 } from '../utils/uploadToR2'
 import { slugify } from '../utils/slugify'
 
 // Must match the MAX_PHOTOS check in RecipeForm.jsx — same cap, enforced on
@@ -660,7 +660,7 @@ export default function Detail({
     for (const file of files.slice(0, room)) {
       try {
         const compressed = await compressImage(file)
-        uploaded.push(await uploadToCloudinary(compressed, recipe.id))
+        uploaded.push(await uploadToR2(compressed, recipe.id))
       } catch (err) {
         console.error('Photo upload failed:', err)
       }

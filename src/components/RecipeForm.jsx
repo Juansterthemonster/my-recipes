@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { toMins, fromMins } from './TimePicker'
 import { compressImage } from '../utils/compressImage'
-import { uploadToCloudinary } from '../utils/uploadToCloudinary'
+import { uploadToR2 } from '../utils/uploadToR2'
 
 // Generates a UUID, falling back to a manual v4 implementation when
 // crypto.randomUUID isn't available — it requires a secure context (HTTPS or
@@ -368,7 +368,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       if (p.url) { finalPhotos.push(p.url); continue }
       const compressed = await compressImage(p.file)
       try {
-        finalPhotos.push(await uploadToCloudinary(compressed, recipeId))
+        finalPhotos.push(await uploadToR2(compressed, recipeId))
       } catch (e) {
         console.error('Photo upload failed:', e)
         setError('Failed to upload one or more photos. Please try again.')

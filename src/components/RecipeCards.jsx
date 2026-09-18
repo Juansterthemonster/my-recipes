@@ -113,7 +113,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         position: 'relative', aspectRatio: '2/3',
         borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#000',
       }}>
-        <img src={recipe.photo_url} alt={recipe.name} style={{
+        <img src={recipe.photo_url} alt={recipe.name} loading="lazy" decoding="async" style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
         <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
@@ -280,7 +280,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         position: 'relative', aspectRatio: '2/3',
         borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#000',
       }}>
-        <img src={recipe.photo_url} alt={recipe.name} style={{
+        <img src={recipe.photo_url} alt={recipe.name} loading="lazy" decoding="async" style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
         <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />

@@ -443,7 +443,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
         position: 'relative', aspectRatio: '2/3',
         borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#000',
       }}>
-        <img src={recipe.photo_url} alt={recipe.name} style={{
+        <img src={recipe.photo_url} alt={recipe.name} loading="lazy" decoding="async" style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
         <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
@@ -587,7 +587,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
         position: 'relative', aspectRatio: '2/3',
         borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#000',
       }}>
-        <img src={recipe.photo_url} alt={recipe.name} style={{
+        <img src={recipe.photo_url} alt={recipe.name} loading="lazy" decoding="async" style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
         <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
@@ -843,7 +843,7 @@ function CollectionPhotoGrid({ photos = [] }) {
     }}>
       {slots.map((url, i) => (
         url
-          ? <img key={i} src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ? <img key={i} src={url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           : <div key={i} style={{ background: 'var(--green-primary)' }} />
       ))}
     </div>

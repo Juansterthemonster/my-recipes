@@ -657,14 +657,17 @@ export default function Detail({
     if (room <= 0) { e.target.value = ''; return }
     setUploading(true)
     const uploaded = []
+    let failed = 0
     for (const file of files.slice(0, room)) {
       try {
         const compressed = await compressImage(file)
         uploaded.push(await uploadToR2(compressed, recipe.id))
       } catch (err) {
         console.error('Photo upload failed:', err)
+        failed += 1
       }
     }
+    if (failed) onToast?.(failed === 1 ? "A photo couldn't be uploaded. Please try again." : `${failed} photos couldn't be uploaded. Please try again.`)
     if (uploaded.length) {
       const newPhotos = [...photos, ...uploaded]
       await supabase.from('recipes').update({ photos: newPhotos, photo_url: newPhotos[0] }).eq('id', recipe.id)

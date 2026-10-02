@@ -371,7 +371,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         finalPhotos.push(await uploadToR2(compressed, recipeId))
       } catch (e) {
         console.error('Photo upload failed:', e)
-        setError('Failed to upload one or more photos. Please try again.')
+        setError(`Failed to upload one or more photos${e?.message ? ` (${e.message})` : ''}. Please try again.`)
         setSaving(false)
         return
       }

@@ -30,6 +30,11 @@ function setCors(req, res) {
 const s3 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  // AWS SDK v3 >= 3.729 adds a CRC32 checksum of the (empty) body to presigned
+  // URLs by default, which R2 then rejects when the real file is PUT.
+  // Only compute checksums when an operation strictly requires one.
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,

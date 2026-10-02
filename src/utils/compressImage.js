@@ -12,8 +12,13 @@ export function compressImage(file, { maxDimension = 1800, quality = 0.82 } = {}
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
     const img = new Image()
+    const timer = setTimeout(() => {
+      URL.revokeObjectURL(url)
+      reject(new Error('compressImage: timed out reading image'))
+    }, 30000)
 
     img.onload = () => {
+      clearTimeout(timer)
       URL.revokeObjectURL(url)
 
       // Scale down only if the image exceeds maxDimension on either axis
@@ -36,6 +41,7 @@ export function compressImage(file, { maxDimension = 1800, quality = 0.82 } = {}
     }
 
     img.onerror = () => {
+      clearTimeout(timer)
       URL.revokeObjectURL(url)
       reject(new Error('compressImage: failed to load image'))
     }

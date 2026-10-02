@@ -366,8 +366,8 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     const finalPhotos = []
     for (const p of photos) {
       if (p.url) { finalPhotos.push(p.url); continue }
-      const compressed = await compressImage(p.file)
       try {
+        const compressed = await compressImage(p.file)
         finalPhotos.push(await uploadToR2(compressed, recipeId))
       } catch (e) {
         console.error('Photo upload failed:', e)
@@ -398,12 +398,16 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       photo_url: finalPhotos[0] || null,
     }
     let err
-    if (isEdit) {
-      // Mark as modified if this recipe was copied from a public one
-      if (recipe.copied_from) payload.is_modified = true
-      ;({ error:err } = await supabase.from('recipes').update(payload).eq('id', recipe.id))
-    } else {
-      ({ error:err } = await supabase.from('recipes').insert({ ...payload, id: recipeId, user_id: session.user.id }))
+    try {
+      if (isEdit) {
+        // Mark as modified if this recipe was copied from a public one
+        if (recipe.copied_from) payload.is_modified = true
+        ;({ error:err } = await supabase.from('recipes').update(payload).eq('id', recipe.id))
+      } else {
+        ({ error:err } = await supabase.from('recipes').insert({ ...payload, id: recipeId, user_id: session.user.id }))
+      }
+    } catch (e) {
+      err = e
     }
     setSaving(false)
     if (err) {

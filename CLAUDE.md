@@ -50,6 +50,7 @@ my-recipes/
       uploadToCloudinary.js  Uploads compressed blob to Cloudinary via unsigned preset; appends timestamp to public_id for replacement support
   supabase_migration_username.sql          SQL to create profiles + likes tables (run once in Supabase SQL editor)
   supabase_migration_activity_counts.sql   SQL for get_recipe_activity_counts RPC — needed for "Others' activity" stats (run once)
+  supabase_migration_collection_details.sql SQL adding collections.description + cover_photo_url (run once, v4.5)
   vercel.json             SPA rewrite rule for /recipe/:id deep links
   vite.config.js          Vite config — server.host:true for WiFi local dev
   CLAUDE.md               ← this file
@@ -614,6 +615,78 @@ Any counter that needs to aggregate data across users must use a `SECURITY DEFIN
 **Known issues / watch points**
 - `r2.dev` is Cloudflare's shared public dev URL, explicitly rate-limited and "not recommended for production" per their own dashboard warning. Fine at current traffic; if it ever becomes a bottleneck, the fix is pointing a custom domain at the bucket (needs Mi Sazón to have a custom domain first — currently only on `my-recipes-sigma.vercel.app`).
 - The 110 already-migrated photos are not uniformly re-compressed WebP — mixed original formats/sizes, left that way deliberately (see migration result above). A follow-up normalization pass was offered and declined for now.
+
+### v4.4 — Fix R2 photo uploads (shipped ✓, 2026-10-02)
+
+**Motivation:** after the v4.3 migration, saving photos failed everywhere. The v4.3 upload path had only been verified by reading the code, never by actually uploading a photo, so none of this surfaced until the first real use.
+
+**Root causes (three separate problems, found in this order)**
+1. **Default checksum baked into the presigned URL.** `@aws-sdk/client-s3` ≥ 3.729 adds `x-amz-checksum-crc32` + `x-amz-sdk-checksum-algorithm` to presigned PUT URLs by default. The checksum is computed over the *empty* body at presign time (`AAAAAA==`), so R2 rejects the real file when it's PUT. Fix: `requestChecksumCalculation: 'WHEN_REQUIRED'` and `responseChecksumValidation: 'WHEN_REQUIRED'` on the `S3Client` in `api/presign-upload.js`. Verified by generating a presigned URL with dummy credentials before and after — the checksum params disappear.
+2. **R2 CORS didn't list the origin in use.** The browser PUTs straight to `*.r2.cloudflarestorage.com`, so the page's exact origin must be in the bucket's CORS `AllowedOrigins`. Symptom: `Failed to fetch` (Chrome) / `Load failed` (Safari) with *no* HTTP status, and a console line "blocked by CORS policy… No 'Access-Control-Allow-Origin' header". Origins are matched exactly — `localhost:5173`, `127.0.0.1:5173`, a LAN IP like `http://192.168.x.x:5173`, `my-recipes-sigma.vercel.app` and the production domain **`https://misazon.app`** are all different origins. Fixed by adding `https://misazon.app` (and `https://www.misazon.app` if used).
+3. **Stuck "Saving…" button.** In `RecipeForm.jsx`'s `handleSave`, `compressImage()` was called *outside* the `try/catch`, so a photo the browser couldn't process threw out of the function before `setSaving(false)` ran. The button stayed on "Saving…" with no message. Fix: compression moved inside the `try`; the Supabase insert/update is also wrapped so `saving` always resets.
+
+**Other changes**
+- `src/utils/uploadToR2.js`: `fetchWithTimeout()` — 20 s for the presign call, 60 s for the PUT; a stall now rejects with "Upload timed out" instead of hanging.
+- `src/utils/compressImage.js`: 30 s timeout if an image neither loads nor errors.
+- `RecipeForm.jsx`: the upload error message now includes the real reason in brackets, e.g. `Failed to upload one or more photos (R2 upload failed (403))`.
+- `Detail.jsx`: a failed upload now shows a toast with the reason (it used to fail silently).
+- `vite.config.js`: `server.proxy` forwards `/api` to `https://my-recipes-sigma.vercel.app`. Plain `npm run dev` doesn't run the `api/` serverless functions, so local uploads always failed ("Failed to get upload URL"). Dev-only. Uploads from local dev therefore go to the production R2 bucket and use the deployed function's keys. Alternative: `vercel dev`.
+
+**Files changed:** `api/presign-upload.js`, `src/components/RecipeForm.jsx`, `src/components/Detail.jsx`, `src/utils/uploadToR2.js`, `src/utils/compressImage.js`, `vite.config.js`.
+
+**Debugging notes for next time**
+- `Failed to fetch` / `Load failed` with no status = the request was blocked or never completed. Check DevTools Console for CORS first, then Network to see whether `presign-upload` or the `r2.cloudflarestorage.com` request is the red one.
+- Test on the *same origin* the failing device uses (e.g. open `https://misazon.app` on the desktop) to get a readable console error instead of guessing from a phone.
+- Any new domain or test address (custom domain, preview URL, LAN IP) must be added to the R2 CORS policy. For auth emails/password reset, also add it to Supabase → Authentication → URL Configuration → Redirect URLs.
+- The `X-Amz-SignedHeaders` on the presigned URL is `host` only, so the `CacheControl` set in `PutObjectCommand` is **not** applied to uploaded objects (the browser doesn't send that header). Photos currently have no long-cache header; fixing it means sending `Cache-Control` from `uploadToR2.js` (and signing it server-side).
+
+**Known issues / watch points**
+- Safari can't export WebP from `canvas.toBlob`, so on iPhone `compressImage()` likely falls back to a (larger) PNG. Not a failure, but uploads are bigger than on desktop. A JPEG fallback when `blob.type !== 'image/webp'` would fix it.
+- `allowed origins` in `api/presign-upload.js` (`ALLOWED_ORIGINS`) only controls CORS headers on the presign response, which the app doesn't need (same-origin `/api` call). It does not include `misazon.app`; harmless, but add it if the function is ever called cross-origin.
+
+### v4.5 — Collections polish: add-to-another, covers, descriptions, new cards & grid (shipped ✓, 2026-10-12)
+
+**Motivation:** collections worked but were bare — no way to add a recipe to a second collection from inside one, no covers or descriptions, cards looked unlike the recipe cards, and the grid stacked oddly.
+
+**DB change (run once in the Supabase SQL editor — `supabase_migration_collection_details.sql`)**
+```sql
+alter table public.collections
+  add column if not exists description text,
+  add column if not exists cover_photo_url text;
+```
+Existing RLS on `collections` is per-row, so no policy changes. **The app selects these columns, so the migration must be run in any Supabase project before deploying this code.**
+
+**Features**
+- **"Add to another collection"** — first item in the recipe kebab menu (Detail.jsx) whenever the recipe is already in a collection; opens the existing `CollectionSheet` unchanged (all collections listed, current ones pre-checked, "＋ New collection" on top). Order: Add to another collection · Remove from collection · Make recipe private/public · Delete recipe. Liked/other users' recipes get a single item labelled "Add to another collection" when already in one, else "Add to collection".
+  - New prop `fromCollection` on `Detail`. `App.jsx` tracks `detailFromCollection` and stores `fromCollection` in the history state (so back/forward restores it). `CollectionDetail` opens recipes with `openDetail(recipe, { fromCollection: true })`.
+  - Saving the sheet when opened from a collection returns to that collection's grid (`onBack`), whether a collection was added or the current one unchecked. Saving with no changes just closes the sheet and stays on the recipe.
+  - Toast names what changed: "Added to X" / "Removed from X" / "Collections updated" (several changes).
+  - `isInAnyCollection` starts as `fromCollection` and the DB check can only upgrade it to `true` — a slow/empty lookup used to hide the menu item for some recipes.
+  - Gotcha: "Remove from collection" still removes the recipe from **all** its collections (unchanged, `handleRemoveFromCollections`). Candidate follow-up: scope it to the current collection.
+- **Collection cover photo** — chosen in the Edit modal from photos of recipes already in that collection (includes multi-photo `photos[]`). Stored as `collections.cover_photo_url`. "Default" = no cover.
+- **Collection description** — optional, max 300 chars, edited in the Edit modal, shown on the card (3-line clamp) and under the title on the collection page.
+- **Edit modal** — `CollectionNameModal` became `CollectionEditModal` (name, description, cover picker). The card menu item "Rename" is now "Edit". New-collection mode has name + description only (no recipes yet to pick a cover from).
+- **Recipe count** was already on the card; it is now a frosted pill (top-left) on the card.
+- **Nav "Add" menu** — the "Add recipe" button is now "Add" and opens a menu: "Add a recipe" / "Add a collection". The collection modal moved to page level in `Browse` so it works from any tab; creating a collection from another tab switches to My Collections.
+- **Tab persists on refresh** — `App.jsx` initialises `activeTab` from the URL hash (`#mine|#favourites|#collections|#public`). Refreshing on a detail/collection/edit page still lands on My recipes.
+- **"New collection / Tap to create" card** only shows when the user has zero collections.
+
+**Collection card design (Browse.jsx `CollectionCard`)**
+- With a cover: 2:3 photo card matching the recipe photo card — dark gradient (`OVERLAY_IMAGE`; taller/darker when a description exists), frosted count pill top-left, frosted kebab top-right, "COLLECTION" eyebrow + Fraunces title + description in white at the bottom. Outer wrapper is `overflow: visible` so the kebab dropdown isn't clipped; an inner layer clips the image.
+- Without a cover (default): compact content-height card on Dark Teal `#0C3D4E`, same structure as the no-photo recipe card (pill + kebab, spacer `minHeight: 28`, text). The old 2×2 photo collage was removed — `CollectionPhotoGrid` now only renders a cover.
+
+**Layout fixes**
+- **`.collection-grid`** (index.css): a real CSS Grid, 2 → 3 → 4 columns (768 / 1024px), `align-items: start`. Used on the My Collections tab **and** inside `CollectionDetail`. Reason: CSS-columns masonry fills a column to the height of the tallest item, so short cards stacked in one column once card heights became mixed. My recipes / Liked / Explore still use `.masonry-grid`. (iOS Safari row-gap caveat from the masonry notes doesn't apply: `align-items: start` stops rows stretching.)
+- **`html { scrollbar-gutter: stable }`** (index.css): the page shifted ~15px sideways when switching between a short page (no scrollbar) and a long one.
+
+**Files changed:** `src/App.jsx`, `src/components/Browse.jsx`, `src/components/CollectionDetail.jsx`, `src/components/Detail.jsx`, `src/index.css`, `supabase_migration_collection_details.sql` (new).
+
+**Debugging notes for next time**
+- Files edited from outside the Mac (e.g. by Claude through the desktop bridge) may not trigger Vite's file watcher: if the UI doesn't reflect a change, stop and restart `npm run dev` and hard refresh.
+- If the collections tab fails to load after deploying, the SQL migration above hasn't been run in that Supabase project.
+- A stored `cover_photo_url` keeps showing even if its recipe is later removed from the collection (until the cover is changed in Edit).
+
+**Ideas not done:** scope "Remove from collection" to the current collection; restore detail/collection pages on refresh; switch the My recipes / Liked / Explore grids to `.collection-grid` if the same stacking appears there.
 
 ---
 

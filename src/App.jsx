@@ -14,8 +14,13 @@ export default function App() {
   const [view, setView]       = useState('browse')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [selectedCollection, setSelectedCollection] = useState(null)
+  const [detailFromCollection, setDetailFromCollection] = useState(false)
   const [toast, setToast]     = useState({ visible: false, message: {} })
-  const [activeTab, setActiveTab] = useState('mine')
+  // Restore the tab from the URL hash so a page refresh stays on the same tab
+  const [activeTab, setActiveTab] = useState(() => {
+    const h = window.location.hash.replace('#', '')
+    return ['mine', 'favourites', 'collections', 'public'].includes(h) ? h : 'mine'
+  })
   const [username, setUsername]   = useState(null)
 
   // ── Share link state ──────────────────────────────────────────────────────
@@ -57,7 +62,7 @@ export default function App() {
   // in place so the URL stays clean; otherwise restore the hash-based approach.
   useEffect(() => {
     if (!shareRecipeId) {
-      window.history.replaceState({ view: 'browse', tab: 'mine', recipe: null }, '', '#mine')
+      window.history.replaceState({ view: 'browse', tab: activeTab, recipe: null }, '', `#${activeTab}`)
     }
   }, [])
 
@@ -66,7 +71,7 @@ export default function App() {
     function handlePop(e) {
       const s = e.state
       if (!s) { setSelectedRecipe(null); setView('browse'); setActiveTab('mine'); return }
-      if (s.view === 'detail' && s.recipe)         { setSelectedRecipe(s.recipe); setView('detail') }
+      if (s.view === 'detail' && s.recipe)         { setSelectedRecipe(s.recipe); setDetailFromCollection(!!s.fromCollection); setView('detail') }
       else if (s.view === 'edit' && s.recipe)     { setSelectedRecipe(s.recipe); setView('edit') }
       else if (s.view === 'add')                  { setSelectedRecipe(null);     setView('add') }
       else if (s.view === 'profile')              { setView('profile') }
@@ -178,9 +183,10 @@ export default function App() {
     setActiveTab(tab)
   }
 
-  function openDetail(recipe) {
-    window.history.pushState({ view: 'detail', tab: activeTab, recipe }, '', '#detail')
+  function openDetail(recipe, { fromCollection = false } = {}) {
+    window.history.pushState({ view: 'detail', tab: activeTab, recipe, fromCollection }, '', '#detail')
     setSelectedRecipe(recipe)
+    setDetailFromCollection(fromCollection)
     setView('detail')
   }
   function openEdit(recipe) {
@@ -327,7 +333,7 @@ export default function App() {
             collection={selectedCollection}
             session={session}
             onBack={goBack}
-            onSelect={openDetail}
+            onSelect={recipe => openDetail(recipe, { fromCollection: true })}
           />
         )}
         {view === 'detail' && (
@@ -339,6 +345,7 @@ export default function App() {
             onAddedToMyRecipes={handleAddedToMyRecipes}
             session={session}
             onToast={showToast}
+            fromCollection={detailFromCollection}
           />
         )}
         {(view === 'add' || view === 'edit') && (

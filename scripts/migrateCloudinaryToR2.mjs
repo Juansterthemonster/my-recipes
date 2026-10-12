@@ -18,13 +18,23 @@
  *   VITE_R2_PUBLIC_URL
  *
  * What it does:
- *   1. Fetches every recipe that has a photo_url and/or a photos[] entry
+ *   1. Fetches every recipe that has a photo_url and/or a photos[] entry.
+ *      Each recipe's own photos are only ever read from and written back to
+ *      that same recipe's row (matched by id) — there is no separate
+ *      matching/pairing heuristic, so a photo can never end up attached to
+ *      the wrong recipe.
  *   2. For each photo that still points to cloudinary.com:
  *        - downloads the original bytes from Cloudinary
- *        - uploads them to R2 with a far-future Cache-Control header
+ *        - re-compresses through sharp with the exact same settings the
+ *          app's client-side upload path uses (src/utils/compressImage.js:
+ *          longest edge capped at 1800px, WebP quality 82) so every migrated
+ *          photo meets the same size/quality bar as a freshly-uploaded one,
+ *          even if the original predates that compression step
+ *        - uploads the result to R2 with a far-future Cache-Control header
  *          (filenames are unique per upload, so this is always safe)
- *   3. Rebuilds `photos` in the same order, swapping in the new R2 URLs
- *      (anything already on R2 is left untouched)
+ *   3. Rebuilds `photos` preserving the EXACT original array order, swapping
+ *      in the new R2 URL only at the index of each migrated photo (anything
+ *      already on R2 is left untouched, in its original position)
  *   4. Sets `photo_url` to the new photos[0] and writes both columns back
  *
  * Safe to re-run: only recipes that still have a cloudinary.com URL
@@ -38,10 +48,16 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import sharp from 'sharp'
 
 // ─── Config ────────────────────────────────────────────────────────────────────
 
 const DRY_RUN = process.argv.includes('--dry-run')
+
+// Mirrors src/utils/compressImage.js exactly, so migrated photos match the
+// size/quality of anything uploaded through the app today.
+const MAX_DIMENSION = 1800
+const WEBP_QUALITY  = 82
 
 const SUPABASE_URL     = process.env.VITE_SUPABASE_URL
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -76,12 +92,6 @@ const s3 = new S3Client({
   },
 })
 
-const EXT_FOR_TYPE = {
-  'image/webp': 'webp',
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-}
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatBytes(bytes) {
@@ -94,25 +104,42 @@ async function migrateOnePhoto(cloudinaryUrl, recipeId, photoIndex) {
   // 1. Download the original bytes from Cloudinary
   const res = await fetch(cloudinaryUrl)
   if (!res.ok) throw new Error(`download failed: HTTP ${res.status}`)
-  const buffer = Buffer.from(await res.arrayBuffer())
-  const contentType = res.headers.get('content-type') || 'image/webp'
-  const safeType = EXT_FOR_TYPE[contentType] ? contentType : 'image/webp'
-  const ext = EXT_FOR_TYPE[safeType] || 'webp'
+  const originalBuffer = Buffer.from(await res.arrayBuffer())
 
-  // 2. Upload to R2
-  const key = `mi-sazon/${recipeId}_${photoIndex}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+  // 2. Re-compress through sharp so this photo matches the same
+  //    max-1800px / WebP-q82 bar as anything uploaded through the app,
+  //    regardless of how the original was encoded.
+  //    .rotate() with no args auto-applies any EXIF orientation before
+  //    stripping it — a no-op if the source has none.
+  const optimizedBuffer = await sharp(originalBuffer)
+    .rotate()
+    .resize({
+      width: MAX_DIMENSION,
+      height: MAX_DIMENSION,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({ quality: WEBP_QUALITY })
+    .toBuffer()
+
+  // 3. Upload the optimized version to R2
+  const key = `mi-sazon/${recipeId}_${photoIndex}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.webp`
 
   if (!DRY_RUN) {
     await s3.send(new PutObjectCommand({
       Bucket: R2_BUCKET,
       Key: key,
-      Body: buffer,
-      ContentType: safeType,
+      Body: optimizedBuffer,
+      ContentType: 'image/webp',
       CacheControl: 'public, max-age=31536000, immutable',
     }))
   }
 
-  return { url: `${R2_PUBLIC_URL}/${key}`, bytes: buffer.byteLength }
+  return {
+    url: `${R2_PUBLIC_URL}/${key}`,
+    originalBytes: originalBuffer.byteLength,
+    optimizedBytes: optimizedBuffer.byteLength,
+  }
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
@@ -128,7 +155,9 @@ async function run() {
 
   if (error) { console.error('Failed to fetch recipes:', error.message); process.exit(1) }
 
-  // 2. Only recipes that still have at least one cloudinary.com URL somewhere
+  // 2. Only recipes that still have at least one cloudinary.com URL somewhere.
+  //    `urls` is this recipe's own array, in its original display order —
+  //    it never mixes photos from a different recipe.
   const toProcess = recipes
     .map(r => ({
       ...r,
@@ -143,38 +172,42 @@ async function run() {
 
   console.log(`Found ${toProcess.length} recipe(s) with Cloudinary photo(s) to migrate.\n`)
 
-  let recipesSucceeded = 0
-  let recipesFailed    = 0
-  let photosMigrated   = 0
-  let totalBytes       = 0
+  let recipesSucceeded  = 0
+  let recipesFailed     = 0
+  let photosMigrated    = 0
+  let originalBytesSum  = 0
+  let optimizedBytesSum = 0
 
   for (let i = 0; i < toProcess.length; i++) {
     const recipe = toProcess[i]
     const idx    = `[${i + 1}/${toProcess.length}]`
-    console.log(`${idx} Recipe ${recipe.id} — ${recipe.urls.length} photo(s)`)
+    console.log(`${idx} Recipe ${recipe.id} — ${recipe.urls.length} photo(s), order: [${recipe.urls.map((_, p) => p).join(', ')}]`)
 
-    const newUrls = []
+    // Preserve the original array length/order exactly — this loop only
+    // ever replaces an entry at its own index, never reorders or drops one.
+    const newUrls = new Array(recipe.urls.length)
     let recipeHadFailure = false
 
     for (let p = 0; p < recipe.urls.length; p++) {
       const url = recipe.urls[p]
 
       if (typeof url !== 'string' || !url.includes('cloudinary.com')) {
-        // Already on R2 (or some other host) — leave it exactly as-is.
-        newUrls.push(url)
+        // Already on R2 (or some other host) — leave it exactly as-is, in place.
+        newUrls[p] = url
         continue
       }
 
-      process.stdout.write(`    photo ${p + 1}/${recipe.urls.length}: downloading + uploading to R2… `)
+      process.stdout.write(`    photo ${p + 1}/${recipe.urls.length}: downloading + optimizing + uploading to R2… `)
       try {
-        const { url: r2Url, bytes } = await migrateOnePhoto(url, recipe.id, p)
-        newUrls.push(r2Url)
+        const { url: r2Url, originalBytes, optimizedBytes } = await migrateOnePhoto(url, recipe.id, p)
+        newUrls[p] = r2Url
         photosMigrated++
-        totalBytes += bytes
-        console.log(`✓ ${formatBytes(bytes)}`)
+        originalBytesSum  += originalBytes
+        optimizedBytesSum += optimizedBytes
+        console.log(`✓ ${formatBytes(originalBytes)} → ${formatBytes(optimizedBytes)}`)
       } catch (e) {
         console.log(`FAILED — ${e.message}`)
-        newUrls.push(url) // keep the old (working) Cloudinary URL rather than losing the photo
+        newUrls[p] = url // keep the old (working) Cloudinary URL rather than losing the photo or its position
         recipeHadFailure = true
       }
     }
@@ -208,7 +241,10 @@ async function run() {
   // ─── Summary ─────────────────────────────────────────────────────────────────
   console.log('─────────────────────────────────────────────────────────────')
   console.log(`Migration ${DRY_RUN ? 'preview' : 'complete'}: ${recipesSucceeded} recipe(s) fully migrated, ${recipesFailed} with issues`)
-  console.log(`${photosMigrated} photo(s) moved to R2, ${formatBytes(totalBytes)} transferred`)
+  console.log(`${photosMigrated} photo(s) moved to R2`)
+  if (photosMigrated > 0) {
+    console.log(`Size: ${formatBytes(originalBytesSum)} → ${formatBytes(optimizedBytesSum)} (${originalBytesSum ? Math.round((1 - optimizedBytesSum / originalBytesSum) * 100) : 0}% smaller)`)
+  }
 
   if (recipesFailed > 0) {
     console.log('\nTip: re-run the script to retry anything that failed.')
@@ -220,7 +256,7 @@ async function run() {
     console.log('Re-run without --dry-run to actually migrate.')
   } else if (recipesSucceeded > 0) {
     console.log('\nNext steps:')
-    console.log('  1. Open the app and verify recipe photos load correctly')
+    console.log('  1. Open the app and verify recipe photos load correctly, in the right order')
     console.log('  2. Once confirmed, the Cloudinary account can be cleared out / cancelled')
   }
 }

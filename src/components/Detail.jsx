@@ -273,9 +273,11 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
   }
 
   async function handleSave() {
-    setSaving(true)
     const toAdd    = [...checkedIds].filter(id => !originalIds.has(id))
     const toRemove = [...originalIds].filter(id => !checkedIds.has(id))
+    // Nothing changed — just close the sheet and stay where we are
+    if (toAdd.length === 0 && toRemove.length === 0) { onClose(); return }
+    setSaving(true)
     await Promise.all([
       toAdd.length > 0
         ? supabase.from('collection_recipes')
@@ -287,9 +289,18 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
       ),
     ])
     setSaving(false)
-    onSaved?.(checkedIds.size > 0)
+
+    // Toast copy reflects what actually changed
+    const nameOf = id => collections.find(c => c.id === id)?.name
+    let message = 'Collections updated'
+    if (toAdd.length === 1 && toRemove.length === 0 && nameOf(toAdd[0]))
+      message = `Added to ${nameOf(toAdd[0])}`
+    else if (toRemove.length === 1 && toAdd.length === 0 && nameOf(toRemove[0]))
+      message = `Removed from ${nameOf(toRemove[0])}`
+
+    onSaved?.(checkedIds.size > 0, true)
     onClose()
-    onToast?.('Collections updated')
+    onToast?.(message)
   }
 
   const hasChanges = (
@@ -526,6 +537,7 @@ export default function Detail({
   readOnly = false,
   onSignIn,
   onToast,
+  fromCollection = false,
 }) {
   const [recipe, setRecipe]               = useState(initialRecipe)
   const [menuOpen, setMenuOpen]           = useState(false)
@@ -539,7 +551,8 @@ export default function Detail({
   const [isAdded, setIsAdded]                 = useState(false)
   const [adding, setAdding]                   = useState(false)
   const [originalAuthor, setOriginalAuthor]   = useState(null)
-  const [isInAnyCollection, setIsInAnyCollection] = useState(false)
+  // Opened from a collection page => definitely in a collection; don't wait on the lookup
+  const [isInAnyCollection, setIsInAnyCollection] = useState(fromCollection)
 
   const menuRef       = useRef(null)
   const photoInputRef = useRef(null)
@@ -618,19 +631,27 @@ export default function Detail({
     fetchInteractionStatus()
   }, [recipe.id, isOwner])
 
-  // For owners: check if this recipe belongs to any collection
+  // Check if this recipe belongs to any of the viewer's collections
   useEffect(() => {
-    if (!isOwner) return
+    if (!session?.user || readOnly) return
     async function checkCollectionMembership() {
       const { data } = await supabase
         .from('collection_recipes')
         .select('collection_id')
         .eq('recipe_id', recipe.id)
         .limit(1)
-      setIsInAnyCollection(!!(data && data.length > 0))
+      // Only ever upgrade to true here; a missing/empty result must not hide the menu item
+      if (data && data.length > 0) setIsInAnyCollection(true)
     }
     checkCollectionMembership()
-  }, [recipe.id, isOwner])
+  }, [recipe.id, session?.user?.id, readOnly])
+
+  // After the collection sheet saves. If the recipe was opened from a collection
+  // page, return to that page's grid so it reflects the change.
+  function handleSheetSaved(anyChecked, changed) {
+    setIsInAnyCollection(anyChecked)
+    if (changed && fromCollection) onBack?.()
+  }
 
   async function handleDelete() {
     if (!window.confirm(`Delete "${recipe.name}"?`)) return
@@ -658,6 +679,7 @@ export default function Detail({
     setUploading(true)
     const uploaded = []
     let failed = 0
+    let lastReason = ''
     for (const file of files.slice(0, room)) {
       try {
         const compressed = await compressImage(file)
@@ -665,9 +687,13 @@ export default function Detail({
       } catch (err) {
         console.error('Photo upload failed:', err)
         failed += 1
+        lastReason = err?.message || ''
       }
     }
-    if (failed) onToast?.(failed === 1 ? "A photo couldn't be uploaded. Please try again." : `${failed} photos couldn't be uploaded. Please try again.`)
+    if (failed) {
+      const base = failed === 1 ? "A photo couldn't be uploaded" : `${failed} photos couldn't be uploaded`
+      onToast?.(`${base}${lastReason ? ` (${lastReason})` : ''}. Please try again.`)
+    }
     if (uploaded.length) {
       const newPhotos = [...photos, ...uploaded]
       await supabase.from('recipes').update({ photos: newPhotos, photo_url: newPhotos[0] }).eq('id', recipe.id)
@@ -887,6 +913,18 @@ export default function Detail({
                     }}>
                       {/* Add / Remove collection */}
                       {isInAnyCollection ? (
+                        <>
+                        <button
+                          onClick={() => { setMenuOpen(false); setSheetOpen(true) }}
+                          style={{
+                            display: 'block', width: '100%', padding: '13px 18px', textAlign: 'left',
+                            fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+                            border: 'none', borderBottom: '1px solid var(--border-soft)',
+                            cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                        >Add to another collection</button>
                         <button
                           onClick={() => { setMenuOpen(false); handleRemoveFromCollections() }}
                           style={{
@@ -898,6 +936,7 @@ export default function Detail({
                           onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                         >Remove from collection</button>
+                        </>
                       ) : (
                         <button
                           onClick={() => { setMenuOpen(false); setSheetOpen(true) }}
@@ -1007,7 +1046,7 @@ export default function Detail({
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                      >Add to collection</button>
+                      >{isInAnyCollection ? 'Add to another collection' : 'Add to collection'}</button>
                     </div>
                   )}
                 </div>
@@ -1469,7 +1508,7 @@ export default function Detail({
           session={session}
           onClose={() => setSheetOpen(false)}
           onToast={onToast}
-          onSaved={setIsInAnyCollection}
+          onSaved={handleSheetSaved}
         />
       )}
     </div>

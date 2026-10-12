@@ -208,6 +208,12 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
             fontFamily: 'var(--font-display)', fontSize: '1.9rem', fontWeight: 400,
             color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: 6,
           }}>{collection.name}</h1>
+          {collection.description && (
+            <p style={{
+              fontFamily: 'var(--font-body)', fontSize: '0.92rem', lineHeight: 1.5,
+              color: 'var(--text-secondary)', margin: '0 0 8px', whiteSpace: 'pre-wrap',
+            }}>{collection.description}</p>
+          )}
           {!loading && (
             <p style={{
               fontFamily: 'var(--font-body)', fontSize: '0.85rem',
@@ -249,9 +255,9 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
             }}>Open any recipe and use the menu to add it here.</div>
           </div>
         ) : (
-          <div className="masonry-grid">
+          <div className="collection-grid">
             {recipes.map(recipe => (
-              <div key={recipe.id} className="masonry-item">
+              <div key={recipe.id}>
                 {recipe.user_id === session.user.id ? (
                   <MyRecipeCard
                     recipe={recipe}

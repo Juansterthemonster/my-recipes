@@ -2,17 +2,27 @@ import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
-function Nav({ onAdd, session, onSignOut, username, onProfile }) {
+function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [addOpen,  setAddOpen]  = useState(false)
   const menuRef = useRef(null)
+  const addRef  = useRef(null)
 
   useEffect(() => {
     function handleClick(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+      if (addRef.current  && !addRef.current.contains(e.target))  setAddOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  const addItemStyle = {
+    display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left',
+    fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+    border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)',
+    transition: 'background 150ms', whiteSpace: 'nowrap',
+  }
 
   return (
     <div
@@ -30,14 +40,45 @@ function Nav({ onAdd, session, onSignOut, username, onProfile }) {
       }}>MI SAZÓN</span>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onAdd} style={{
-          background: 'transparent', color: '#0C3D4E',
-          border: '1.5px solid #0C3D4E', borderRadius: 'var(--r-full)',
-          fontFamily: 'var(--font-body)', fontSize: '0.82rem',
-          fontWeight: 500, letterSpacing: '0.05em',
-          padding: '9px 22px', cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center',
-        }}>Add recipe</button>
+        <div ref={addRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setAddOpen(o => !o)}
+            aria-haspopup="menu"
+            aria-expanded={addOpen}
+            style={{
+              background: 'transparent', color: '#0C3D4E',
+              border: '1.5px solid #0C3D4E', borderRadius: 'var(--r-full)',
+              fontFamily: 'var(--font-body)', fontSize: '0.82rem',
+              fontWeight: 500, letterSpacing: '0.05em',
+              padding: '9px 22px', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center',
+            }}
+          >Add</button>
+
+          {addOpen && (
+            <div role="menu" style={{
+              position: 'absolute', right: 0, top: 'calc(100% + 8px)',
+              background: 'var(--white)', border: '1px solid var(--border-soft)',
+              borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+              minWidth: 170, zIndex: 100, overflow: 'hidden',
+            }}>
+              <button
+                role="menuitem"
+                onClick={() => { setAddOpen(false); onAdd() }}
+                style={{ ...addItemStyle, borderBottom: '1px solid var(--border-soft)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+              >Add a recipe</button>
+              <button
+                role="menuitem"
+                onClick={() => { setAddOpen(false); onAddCollection() }}
+                style={addItemStyle}
+                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+              >Add a collection</button>
+            </div>
+          )}
+        </div>
 
         <div ref={menuRef} style={{ position: 'relative' }}>
           <button
@@ -816,29 +857,37 @@ function EmptyExplore() {
 /* ─── COLLECTION PHOTO GRID ─────────────────────────────────────────────────
    Renders up to 4 recipe photos in a 2×2 grid. Empty cells fall back to the
    app's teal primary colour so the card always has a consistent visual weight.  */
-function CollectionPhotoGrid({ photos = [] }) {
+function CollectionPhotoGrid({ photos = [], cover = null }) {
+  // A user-chosen cover replaces the collage with one full image
+  if (cover) {
+    return (
+      <div style={{ height: '100%', background: 'var(--green-primary)',  overflow: 'hidden' }}>
+        <img src={cover} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      </div>
+    )
+  }
   const slots = [photos[0] || null, photos[1] || null, photos[2] || null, photos[3] || null]
   const hasAnyPhoto = photos.length > 0
 
   if (!hasAnyPhoto) {
     return (
       <div style={{
-        aspectRatio: '2/3',
+        height: '100%',
         background: 'var(--green-primary)',
-        borderRadius: '8px 8px 0 0',
+        
       }} />
     )
   }
 
   return (
     <div style={{
-      aspectRatio: '2/3',
+      height: '100%',
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
       gridTemplateRows: '1fr 1fr',
       gap: 2,
       background: 'var(--green-primary)', // shows through gaps + fills empty cells
-      borderRadius: '8px 8px 0 0',
+      
       overflow: 'hidden',
     }}>
       {slots.map((url, i) => (
@@ -850,25 +899,66 @@ function CollectionPhotoGrid({ photos = [] }) {
   )
 }
 
-/* ─── COLLECTION NAME MODAL ─────────────────────────────────────────────────
-   Centred overlay used for both "New collection" and "Rename collection".
-   Accepts an async onSave(name) callback — caller is responsible for the DB
-   write and for closing the modal (by setting modalMode to null).            */
-function CollectionNameModal({ title, initialValue = '', onSave, onClose }) {
-  const [name,   setName]   = useState(initialValue)
+/* ─── COLLECTION EDIT MODAL ─────────────────────────────────────────────────
+   Centred overlay used for both "New collection" and "Edit collection".
+   Fields: name (required), description (optional) and — when editing — a cover
+   photo picked from the recipes already in the collection.
+   Accepts an async onSave({ name, description, cover }) callback — caller is
+   responsible for the DB write and for closing the modal.                    */
+function CollectionEditModal({ title, collectionId = null, initial = {}, onSave, onClose }) {
+  const [name,        setName]        = useState(initial.name || '')
+  const [description, setDescription] = useState(initial.description || '')
+  const [cover,       setCover]       = useState(initial.cover_photo_url || null)
+  const [coverOptions, setCoverOptions] = useState([])
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState(null)
   const inputRef = useRef(null)
 
   useEffect(() => { if (inputRef.current) inputRef.current.focus() }, [])
 
+  // Load every photo from the recipes in this collection (edit mode only)
+  useEffect(() => {
+    if (!collectionId) return
+    let cancelled = false
+    async function loadPhotos() {
+      const { data } = await supabase
+        .from('collection_recipes')
+        .select('recipes(photo_url, photos)')
+        .eq('collection_id', collectionId)
+      if (cancelled) return
+      const urls = []
+      for (const row of data || []) {
+        const r = row.recipes
+        if (!r) continue
+        const list = r.photos?.length ? r.photos : (r.photo_url ? [r.photo_url] : [])
+        for (const u of list) if (u && !urls.includes(u)) urls.push(u)
+      }
+      setCoverOptions(urls)
+    }
+    loadPhotos()
+    return () => { cancelled = true }
+  }, [collectionId])
+
   async function handleSave() {
     const trimmed = name.trim()
     if (!trimmed) { setError('Please enter a collection name'); return }
     setError(null)
     setSaving(true)
-    await onSave(trimmed)
+    await onSave({ name: trimmed, description: description.trim(), cover })
     // onSave closes the modal; setSaving left true to prevent double-clicks
+  }
+
+  const fieldStyle = {
+    width: '100%', boxSizing: 'border-box',
+    background: 'var(--white)',
+    border: '1.5px solid var(--border-soft)',
+    borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-body)',
+    fontSize: '0.95rem', color: 'var(--text-primary)',
+    padding: '11px 14px', outline: 'none',
+  }
+  const labelStyle = {
+    display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600,
+    color: 'var(--text-secondary)', marginBottom: 6,
   }
 
   return (
@@ -887,6 +977,7 @@ function CollectionNameModal({ title, initialValue = '', onSave, onClose }) {
         borderRadius: 16,
         padding: '28px 24px',
         width: 'min(380px, calc(100vw - 48px))',
+        maxHeight: 'calc(100vh - 48px)', overflowY: 'auto',
         boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
       }}>
         <div style={{
@@ -894,6 +985,7 @@ function CollectionNameModal({ title, initialValue = '', onSave, onClose }) {
           color: 'var(--text-primary)', marginBottom: 18,
         }}>{title}</div>
 
+        <label style={labelStyle}>Name</label>
         <input
           ref={inputRef}
           value={name}
@@ -901,15 +993,7 @@ function CollectionNameModal({ title, initialValue = '', onSave, onClose }) {
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
           placeholder="e.g. Weeknight dinners"
           maxLength={60}
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            background: 'var(--white)',
-            border: `1.5px solid ${error ? '#f5baba' : 'var(--border-soft)'}`,
-            borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-body)',
-            fontSize: '0.95rem', color: 'var(--text-primary)',
-            padding: '11px 14px', outline: 'none',
-            marginBottom: error ? 8 : 20,
-          }}
+          style={{ ...fieldStyle, borderColor: error ? '#f5baba' : 'var(--border-soft)', marginBottom: error ? 8 : 16 }}
           onFocus={e => e.target.style.borderColor = error ? '#f5baba' : 'var(--green-primary)'}
           onBlur={e => e.target.style.borderColor = error ? '#f5baba' : 'var(--border-soft)'}
         />
@@ -924,6 +1008,57 @@ function CollectionNameModal({ title, initialValue = '', onSave, onClose }) {
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             {error}
+          </div>
+        )}
+
+        <label style={labelStyle}>Description <span style={{ fontWeight: 400 }}>(optional)</span></label>
+        <textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder="What's this collection about?"
+          maxLength={300}
+          rows={3}
+          style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.45, marginBottom: 16 }}
+          onFocus={e => e.target.style.borderColor = 'var(--green-primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border-soft)'}
+        />
+
+        {/* Cover picker — only when editing a collection that has recipe photos */}
+        {collectionId && coverOptions.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Cover photo</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              {/* Default collage */}
+              <button
+                type="button"
+                onClick={() => setCover(null)}
+                aria-label="Use default collage"
+                aria-pressed={cover === null}
+                style={{
+                  aspectRatio: '1/1', borderRadius: 8, cursor: 'pointer',
+                  border: cover === null ? '2.5px solid #0C3D4E' : '1.5px solid var(--border-soft)',
+                  background: 'var(--white)', color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
+                  lineHeight: 1.15, padding: 4,
+                }}
+              >Default</button>
+              {coverOptions.map(url => (
+                <button
+                  type="button"
+                  key={url}
+                  onClick={() => setCover(url)}
+                  aria-label="Use this photo as cover"
+                  aria-pressed={cover === url}
+                  style={{
+                    aspectRatio: '1/1', borderRadius: 8, cursor: 'pointer', padding: 0, overflow: 'hidden',
+                    border: cover === url ? '2.5px solid #0C3D4E' : '1.5px solid var(--border-soft)',
+                    background: 'var(--green-primary)',
+                  }}
+                >
+                  <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -956,11 +1091,15 @@ function CollectionNameModal({ title, initialValue = '', onSave, onClose }) {
   )
 }
 
-/* ─── COLLECTION CARD ───────────────────────────────────────────────────────── */
+/* ─── COLLECTION CARD ─────────────────────────────────────────────────────────
+   Mirrors the recipe photo card: 2:3, photo/collage behind a dark gradient,
+   white text on the image. Count pill top-left, kebab top-right, then
+   title + description at the bottom.                                          */
 function CollectionCard({ collection, onClick, onRename, onDelete }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
   const count = collection.recipe_count || 0
+  const hasDescription = !!collection.description
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -970,48 +1109,17 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  return (
-    // overflow:visible so the kebab dropdown isn't clipped at card edges.
-    // Radius is applied per-section: photo gets top corners, bottom gets lower corners.
-    <div
-      onClick={onClick}
-      style={{
-        borderRadius: 10, overflow: 'visible', cursor: 'pointer',
-        background: '#FFFFFF', border: '1px solid var(--border-soft)',
-      }}
-    >
-      {/* Photo grid — top corners match card radius */}
-      <CollectionPhotoGrid photos={collection.photos} />
+  // Only a user-chosen cover gives the photo card; "Default" is the plain teal card
+  const hasImage = !!collection.cover_photo_url
 
-      {/* Name + count + kebab in one row — bottom corners match card radius */}
-      <div style={{
-        padding: '12px 10px 12px 14px', display: 'flex', alignItems: 'flex-start', gap: 6,
-        borderRadius: '0 0 10px 10px', background: '#FFFFFF',
-      }}>
-        {/* Text: name + count */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 400,
-            color: '#0C3D4E', lineHeight: 1.25, marginBottom: 4,
-            display: '-webkit-box', WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}>{collection.name}</div>
-          <div style={{
-            fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
-          }}>{count} {count === 1 ? 'recipe' : 'recipes'}</div>
-        </div>
-
-        {/* Kebab button + dropdown — position:relative here is the containing block;
-            the card has overflow:visible so the dropdown renders above sibling cards */}
-        <div ref={menuRef} style={{ position: 'relative', flexShrink: 0, marginTop: 2, zIndex: 10 }}>
+  const kebab = (
+        <div ref={menuRef} style={{ position: 'relative', flexShrink: 0, pointerEvents: 'auto' }}>
           <button
             onClick={e => { e.stopPropagation(); setMenuOpen(o => !o) }}
             aria-label="Collection options"
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: 4, borderRadius: 6, color: '#0C3D4E',
-            }}
+            style={{ ...blurBtn, padding: 8, color: '#fff' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
           >
             <KebabIcon />
           </button>
@@ -1033,7 +1141,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >Rename</button>
+              >Edit</button>
               <button
                 onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
                 style={{
@@ -1048,6 +1156,103 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
             </div>
           )}
         </div>
+  )
+
+  const textBlock = (
+    <>
+        <div style={{
+          fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)',
+          fontFamily: 'var(--font-body)', marginBottom: 5,
+        }}>Collection</div>
+        <div style={{
+          fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
+          color: '#fff', lineHeight: 1.25, marginBottom: hasDescription ? 6 : 0,
+          display: '-webkit-box', WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{collection.name}</div>
+        {hasDescription && (
+          <div style={{
+            fontSize: '0.78rem', lineHeight: 1.4, color: 'rgba(255,255,255,0.92)',
+            fontFamily: 'var(--font-body)',
+            display: '-webkit-box', WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>{collection.description}</div>
+        )}
+    </>
+  )
+
+  const countPill = (
+    <span style={{
+      background: 'rgba(255,255,255,0.22)', color: '#FFFFFF', border: '1.5px solid #FFFFFF',
+      borderRadius: 'var(--r-full)', padding: '8px 12px',
+      fontSize: '0.72rem', fontWeight: 500, fontFamily: 'var(--font-body)',
+      lineHeight: 1, whiteSpace: 'nowrap',
+    }}>{count} {count === 1 ? 'recipe' : 'recipes'}</span>
+  )
+
+  /* ── NO-IMAGE CARD: content-height like the no-photo recipe card, on Dark Teal ── */
+  if (!hasImage) {
+    return (
+      <div onClick={onClick} style={{
+        position: 'relative', borderRadius: 8, cursor: 'pointer',
+        background: '#0C3D4E', display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          gap: 8, padding: '12px 12px 0',
+        }}>
+          {countPill}
+          {kebab}
+        </div>
+        <div style={{ flex: 1, minHeight: 28 }} />
+        <div style={{ padding: '0 14px 16px' }}>
+          {textBlock}
+        </div>
+      </div>
+    )
+  }
+
+  // Taller, darker gradient when a description needs to stay readable
+  const overlay = hasDescription
+    ? 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.86) 22%, rgba(0,0,0,0.5) 46%, rgba(0,0,0,0) 66%)'
+    : OVERLAY_IMAGE
+
+  return (
+    // Outer wrapper is overflow:visible so the kebab dropdown isn't clipped;
+    // the inner layer clips the image to the rounded card shape.
+    <div
+      onClick={onClick}
+      style={{ position: 'relative', aspectRatio: '2/3', borderRadius: 8, cursor: 'pointer' }}
+    >
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 8, overflow: 'hidden', background: 'var(--green-primary)' }}>
+        <CollectionPhotoGrid cover={collection.cover_photo_url} />
+        <div style={{ position: 'absolute', inset: 0, background: overlay }} />
+      </div>
+
+      {/* Top row: count pill (left) + kebab (right) */}
+      <div style={{
+        position: 'absolute', top: 12, left: 12, right: 12, zIndex: 2,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8,
+        pointerEvents: 'none',
+      }}>
+        <span style={{
+          background: 'rgba(0,0,0,0.24)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          color: '#FFFFFF', border: '1.5px solid #FFFFFF',
+          borderRadius: 'var(--r-full)', padding: '8px 12px',
+          fontSize: '0.72rem', fontWeight: 500, fontFamily: 'var(--font-body)',
+          lineHeight: 1, whiteSpace: 'nowrap',
+        }}>{count} {count === 1 ? 'recipe' : 'recipes'}</span>
+
+        {kebab}
+      </div>
+
+      {/* Bottom: eyebrow → title → description */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 16px', zIndex: 2,
+        pointerEvents: 'none',
+      }}>
+        {textBlock}
       </div>
     </div>
   )
@@ -1173,7 +1378,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         .order('created_at', { ascending: false }),
       supabase.from('likes').select('recipe_id')
         .eq('user_id', session.user.id),
-      supabase.from('collections').select('id, name, created_at')
+      supabase.from('collections').select('id, name, description, cover_photo_url, created_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false }),
     ])
@@ -1257,25 +1462,27 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   // ── Collection CRUD ───────────────────────────────────────────────────────
 
-  async function handleCreateCollection(name) {
+  async function handleCreateCollection({ name, description }) {
     const { data, error } = await supabase
       .from('collections')
-      .insert({ user_id: session.user.id, name })
+      .insert({ user_id: session.user.id, name, description: description || null })
       .select().single()
     if (!error && data) {
       setCollections(prev => [{ ...data, recipe_count: 0, photos: [] }, ...prev])
+      if (activeTab !== 'collections') onTabChange('collections')
     }
     setModalMode(null)
   }
 
-  async function handleRenameCollection(name) {
+  async function handleRenameCollection({ name, description, cover }) {
     if (!renameTarget) return
+    const patch = { name, description: description || null, cover_photo_url: cover || null }
     const { error } = await supabase
       .from('collections')
-      .update({ name })
+      .update(patch)
       .eq('id', renameTarget.id)
     if (!error) {
-      setCollections(prev => prev.map(c => c.id === renameTarget.id ? { ...c, name } : c))
+      setCollections(prev => prev.map(c => c.id === renameTarget.id ? { ...c, ...patch } : c))
     }
     setModalMode(null)
     setRenameTarget(null)
@@ -1304,7 +1511,23 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   return (
     <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
-      <Nav onAdd={onAdd} session={session} onSignOut={onSignOut} username={username} onProfile={onProfile} />
+      <Nav
+        onAdd={onAdd}
+        onAddCollection={() => setModalMode('create')}
+        session={session} onSignOut={onSignOut} username={username} onProfile={onProfile}
+      />
+
+      {/* Collection modal — create or edit (name, description, cover).
+          Lives at page level so the nav "Add" menu can open it from any tab. */}
+      {modalMode && (
+        <CollectionEditModal
+          title={modalMode === 'create' ? 'New collection' : 'Edit collection'}
+          collectionId={modalMode === 'rename' ? renameTarget?.id : null}
+          initial={modalMode === 'rename' ? (renameTarget || {}) : {}}
+          onSave={modalMode === 'create' ? handleCreateCollection : handleRenameCollection}
+          onClose={() => { setModalMode(null); setRenameTarget(null) }}
+        />
+      )}
       <SearchBar
         search={search} onSearch={setSearch}
         filtersOpen={filtersOpen}
@@ -1383,9 +1606,9 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
             {activeTab === 'collections' && (
               <>
                 {/* Masonry grid — matches recipe card layout and breakpoints exactly */}
-                <div className="masonry-grid">
+                <div className="collection-grid">
                   {collections.map(col => (
-                    <div key={col.id} className="masonry-item">
+                    <div key={col.id}>
                       <CollectionCard
                         collection={col}
                         onClick={() => onSelectCollection && onSelectCollection(col)}
@@ -1394,20 +1617,13 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
                       />
                     </div>
                   ))}
-                  <div className="masonry-item">
-                    <EmptyCollectionCard onCreate={() => setModalMode('create')} />
-                  </div>
+                  {/* Empty-state card: only until the first collection exists */}
+                  {collections.length === 0 && (
+                    <div>
+                      <EmptyCollectionCard onCreate={() => setModalMode('create')} />
+                    </div>
+                  )}
                 </div>
-
-                {/* Collection name modal — create or rename */}
-                {modalMode && (
-                  <CollectionNameModal
-                    title={modalMode === 'create' ? 'New collection' : 'Rename collection'}
-                    initialValue={modalMode === 'rename' ? (renameTarget?.name ?? '') : ''}
-                    onSave={modalMode === 'create' ? handleCreateCollection : handleRenameCollection}
-                    onClose={() => { setModalMode(null); setRenameTarget(null) }}
-                  />
-                )}
               </>
             )}
 

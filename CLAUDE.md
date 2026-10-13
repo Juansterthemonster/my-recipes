@@ -711,6 +711,26 @@ Existing RLS on `collections` is per-row, so no policy changes. **The app select
 
 **Ideas not done:** "Remove from collection" still removes from all collections; detail/collection pages don't restore on refresh; the desktop single-photo section is left-aligned (empty space to its right on wide screens) — could centre or add content beside it.
 
+### v4.7 — Recipe page: byline with dates, original-creator credit, key-facts band (shipped ✓, 2026-10-13)
+
+**No DB changes.** Frontend only (`src/components/Detail.jsx`, `src/App.jsx`).
+
+**Byline under the recipe title (Detail.jsx)**
+- Shown for **every** recipe, not just other people's: `by @username · Added on Oct 13, 2026` (`toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })`, via `fmtDate`). Either half is omitted if its data is missing; the `·` only appears when both exist.
+- Own recipes: username comes from a new `username` prop on `Detail` (App passes its `profiles`-sourced `username`, never `user_metadata`). Other users' recipes use `recipe.author_username`. Date = `recipe.created_at`.
+- **Saved copies of someone else's recipe** (`isOwner && recipe.copied_from`, called `isCopy`): line 1 credits the **original creator** and the **original's** date — `by @originalcreator · Added on <original created_at>`; line 2 reads `Added to my recipes on <copy created_at>`. Never shows the copier's own name as author. The existing `fetchOriginalAuthor` effect now also loads the original's `created_at` (`originalDate`).
+- Limitation: if the original was deleted or made private, RLS hides it, so the creator and original date are omitted and only the "Added to my recipes on" line shows. Fix would be to snapshot the creator username/date onto the copy at save time (`handleAddToMyRecipes`) — needs new columns. The older italic "Original recipe by @x edited by you" note (shown when `is_modified`) is unchanged, so edited copies name the creator twice.
+
+**Key-facts band**
+- Total time, Prep time, Serves (− / + stepper + Reset) and Cuisine are now separate groups: small-caps label (`factLabel`, matches the meal-type eyebrow) over a larger bold value (`factValue`), framed by top/bottom hairlines. `totalTimeText` / `prepTimeText` no longer include the "Total time:" / "Prep time:" prefixes (labels are separate).
+- Desktop: one row, groups divided by thin left borders (`lg:ml-6 lg:pl-6 border-l`; first group has none). Mobile: the same single row (tighter `ml-3 pl-3`, values `0.95rem`) so total / prep / serves fit on one line; Cuisine is its own full-width row on mobile (`basis-full`) and sits in the row on desktop. Groups are conditional on data existing.
+
+**Spacing tweaks (halved):** photo → meal-type label margin 20px → 10px (22 → 11 on the desktop single-photo row, and the owner "Add photo" strip); meal-type label → title 8px → 4px.
+
+**Files changed:** `src/components/Detail.jsx`, `src/App.jsx` (passes `username` to `Detail`).
+
+**Ideas not done:** snapshot original creator + date onto copies at save time so credit survives deletion/privatising of the original; drop the redundant "edited by you" note now the byline credits the creator.
+
 ---
 
 ## How to work with Claude (Cowork)

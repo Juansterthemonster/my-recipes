@@ -346,6 +346,7 @@ export default function App() {
             session={session}
             onToast={showToast}
             fromCollection={detailFromCollection}
+            username={username}
           />
         )}
         {(view === 'add' || view === 'edit') && (

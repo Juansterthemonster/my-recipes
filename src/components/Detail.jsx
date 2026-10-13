@@ -538,6 +538,7 @@ export default function Detail({
   onSignIn,
   onToast,
   fromCollection = false,
+  username = null,
 }) {
   const [recipe, setRecipe]               = useState(initialRecipe)
   const [menuOpen, setMenuOpen]           = useState(false)
@@ -551,6 +552,7 @@ export default function Detail({
   const [isAdded, setIsAdded]                 = useState(false)
   const [adding, setAdding]                   = useState(false)
   const [originalAuthor, setOriginalAuthor]   = useState(null)
+  const [originalDate, setOriginalDate]       = useState(null)   // when the original recipe was created
   // Opened from a collection page => definitely in a collection; don't wait on the lookup
   const [isInAnyCollection, setIsInAnyCollection] = useState(fromCollection)
 
@@ -558,6 +560,18 @@ export default function Detail({
   const photoInputRef = useRef(null)
 
   const isOwner    = !readOnly && recipe.user_id === session?.user?.id
+  // Byline: "by @name · Added on <date>" — shown for everyone's recipes, owner included.
+  // The owner's own username comes from App (profiles table); others arrive as author_username.
+  // A copy of someone else's recipe (mine, with copied_from set) credits the ORIGINAL creator and
+  // the original's date, plus a second line with when I saved it. If the original is no longer
+  // visible (deleted / made private) the creator and date are simply omitted — never my own name.
+  const fmtDate = iso => iso
+    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null
+  const isCopy = isOwner && !!recipe.copied_from
+  const authorName = isCopy ? originalAuthor : (isOwner ? username : recipe.author_username)
+  const addedDate = fmtDate(isCopy ? originalDate : recipe.created_at)
+  const savedToMineDate = isCopy ? fmtDate(recipe.created_at) : null
   // Gallery: falls back to the single legacy photo_url for older recipes that
   // predate the photos[] column, so nothing needs a data migration.
   const photos = recipe.photos?.length ? recipe.photos : (recipe.photo_url ? [recipe.photo_url] : [])
@@ -606,8 +620,9 @@ export default function Detail({
     if (!recipe.copied_from) return
     async function fetchOriginalAuthor() {
       const { data: orig } = await supabase
-        .from('recipes').select('user_id').eq('id', recipe.copied_from).maybeSingle()
+        .from('recipes').select('user_id, created_at').eq('id', recipe.copied_from).maybeSingle()
       if (!orig) return
+      if (orig.created_at) setOriginalDate(orig.created_at)
       const { data: prof } = await supabase
         .from('profiles').select('username').eq('id', orig.user_id).maybeSingle()
       if (prof?.username) setOriginalAuthor(prof.username)
@@ -801,12 +816,22 @@ export default function Detail({
   const steps         = Array.isArray(recipe.steps) ? recipe.steps : []
   const totalTimeText = recipe.total_time_min
     ? recipe.total_time_max && recipe.total_time_max !== recipe.total_time_min
-      ? `Total time: ${formatTime(recipe.total_time_min)}–${formatTime(recipe.total_time_max)}`
-      : `Total time: ${formatTime(recipe.total_time_min)}`
+      ? `${formatTime(recipe.total_time_min)}–${formatTime(recipe.total_time_max)}`
+      : formatTime(recipe.total_time_min)
     : null
   const prepTimeText = recipe.active_time_mins
-    ? `Prep time: ${formatTime(recipe.active_time_mins)}`
+    ? formatTime(recipe.active_time_mins)
     : null
+
+  /* ── Key-facts typography: small-caps label over a larger value ── */
+  const factLabel = {
+    fontSize: '0.62rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
+    color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', marginBottom: 4,
+  }
+  const factValue = {
+    fontWeight: 600, color: 'var(--text-primary)',
+    fontFamily: 'var(--font-body)', lineHeight: 1.3, minHeight: 26, display: 'flex', alignItems: 'center',
+  }
 
   /* ── Shared stepper button style ── */
   const stepperBtn = {
@@ -1074,7 +1099,7 @@ export default function Detail({
              more than one photo; a single photo renders exactly as before. */
           <div
             className={photos.length === 1 ? 'lg:hidden' : undefined}
-            style={{ position: 'relative', margin: '-24px -24px 20px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}
+            style={{ position: 'relative', margin: '-24px -24px 10px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}
           >
             {photos.length > 1 ? (
               <>
@@ -1273,7 +1298,7 @@ export default function Detail({
               /* Owner — full-width clickable Add photo zone with heart overlaid */
               <div style={{
                 position: 'relative',
-                margin: '-24px -24px 20px',
+                margin: '-24px -24px 10px',
                 borderRadius: 'var(--r-lg) var(--r-lg) 0 0',
                 overflow: 'hidden',
               }}>
@@ -1342,7 +1367,7 @@ export default function Detail({
             Below lg the banner above is used. Two or more photos use the
             multi-photo layout instead. */}
         {photos.length === 1 && (
-          <div className="hidden lg:flex" style={{ gap: 12, margin: '-24px -24px 22px', padding: 24, paddingBottom: 0 }}>
+          <div className="hidden lg:flex" style={{ gap: 12, margin: '-24px -24px 11px', padding: 24, paddingBottom: 0 }}>
             <div style={{
               position: 'relative', width: 255, aspectRatio: '2/3', flexShrink: 0,
               borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
@@ -1421,7 +1446,7 @@ export default function Detail({
           return (
             <div style={{
               display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', marginBottom: 8,
+              justifyContent: 'space-between', marginBottom: 4,
             }}>
               {mealItems.length > 0 ? (
                 <div style={{
@@ -1446,7 +1471,7 @@ export default function Detail({
             style={{
               fontFamily: 'var(--font-display)', fontWeight: 400,
               color: 'var(--text-primary)', lineHeight: 1.15,
-              marginBottom: (recipe.author_username && !isOwner) || (recipe.copied_from && recipe.is_modified) ? 6 : 10,
+              marginBottom: authorName || addedDate || savedToMineDate || (recipe.copied_from && recipe.is_modified) ? 6 : 10,
               letterSpacing: '-0.01em',
             }}>{recipe.name}</h1>
 
@@ -1463,13 +1488,24 @@ export default function Detail({
           </p>
         )}
 
-        {/* Attribution — shown on other users' public recipes */}
-        {!isOwner && recipe.author_username && (
-          <p style={{
+        {/* Byline — "by @user · Added on <date>", for every recipe (own and others') */}
+        {(authorName || addedDate || savedToMineDate) && (
+          <div style={{
             fontFamily: 'var(--font-body)', fontSize: '0.82rem',
             color: 'var(--text-tertiary)', marginBottom: 14,
-            letterSpacing: '0.01em',
-          }}>by @{recipe.author_username}</p>
+            letterSpacing: '0.01em', lineHeight: 1.5,
+          }}>
+            {(authorName || addedDate) && (
+              <p style={{ margin: 0 }}>
+                {authorName && `by @${authorName}`}
+                {authorName && addedDate && ' · '}
+                {addedDate && `Added on ${addedDate}`}
+              </p>
+            )}
+            {savedToMineDate && (
+              <p style={{ margin: 0 }}>Added to my recipes on {savedToMineDate}</p>
+            )}
+          </div>
         )}
 
         {recipe.description && (
@@ -1479,30 +1515,34 @@ export default function Detail({
           >{recipe.description}</p>
         )}
 
-        {(totalTimeText || prepTimeText) && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 10 }}>
+        {/* ── Key facts: time / servings / cuisine as distinct groups ──
+            2-up grid on mobile, one divided row on desktop. Label (small caps)
+            over value, so each reads as its own piece of information. */}
+        {(totalTimeText || prepTimeText || recipe.serves || recipe.cuisine) && (
+          <div
+            className="flex flex-wrap gap-y-4"
+            style={{
+              padding: '16px 0', margin: '4px 0 18px',
+              borderTop: '1px solid var(--border-soft)', borderBottom: '1px solid var(--border-soft)',
+            }}
+          >
             {totalTimeText && (
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                {totalTimeText}
-              </span>
+              <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
+                <div style={factLabel}>Total time</div>
+                <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{totalTimeText}</div>
+              </div>
             )}
             {prepTimeText && (
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                {prepTimeText}
-              </span>
+              <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
+                <div style={factLabel}>Prep time</div>
+                <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{prepTimeText}</div>
+              </div>
             )}
-          </div>
-        )}
-
-        {/* ── Serves stepper + cuisine ── */}
-        {(recipe.serves || recipe.cuisine) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
             {recipe.serves ? (
-              <>
+              <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
+                <div style={factLabel}>Serves</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 26 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                    Serves
-                  </span>
                   <button
                     onClick={() => setScaledServings(s => Math.max(1, (s || recipe.serves) - 1))}
                     aria-label="Fewer servings"
@@ -1515,10 +1555,10 @@ export default function Detail({
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                   </button>
-                  <span style={{
-                    fontSize: '0.875rem', fontWeight: 600,
+                  <span className="text-[0.95rem] lg:text-[1.0625rem]" style={{
+                    fontWeight: 600,
                     color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
-                    minWidth: 20, textAlign: 'center',
+                    minWidth: 18, textAlign: 'center',
                   }}>
                     {scaledServings ?? recipe.serves}
                   </span>
@@ -1549,13 +1589,14 @@ export default function Detail({
                     }}
                   >Reset</button>
                 )}
-              </>
+                </div>
+              </div>
             ) : null}
-
             {recipe.cuisine && (
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                {recipe.serves ? '·' : ''} {recipe.cuisine}
-              </span>
+              <div className="basis-full first:pl-0 lg:basis-auto lg:ml-6 lg:pl-6 lg:border-l lg:border-[#E0E8EA] lg:first:ml-0 lg:first:border-l-0 lg:first:pl-0">
+                <div style={factLabel}>Cuisine</div>
+                <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{recipe.cuisine}</div>
+              </div>
             )}
           </div>
         )}

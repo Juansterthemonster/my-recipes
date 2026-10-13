@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
+import MasonryGrid from './MasonryGrid'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
 function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }) {
@@ -1179,16 +1180,12 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{collection.description}</div>
         )}
+        {/* Recipe count — same treatment as the dietary label on recipe cards */}
+        <div style={{
+          fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)',
+          fontFamily: 'var(--font-body)', marginTop: hasDescription ? 8 : 5,
+        }}>{count} {count === 1 ? 'recipe' : 'recipes'}</div>
     </>
-  )
-
-  const countPill = (
-    <span style={{
-      background: 'rgba(255,255,255,0.22)', color: '#FFFFFF', border: '1.5px solid #FFFFFF',
-      borderRadius: 'var(--r-full)', padding: '8px 12px',
-      fontSize: '0.72rem', fontWeight: 500, fontFamily: 'var(--font-body)',
-      lineHeight: 1, whiteSpace: 'nowrap',
-    }}>{count} {count === 1 ? 'recipe' : 'recipes'}</span>
   )
 
   /* ── NO-IMAGE CARD: content-height like the no-photo recipe card, on Dark Teal ── */
@@ -1199,10 +1196,9 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
         background: '#0C3D4E', display: 'flex', flexDirection: 'column',
       }}>
         <div style={{
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
           gap: 8, padding: '12px 12px 0',
         }}>
-          {countPill}
           {kebab}
         </div>
         <div style={{ flex: 1, minHeight: 28 }} />
@@ -1233,16 +1229,9 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
       {/* Top row: count pill (left) + kebab (right) */}
       <div style={{
         position: 'absolute', top: 12, left: 12, right: 12, zIndex: 2,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 8,
         pointerEvents: 'none',
       }}>
-        <span style={{
-          background: 'rgba(0,0,0,0.24)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-          color: '#FFFFFF', border: '1.5px solid #FFFFFF',
-          borderRadius: 'var(--r-full)', padding: '8px 12px',
-          fontSize: '0.72rem', fontWeight: 500, fontFamily: 'var(--font-body)',
-          lineHeight: 1, whiteSpace: 'nowrap',
-        }}>{count} {count === 1 ? 'recipe' : 'recipes'}</span>
 
         {kebab}
       </div>
@@ -1606,24 +1595,24 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
             {activeTab === 'collections' && (
               <>
                 {/* Masonry grid — matches recipe card layout and breakpoints exactly */}
-                <div className="collection-grid">
-                  {collections.map(col => (
-                    <div key={col.id}>
-                      <CollectionCard
-                        collection={col}
-                        onClick={() => onSelectCollection && onSelectCollection(col)}
-                        onRename={() => { setRenameTarget(col); setModalMode('rename') }}
-                        onDelete={() => handleDeleteCollection(col)}
-                      />
-                    </div>
-                  ))}
-                  {/* Empty-state card: only until the first collection exists */}
-                  {collections.length === 0 && (
-                    <div>
-                      <EmptyCollectionCard onCreate={() => setModalMode('create')} />
-                    </div>
+                <MasonryGrid
+                  items={collections.length > 0 ? collections : [{ id: '__new__', isNewCard: true }]}
+                  getKey={col => col.id}
+                  estimateHeight={(col, w) => col.isNewCard
+                    ? w / 2
+                    : col.cover_photo_url ? w * 1.5 : 150 + (col.description ? 44 : 0)}
+                  renderItem={col => col.isNewCard ? (
+                    /* Empty-state card: only until the first collection exists */
+                    <EmptyCollectionCard onCreate={() => setModalMode('create')} />
+                  ) : (
+                    <CollectionCard
+                      collection={col}
+                      onClick={() => onSelectCollection && onSelectCollection(col)}
+                      onRename={() => { setRenameTarget(col); setModalMode('rename') }}
+                      onDelete={() => handleDeleteCollection(col)}
+                    />
                   )}
-                </div>
+                />
               </>
             )}
 

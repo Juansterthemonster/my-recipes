@@ -21,6 +21,11 @@ const btnPrimary = {
   fontSize: '0.9rem', fontWeight: 500, padding: '12px 22px',
   cursor: 'pointer', transition: 'background 180ms', letterSpacing: '0.02em',
 }
+// Same as btnPrimary but hugs its label like the other CTAs in the app
+const btnHug = {
+  ...btnPrimary, width: 'auto', display: 'inline-flex', alignItems: 'center',
+  justifyContent: 'center', padding: '10px 24px',
+}
 const card = {
   background: 'var(--white)', borderRadius: 'var(--r-lg)',
   border: '1px solid var(--border-soft)', padding: '20px 24px',
@@ -247,18 +252,34 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
 
   /* ── Save username ──────────────────────────────────────────────────────── */
   const trimmedUsername = newUsername.trim()
-  const canSaveUsername = (
-    trimmedUsername &&
-    trimmedUsername !== username &&
-    usernameStatus === 'available' &&
-    !usernameLoading
-  )
-
   async function handleUsernameSubmit(e) {
     e.preventDefault()
-    if (!canSaveUsername) return
-    setUsernameLoading(true)
+    if (usernameLoading) return
     setUsernameError(null)
+
+    // Tell the user what to fix instead of silently disabling the button
+    if (!trimmedUsername) {
+      setUsernameError('Enter a username to save.')
+      return
+    }
+    if (trimmedUsername === username) {
+      setUsernameError("That's already your username. Enter a different one to change it.")
+      return
+    }
+    if (usernameStatus === 'invalid') {
+      setUsernameError('Usernames must be 3–20 characters and use only letters, numbers, - or _.')
+      return
+    }
+    if (usernameStatus === 'taken') {
+      setUsernameError('That username is already taken. Try a different one.')
+      return
+    }
+    if (usernameStatus !== 'available') {
+      setUsernameError('Still checking if that username is available. Try again in a moment.')
+      return
+    }
+
+    setUsernameLoading(true)
     try {
       const { error: profileErr } = await supabase
         .from('profiles')
@@ -284,6 +305,15 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
   async function handlePasswordSubmit(e) {
     e.preventDefault()
     setPasswordError(null)
+
+    if (!newPassword) {
+      setPasswordError('Enter a new password.')
+      return
+    }
+    if (!confirmPassword) {
+      setPasswordError('Re-enter your new password in the confirm field.')
+      return
+    }
 
     if (newPassword.length < 8) {
       setPasswordError('Password must be at least 8 characters.')
@@ -392,8 +422,11 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         ]} />
       </div>
 
+      {/* Username + password: stacked on mobile (same order), side by side on desktop */}
+      <div className="mx-4 mt-3 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-2">
+
       {/* ── Change username card ── */}
-      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+      <div style={card}>
         <div style={sectionLabel}>Username</div>
         <form onSubmit={handleUsernameSubmit} noValidate>
           {usernameError && <div style={errBlock}>{usernameError}</div>}
@@ -415,13 +448,13 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           </div>
           <button
             type="submit"
-            disabled={!canSaveUsername}
+            disabled={usernameLoading}
             style={{
-              ...btnPrimary,
-              opacity: canSaveUsername ? 1 : 0.45,
-              cursor: canSaveUsername ? 'pointer' : 'default',
+              ...btnHug,
+              opacity: usernameLoading ? 0.7 : 1,
+              cursor: usernameLoading ? 'default' : 'pointer',
             }}
-            onMouseEnter={e => { if (canSaveUsername) e.currentTarget.style.background = 'var(--green-mid)' }}
+            onMouseEnter={e => { if (!usernameLoading) e.currentTarget.style.background = 'var(--green-mid)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
           >
             {usernameLoading ? 'Saving…' : 'Save username'}
@@ -430,7 +463,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
 
       {/* ── Change password card ── */}
-      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+      <div style={card}>
         <div style={sectionLabel}>Password</div>
         <form onSubmit={handlePasswordSubmit} noValidate>
           {passwordError && <div style={errBlock}>{passwordError}</div>}
@@ -461,18 +494,20 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           </div>
           <button
             type="submit"
-            disabled={passwordLoading || !newPassword || !confirmPassword}
+            disabled={passwordLoading}
             style={{
-              ...btnPrimary,
-              opacity: (passwordLoading || !newPassword || !confirmPassword) ? 0.45 : 1,
-              cursor: (passwordLoading || !newPassword || !confirmPassword) ? 'default' : 'pointer',
+              ...btnHug,
+              opacity: passwordLoading ? 0.7 : 1,
+              cursor: passwordLoading ? 'default' : 'pointer',
             }}
-            onMouseEnter={e => { if (!passwordLoading && newPassword && confirmPassword) e.currentTarget.style.background = 'var(--green-mid)' }}
+            onMouseEnter={e => { if (!passwordLoading) e.currentTarget.style.background = 'var(--green-mid)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
           >
             {passwordLoading ? 'Updating…' : 'Update password'}
           </button>
         </form>
+      </div>
+
       </div>
 
       {/* ── Sign out ── */}

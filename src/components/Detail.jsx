@@ -671,6 +671,8 @@ export default function Detail({
     setRecipe(r => ({ ...r, is_favourite: newVal }))
   }
 
+  const triggerAddPhotos = () => { if (!uploading) photoInputRef.current?.click() }
+
   async function handlePhotoUpload(e) {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
@@ -1070,7 +1072,10 @@ export default function Detail({
           /* Photo(s) present — heart sits top-right over the image (blur style).
              A swipeable carousel with dot indicators renders only when there is
              more than one photo; a single photo renders exactly as before. */
-          <div style={{ position: 'relative', margin: '-24px -24px 20px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}>
+          <div
+            className={photos.length === 1 ? 'lg:hidden' : undefined}
+            style={{ position: 'relative', margin: '-24px -24px 20px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}
+          >
             {photos.length > 1 ? (
               <>
                 {/* Mobile/tablet (below lg): swipeable carousel — unchanged. */}
@@ -1200,6 +1205,33 @@ export default function Detail({
               </button>
             )}
 
+            {isOwner && !readOnly && photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={triggerAddPhotos}
+                disabled={uploading}
+                aria-label="Add more photos"
+                style={{
+                  ...blurBtn, position: 'absolute', top: 12, left: 12, gap: 6,
+                  padding: '9px 14px', color: '#fff', borderRadius: 'var(--r-full)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 500,
+                  cursor: uploading ? 'default' : 'pointer',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+              >
+                {uploading ? 'Uploading…' : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add photos
+                  </>
+                )}
+              </button>
+            )}
+
             {!readOnly && (
               isOwner ? (
                 <button
@@ -1292,6 +1324,88 @@ export default function Detail({
               </div>
             )}
           </>
+        )}
+
+        {/* Hidden picker shared by every "Add photos" control below */}
+        {photos.length > 0 && isOwner && !readOnly && (
+          <input
+            ref={photoInputRef}
+            type="file" accept="image/*" multiple
+            style={{ display: 'none' }}
+            onChange={handlePhotoUpload}
+          />
+        )}
+
+        {/* Single photo, desktop only (lg+): a compact photo section ABOVE the
+            title — the photo in a 2:3 tile (about 75% of the old size so the
+            title stays above the fold) next to an owner-only "Add photos" tile.
+            Below lg the banner above is used. Two or more photos use the
+            multi-photo layout instead. */}
+        {photos.length === 1 && (
+          <div className="hidden lg:flex" style={{ gap: 12, margin: '-24px -24px 22px', padding: 24, paddingBottom: 0 }}>
+            <div style={{
+              position: 'relative', width: 255, aspectRatio: '2/3', flexShrink: 0,
+              borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
+            }}>
+              <img
+                src={photos[0]} alt={recipe.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+              {!readOnly && (
+                isOwner ? (
+                  <button
+                    onClick={handleToggleFavourite}
+                    aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+                    style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
+                      color: recipe.is_favourite ? '#D7191D' : '#fff' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+                  >
+                    <HeartIcon filled={recipe.is_favourite} />
+                  </button>
+                ) : session?.user ? (
+                  <button
+                    onClick={handleToggleLike}
+                    aria-label={isLiked ? 'Unlike recipe' : 'Like recipe'}
+                    style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
+                      color: isLiked ? '#D7191D' : '#fff' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+                  >
+                    <HeartIcon filled={isLiked} />
+                  </button>
+                ) : null
+              )}
+            </div>
+
+            {isOwner && !readOnly && photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={triggerAddPhotos}
+                disabled={uploading}
+                style={{
+                  width: 150, aspectRatio: '2/3', flexShrink: 0,
+                  borderRadius: 'var(--r-lg)', border: '1.5px dashed #C9CDD1',
+                  background: '#F3F3F1', color: '#8A9096',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 500,
+                  cursor: uploading ? 'default' : 'pointer', transition: 'background 150ms, color 150ms, border-color 150ms',
+                }}
+                onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = '#E9E8E5'; e.currentTarget.style.color = '#0C3D4E'; e.currentTarget.style.borderColor = '#0C3D4E' } }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#F3F3F1'; e.currentTarget.style.color = '#8A9096'; e.currentTarget.style.borderColor = '#C9CDD1' }}
+              >
+                {uploading ? <span>Uploading…</span> : (
+                  <>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    <span>Add more photos</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Eyebrow row: meal-type label (left) + share icon (right).

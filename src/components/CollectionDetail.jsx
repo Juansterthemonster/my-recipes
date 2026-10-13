@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import MasonryGrid from './MasonryGrid'
 import { supabase } from '../supabase'
 import { MyRecipeCard, PublicRecipeCard } from './RecipeCards'
 
@@ -255,27 +256,28 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
             }}>Open any recipe and use the menu to add it here.</div>
           </div>
         ) : (
-          <div className="collection-grid">
-            {recipes.map(recipe => (
-              <div key={recipe.id}>
-                {recipe.user_id === session.user.id ? (
-                  <MyRecipeCard
-                    recipe={recipe}
-                    onClick={() => onSelect(recipe)}
-                    onToggleFavourite={e => toggleFavourite(recipe, e)}
-                    onRemove={e => { e.stopPropagation(); setRemoveTarget(recipe) }}
-                  />
-                ) : (
-                  <PublicRecipeCard
-                    recipe={recipe}
-                    onClick={() => onSelect(recipe)}
-                    onToggleLike={e => toggleLike(recipe, e)}
-                    onRemove={e => { e.stopPropagation(); setRemoveTarget(recipe) }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <MasonryGrid
+            items={recipes}
+            getKey={recipe => recipe.id}
+            estimateHeight={(recipe, w) => (recipe.photo_url ? w * 1.5 : 200)}
+            renderItem={recipe => (
+              recipe.user_id === session.user.id ? (
+                <MyRecipeCard
+                  recipe={recipe}
+                  onClick={() => onSelect(recipe)}
+                  onToggleFavourite={e => toggleFavourite(recipe, e)}
+                  onRemove={e => { e.stopPropagation(); setRemoveTarget(recipe) }}
+                />
+              ) : (
+                <PublicRecipeCard
+                  recipe={recipe}
+                  onClick={() => onSelect(recipe)}
+                  onToggleLike={e => toggleLike(recipe, e)}
+                  onRemove={e => { e.stopPropagation(); setRemoveTarget(recipe) }}
+                />
+              )
+            )}
+          />
         )}
       </div>
 

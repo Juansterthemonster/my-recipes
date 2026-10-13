@@ -672,11 +672,11 @@ Existing RLS on `collections` is per-row, so no policy changes. **The app select
 - **"New collection / Tap to create" card** only shows when the user has zero collections.
 
 **Collection card design (Browse.jsx `CollectionCard`)**
-- With a cover: 2:3 photo card matching the recipe photo card — dark gradient (`OVERLAY_IMAGE`; taller/darker when a description exists), frosted count pill top-left, frosted kebab top-right, "COLLECTION" eyebrow + Fraunces title + description in white at the bottom. Outer wrapper is `overflow: visible` so the kebab dropdown isn't clipped; an inner layer clips the image.
+- With a cover: 2:3 photo card matching the recipe photo card — dark gradient (`OVERLAY_IMAGE`; taller/darker when a description exists), frosted kebab top-right (the count pill moved below the description in v4.6), "COLLECTION" eyebrow + Fraunces title + description in white at the bottom. Outer wrapper is `overflow: visible` so the kebab dropdown isn't clipped; an inner layer clips the image.
 - Without a cover (default): compact content-height card on Dark Teal `#0C3D4E`, same structure as the no-photo recipe card (pill + kebab, spacer `minHeight: 28`, text). The old 2×2 photo collage was removed — `CollectionPhotoGrid` now only renders a cover.
 
 **Layout fixes**
-- **`.collection-grid`** (index.css): a real CSS Grid, 2 → 3 → 4 columns (768 / 1024px), `align-items: start`. Used on the My Collections tab **and** inside `CollectionDetail`. Reason: CSS-columns masonry fills a column to the height of the tallest item, so short cards stacked in one column once card heights became mixed. My recipes / Liked / Explore still use `.masonry-grid`. (iOS Safari row-gap caveat from the masonry notes doesn't apply: `align-items: start` stops rows stretching.)
+- **`.collection-grid`** (index.css) — *superseded in v4.6 by `MasonryGrid`; the CSS was removed*: a real CSS Grid, 2 → 3 → 4 columns (768 / 1024px), `align-items: start`. Used on the My Collections tab **and** inside `CollectionDetail`. Reason: CSS-columns masonry fills a column to the height of the tallest item, so short cards stacked in one column once card heights became mixed. My recipes / Liked / Explore still use `.masonry-grid`. (iOS Safari row-gap caveat from the masonry notes doesn't apply: `align-items: start` stops rows stretching.)
 - **`html { scrollbar-gutter: stable }`** (index.css): the page shifted ~15px sideways when switching between a short page (no scrollbar) and a long one.
 
 **Files changed:** `src/App.jsx`, `src/components/Browse.jsx`, `src/components/CollectionDetail.jsx`, `src/components/Detail.jsx`, `src/index.css`, `supabase_migration_collection_details.sql` (new).
@@ -686,7 +686,30 @@ Existing RLS on `collections` is per-row, so no policy changes. **The app select
 - If the collections tab fails to load after deploying, the SQL migration above hasn't been run in that Supabase project.
 - A stored `cover_photo_url` keeps showing even if its recipe is later removed from the collection (until the cover is changed in Edit).
 
-**Ideas not done:** scope "Remove from collection" to the current collection; restore detail/collection pages on refresh; switch the My recipes / Liked / Explore grids to `.collection-grid` if the same stacking appears there.
+**Ideas not done:** scope "Remove from collection" to the current collection; restore detail/collection pages on refresh; switch the My recipes / Liked / Explore grids to `MasonryGrid` (v4.6) if the same column-stacking appears there.
+
+### v4.6 — Recipe photo section, masonry for collections, profile polish (shipped ✓, 2026-10-13)
+
+**No DB changes.** Frontend only.
+
+**Recipe detail (Detail.jsx) — photos**
+- **Desktop (lg+), exactly one photo:** a compact photo section sits **above** the title inside the header card — the photo in a 2:3 tile (255px wide ≈ 75% of the earlier 340px design, so the recipe title stays above the fold) and, for the owner, a dashed "Add more photos" tile beside it. Other users' recipes show the photo only. Below `lg` the original full-width 260px banner is unchanged.
+- **"+ Add photos" button on every breakpoint** (owner only, hidden at the 6-photo cap): a frosted pill at the top-left of the banner / carousel / multi-photo desktop grid. Heart stays top-right. All controls share one hidden `<input type="file" multiple>` (`photoInputRef`) and `triggerAddPhotos()` → `handlePhotoUpload` (appends to `photos`, keeps `photo_url = photos[0]`, cap `MAX_PHOTOS = 6`). The no-photo state keeps its own input/zone.
+- Design history (so it isn't retried blindly): a side-by-side layout (photo left/right of the text, full-bleed panel) was built and rejected as "broken"; the final design is photos on top, title below. Two or more photos still use the existing desktop grid.
+
+**Collections**
+- **`src/components/MasonryGrid.jsx` (new):** JS masonry with the same breakpoints as `.masonry-grid` (2 → 3 @768 → 4 @1024, 12px gap). Each item goes into the **shortest column** using a per-item `estimateHeight(item, colWidth)` — no blank gaps under short cards and no "short cards stacked in one column when there are few items" (the CSS-columns problem). Used by the My Collections tab and by `CollectionDetail`. Photo cards estimate `w × 1.5`; compact cards use a fixed estimate, so column bottoms can be slightly ragged (never holes). My recipes / Liked / Explore still use CSS `.masonry-grid`.
+- The "New collection" empty-state card is now an item in the same `MasonryGrid` (`isNewCard`), shown only when there are zero collections.
+- **Collection card:** the recipe count is no longer a pill at the top — it is now below the description in the same style as the dietary label on recipe cards (`0.72rem`, weight 600, `rgba(255,255,255,0.8)`). Top row holds only the kebab (right-aligned).
+
+**Profile (Profile.jsx)**
+- Desktop: the Username and Password cards sit side by side (`lg:grid lg:grid-cols-2`, equal height); mobile keeps the stacked order.
+- "Save username" / "Update password" buttons hug their label (`btnHug`) instead of full width.
+- **Errors instead of disabled buttons:** the buttons are only disabled while saving. Submitting now shows what to fix — username: empty, unchanged, invalid format/length, taken, or "still checking"; password: empty new password, empty confirm field (existing <8 chars and mismatch messages kept). Removed `canSaveUsername`.
+
+**Files changed:** `src/components/Detail.jsx`, `src/components/Browse.jsx`, `src/components/CollectionDetail.jsx`, `src/components/Profile.jsx`, `src/components/MasonryGrid.jsx` (new), `src/index.css` (removed `.collection-grid`).
+
+**Ideas not done:** "Remove from collection" still removes from all collections; detail/collection pages don't restore on refresh; the desktop single-photo section is left-aligned (empty space to its right on wide screens) — could centre or add content beside it.
 
 ---
 

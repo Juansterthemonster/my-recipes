@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import { useI18n } from '../i18n'
 
 /* ─── SHARED STYLES (mirrors AuthScreen) ─────────────────────────────────────── */
 const inp = {
@@ -43,6 +44,7 @@ function EyeIcon({ visible }) {
 
 /* ─── PASSWORD FIELD ─────────────────────────────────────────────────────────── */
 function PasswordField({ label, value, onChange, autoComplete, visible, onToggle }) {
+  const { t } = useI18n()
   return (
     <div>
       <label style={lbl}>{label}</label>
@@ -62,7 +64,7 @@ function PasswordField({ label, value, onChange, autoComplete, visible, onToggle
           type="button"
           onClick={onToggle}
           tabIndex={-1}
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? t('profile.hidePassword') : t('profile.showPassword')}
           style={{
             position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
             background: 'none', border: 'none', cursor: 'pointer', padding: 2,
@@ -81,6 +83,7 @@ function PasswordField({ label, value, onChange, autoComplete, visible, onToggle
 
 /* ─── RESET PASSWORD ─────────────────────────────────────────────────────────── */
 export default function ResetPassword({ onDone }) {
+  const { t } = useI18n()
   const [password, setPassword]         = useState('')
   const [confirm, setConfirm]           = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -93,11 +96,11 @@ export default function ResetPassword({ onDone }) {
     setError('')
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+      setError(t('reset.err.short'))
       return
     }
     if (password !== confirm) {
-      setError("Passwords don't match.")
+      setError(t('reset.err.mismatch'))
       return
     }
 
@@ -106,7 +109,7 @@ export default function ResetPassword({ onDone }) {
     setLoading(false)
 
     if (err) {
-      setError('Something went wrong. Your reset link may have expired — please request a new one.')
+      setError(t('reset.err.failed'))
       return
     }
 
@@ -142,10 +145,10 @@ export default function ResetPassword({ onDone }) {
             fontSize: '1.8rem', color: 'var(--text-primary)',
             lineHeight: 1.15, letterSpacing: '-0.01em', marginBottom: 6,
           }}>
-            Choose a new password
+            {t('reset.title')}
           </h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Make it something you'll remember.
+            {t('reset.sub')}
           </p>
         </div>
 
@@ -164,7 +167,7 @@ export default function ResetPassword({ onDone }) {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <PasswordField
-              label="New password"
+              label={t('reset.newPassword')}
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="new-password"
@@ -173,7 +176,7 @@ export default function ResetPassword({ onDone }) {
             />
 
             <PasswordField
-              label="Confirm new password"
+              label={t('reset.confirm')}
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
               autoComplete="new-password"
@@ -187,7 +190,7 @@ export default function ResetPassword({ onDone }) {
               onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'var(--green-mid)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
             >
-              {loading ? 'Saving…' : 'Set new password'}
+              {loading ? t('reset.saving') : t('reset.submit')}
             </button>
 
           </form>

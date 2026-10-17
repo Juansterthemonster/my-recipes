@@ -731,6 +731,42 @@ Existing RLS on `collections` is per-row, so no policy changes. **The app select
 
 **Ideas not done:** snapshot original creator + date onto copies at save time so credit survives deletion/privatising of the original; drop the redundant "edited by you" note now the byline credits the creator.
 
+### v4.8 — Languages: English, Français, Español (staged, 2026-10-17)
+
+**What shipped:** The whole UI can be shown in English, Canadian French (informal "tu") or neutral Latin American Spanish. The choice lives in **Profile & settings → Language** and is saved in `profiles.language` (Supabase), so it follows the user across devices. Before sign-in (or if null) the browser language is used.
+
+**DB (run once):** `supabase_migration_language.sql`
+`alter table public.profiles add column if not exists language text check (language in ('en','fr','es'));`
+Without it the selector shows "couldn't save" and rolls back; everything else still works.
+
+**Architecture (zero dependencies):**
+- `src/i18n/index.jsx` — `I18nProvider` (wraps `<App/>` in `main.jsx`), `useI18n()` → `{ lang, setLang, t, formatDate }`, module-level `translate()` for non-React code, `tagLabel(t, group, value)`, `LANGUAGES`.
+- `src/i18n/locales/*.js` — auto-merged via `import.meta.glob`. Each file `export default { en:{}, fr:{}, es:{} }`. Files: profile, auth, app, browse, tags, collection, detail, form.
+- Flat dotted keys, `{param}` interpolation, plurals via `key_one` / `key_other` + `t(key, { count })`. Fallback: active language → English → the key itself.
+- Diet / meal-type values stay **English in the DB**; only labels are translated (`tag.dietary.*`, `tag.meal.*`).
+- Dates use `formatDate` (en-US / fr-CA / es-419).
+
+**Adding a string:** add the key to the right locale file in all three languages, then use `t('key')`. Keep en/fr/es key parity (a quick node script comparing keys per file is how it was verified).
+
+**Known limitations:**
+- Supabase auth emails (confirmation, reset) are configured in the Supabase dashboard and stay English.
+- Recipe content written by users (names, steps, notes) is not translated.
+- Error text coming straight from Supabase / the upload API (`err.message`) stays English.
+- Translations have not had a native-speaker review yet.
+- Time units show `h` / `m` in the form's time boxes (cards and detail use `min` in fr/es).
+
+### v4.9 — Paste ingredients (staged, 2026-10-17)
+
+**What shipped:** In the recipe form, **Paste ingredients** (top-right of the Ingredients card) opens a dialog: paste one ingredient per line → **Preview** shows each line split into Amount + Ingredient, with Optional checkbox, remove (×) and editable group names → **Add N ingredients**.
+
+**Behaviour:** an untouched/empty list is replaced; a single unlabeled pasted group is appended to the last existing group; labeled groups ("Sauce:") are appended as new groups. Lines ending in `:` become group labels.
+
+**Parser** (`src/utils/parseIngredients.js`, rule-based, no network): handles fractions (`1 1/2`, `½`), ranges (`2-3`), decimals, `1 (14 oz) can`, "to taste"/"au goût"/"al gusto", "a pinch of", `(optional)`, bullets/numbering, and EN/FR/ES units. Unparseable lines (e.g. "Juice of 1 lemon") go whole into the name with an empty amount. Amount stays a single text field (quantity + unit) to match the existing `{ name, amount, optional }` schema and `scaleIngredient`.
+
+**Files:** `src/utils/parseIngredients.js`, `src/components/PasteIngredientsModal.jsx`, `src/i18n/locales/paste.js`, `RecipeForm.jsx`. No DB changes.
+
+**Ideas not done:** AI fallback for lines the rules can't split; same paste flow for steps.
+
 ---
 
 ## How to work with Claude (Cowork)

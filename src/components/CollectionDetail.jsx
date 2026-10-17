@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import MasonryGrid from './MasonryGrid'
 import { supabase } from '../supabase'
+import { useI18n } from '../i18n'
 import { MyRecipeCard, PublicRecipeCard } from './RecipeCards'
 
 /* ─── REMOVE CONFIRMATION MODAL ─────────────────────────────────────────────── */
 function RemoveConfirmModal({ onConfirm, onCancel }) {
+  const { t } = useI18n()
   return (
     <>
       {/* Backdrop */}
@@ -27,13 +29,13 @@ function RemoveConfirmModal({ onConfirm, onCancel }) {
           fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
           color: 'var(--text-primary)', marginBottom: 10, lineHeight: 1.4,
         }}>
-          This will remove the recipe from your collection but not delete the recipe.
+          {t('cd.removeTitle')}
         </div>
         <div style={{
           fontFamily: 'var(--font-body)', fontSize: '0.88rem',
           color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5,
         }}>
-          Would you like to remove it or keep it?
+          {t('cd.removeBody')}
         </div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button
@@ -44,7 +46,7 @@ function RemoveConfirmModal({ onConfirm, onCancel }) {
               color: 'var(--text-secondary)', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500,
             }}
-          >Keep</button>
+          >{t('cd.keep')}</button>
           <button
             onClick={onConfirm}
             style={{
@@ -53,7 +55,7 @@ function RemoveConfirmModal({ onConfirm, onCancel }) {
               color: '#fff', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
             }}
-          >Remove</button>
+          >{t('cd.remove')}</button>
         </div>
       </div>
     </>
@@ -82,6 +84,7 @@ function BackArrow() {
     onSelect    – open a recipe in Detail view
 */
 export default function CollectionDetail({ collection, session, onBack, onSelect }) {
+  const { t } = useI18n()
   const [recipes,      setRecipes]      = useState([])
   const [loading,      setLoading]      = useState(true)
   const [removeTarget, setRemoveTarget] = useState(null)   // recipe to confirm-remove
@@ -196,7 +199,7 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
           }}
         >
           <BackArrow />
-          Collections
+          {t('cd.back')}
         </button>
       </div>
 
@@ -232,7 +235,7 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
             border: '1px solid var(--border-soft)',
             padding: '48px 20px', textAlign: 'center',
             fontSize: '0.9rem', color: 'var(--text-secondary)',
-          }}>Loading…</div>
+          }}>{t('browse.loading')}</div>
         ) : recipes.length === 0 ? (
           <div style={{
             background: 'var(--white)', borderRadius: 14,
@@ -249,11 +252,11 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
             <div style={{
               fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
               color: 'var(--text-primary)', marginBottom: 8,
-            }}>This collection is empty</div>
+            }}>{t('cd.emptyTitle')}</div>
             <div style={{
               fontSize: '0.85rem', color: 'var(--text-secondary)',
               fontFamily: 'var(--font-body)', lineHeight: 1.5, maxWidth: 260,
-            }}>Open any recipe and use the menu to add it here.</div>
+            }}>{t('cd.emptyBody')}</div>
           </div>
         ) : (
           <MasonryGrid

@@ -5,6 +5,8 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 /* ─── HEART ICON ───────────────────────────────────────────────────────────── */
+import { useI18n, tagLabel, translate } from '../i18n'
+
 export function HeartIcon({ filled }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24"
@@ -48,8 +50,8 @@ export function ClockIcon() {
 export function fmtTime(mins) {
   if (!mins) return null
   const h = Math.floor(mins / 60), m = mins % 60
-  if (h > 0 && m > 0) return `${h}h ${m}m`
-  return h > 0 ? `${h}h` : `${m}m`
+  if (h > 0 && m > 0) return `${h}h ${m}${translate('time.min')}`
+  return h > 0 ? `${h}h` : `${m}${translate('time.min')}`
 }
 
 /* ─── PORTRAIT CARD CONSTANTS ──────────────────────────────────────────────── */
@@ -98,12 +100,13 @@ export const blurBtn = {
 
 /* ─── MY RECIPE CARD ───────────────────────────────────────────────────────── */
 export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
+  const { t } = useI18n()
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
-    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).join(' · ')
+    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(v => tagLabel(t, 'meal', v)).join(' · ')
     : null
   const dietaryLabel = recipe.dietary && recipe.dietary.length > 0
-    ? (Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
+    ? tagLabel(t, 'dietary', Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
     : null
 
   /* ── IMAGE CARD: 2:3 ratio, absolute layout, white text ── */
@@ -127,7 +130,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button
               onClick={onToggleFavourite}
-              aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+              aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
               style={{ ...blurBtn, padding: 10, color: recipe.is_favourite ? '#D7191D' : '#fff', flexShrink: 0 }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -135,7 +138,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
             {onRemove && (
               <button
                 onClick={onRemove}
-                aria-label="Remove from collection"
+                aria-label={t('card.removeFromCollection')}
                 style={{ ...blurBtn, padding: 10, color: '#fff', flexShrink: 0 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -167,7 +170,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
                   background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.9)',
                   borderRadius: 999, padding: '2px 8px',
                   backdropFilter: 'blur(4px)',
-                }}>Public</span>
+                }}>{t('card.public')}</span>
               )}
               {dietaryLabel && (
                 <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}>
@@ -197,7 +200,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <button
             onClick={onToggleFavourite}
-            aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+            aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 6,
               color: recipe.is_favourite ? '#D7191D' : '#0C3D4E',
@@ -210,7 +213,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
           {onRemove && (
             <button
               onClick={onRemove}
-              aria-label="Remove from collection"
+              aria-label={t('card.removeFromCollection')}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: 6,
                 color: '#0C3D4E',
@@ -249,7 +252,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
                 fontSize: '0.72rem', fontWeight: 600, fontFamily: 'var(--font-body)',
                 background: 'var(--green-light)', color: 'var(--green-primary)',
                 borderRadius: 999, padding: '2px 8px',
-              }}>Public</span>
+              }}>{t('card.public')}</span>
             )}
             {dietaryLabel && (
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
@@ -265,12 +268,13 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
 
 /* ─── PUBLIC RECIPE CARD ───────────────────────────────────────────────────── */
 export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
+  const { t } = useI18n()
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
-    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).join(' · ')
+    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(v => tagLabel(t, 'meal', v)).join(' · ')
     : null
   const dietaryLabel = recipe.dietary && recipe.dietary.length > 0
-    ? (Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
+    ? tagLabel(t, 'dietary', Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
     : null
 
   /* ── IMAGE CARD ── */
@@ -294,7 +298,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button
               onClick={onToggleLike}
-              aria-label={recipe.is_liked ? 'Unlike recipe' : 'Like recipe'}
+              aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
               style={{ ...blurBtn, padding: 10, color: recipe.is_liked ? '#D7191D' : '#fff', flexShrink: 0 }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -302,7 +306,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
             {onRemove && (
               <button
                 onClick={onRemove}
-                aria-label="Remove from collection"
+                aria-label={t('card.removeFromCollection')}
                 style={{ ...blurBtn, padding: 10, color: '#fff', flexShrink: 0 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -337,7 +341,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
               color: 'rgba(255,255,255,0.55)',
               marginTop: 6, letterSpacing: '0.01em',
             }}>
-              by @{recipe.author_username}
+              {t('card.by', { author: recipe.author_username })}
             </div>
           )}
         </div>
@@ -361,7 +365,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <button
             onClick={onToggleLike}
-            aria-label={recipe.is_liked ? 'Unlike recipe' : 'Like recipe'}
+            aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 6,
               color: recipe.is_liked ? '#D7191D' : '#0C3D4E',
@@ -374,7 +378,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
           {onRemove && (
             <button
               onClick={onRemove}
-              aria-label="Remove from collection"
+              aria-label={t('card.removeFromCollection')}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: 6,
                 color: '#0C3D4E',
@@ -417,7 +421,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
             color: 'var(--text-tertiary)',
             marginTop: 6, letterSpacing: '0.01em',
           }}>
-            by @{recipe.author_username}
+            {t('card.by', { author: recipe.author_username })}
           </div>
         )}
       </div>

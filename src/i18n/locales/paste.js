@@ -1,0 +1,32 @@
+export default {
+  en: {
+    'paste.button': 'Paste ingredients', 'paste.title': 'Paste ingredients',
+    'paste.hint': 'Paste your ingredient list, one ingredient per line. We\'ll split each line into an amount and a name — you can adjust everything before it\'s added.',
+    'paste.placeholder': '2 cups flour\n1 1/2 tsp salt\n3 cloves garlic, minced\n\nSauce:\n1 can crushed tomatoes',
+    'paste.preview': 'Preview', 'paste.cancel': 'Cancel', 'paste.back': 'Back to text',
+    'paste.reviewHint': 'Check each line. Edit the amount or name, tick Optional, or remove a line.',
+    'paste.amount': 'Amount', 'paste.name': 'Ingredient', 'paste.optional': 'Optional', 'paste.remove': 'Remove line',
+    'paste.group': 'Group name', 'paste.add_one': 'Add {count} ingredient', 'paste.add_other': 'Add {count} ingredients',
+    'paste.empty': 'Nothing to add yet.', 'paste.noAmount': 'No amount found',
+  },
+  fr: {
+    'paste.button': 'Coller des ingrédients', 'paste.title': 'Coller des ingrédients',
+    'paste.hint': "Colle ta liste d'ingrédients, un ingrédient par ligne. Nous séparerons chaque ligne en quantité et en nom — tu pourras tout ajuster avant l'ajout.",
+    'paste.placeholder': '2 tasses de farine\n1 1/2 c. à thé de sel\n3 gousses d\'ail, hachées\n\nSauce :\n1 boîte de tomates broyées',
+    'paste.preview': 'Aperçu', 'paste.cancel': 'Annuler', 'paste.back': 'Retour au texte',
+    'paste.reviewHint': 'Vérifie chaque ligne. Modifie la quantité ou le nom, coche Facultatif ou retire une ligne.',
+    'paste.amount': 'Quantité', 'paste.name': 'Ingrédient', 'paste.optional': 'Facultatif', 'paste.remove': 'Retirer la ligne',
+    'paste.group': 'Nom du groupe', 'paste.add_one': 'Ajouter {count} ingrédient', 'paste.add_other': 'Ajouter {count} ingrédients',
+    'paste.empty': 'Rien à ajouter pour l\'instant.', 'paste.noAmount': 'Aucune quantité trouvée',
+  },
+  es: {
+    'paste.button': 'Pegar ingredientes', 'paste.title': 'Pegar ingredientes',
+    'paste.hint': 'Pega tu lista de ingredientes, un ingrediente por línea. Separaremos cada línea en cantidad y nombre; podrás ajustar todo antes de agregarlo.',
+    'paste.placeholder': '2 tazas de harina\n1 1/2 cucharadita de sal\n3 dientes de ajo, picados\n\nSalsa:\n1 lata de tomates triturados',
+    'paste.preview': 'Vista previa', 'paste.cancel': 'Cancelar', 'paste.back': 'Volver al texto',
+    'paste.reviewHint': 'Revisa cada línea. Edita la cantidad o el nombre, marca Opcional o quita una línea.',
+    'paste.amount': 'Cantidad', 'paste.name': 'Ingrediente', 'paste.optional': 'Opcional', 'paste.remove': 'Quitar línea',
+    'paste.group': 'Nombre del grupo', 'paste.add_one': 'Agregar {count} ingrediente', 'paste.add_other': 'Agregar {count} ingredientes',
+    'paste.empty': 'Aún no hay nada que agregar.', 'paste.noAmount': 'No se encontró cantidad',
+  },
+}

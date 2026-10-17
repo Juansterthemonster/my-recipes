@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import { useI18n } from '../i18n'
 
 /* ─── SHARED STYLES ──────────────────────────────────────────────────────────── */
 const inp = {
@@ -51,6 +52,7 @@ function EyeIcon({ visible }) {
 
 /* ─── PASSWORD FIELD ─────────────────────────────────────────────────────────── */
 function PasswordField({ label, value, onChange, autoComplete, visible, onToggle }) {
+  const { t } = useI18n()
   return (
     <div>
       <label style={lbl}>{label}</label>
@@ -70,7 +72,7 @@ function PasswordField({ label, value, onChange, autoComplete, visible, onToggle
           type="button"
           onClick={onToggle}
           tabIndex={-1}
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? t('profile.hidePassword') : t('profile.showPassword')}
           style={{
             position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
             background: 'none', border: 'none', cursor: 'pointer', padding: 2,
@@ -115,6 +117,7 @@ function AuthShell({ children }) {
 /* ─── AUTH SCREEN ────────────────────────────────────────────────────────────── */
 // modes: 'signin' | 'signup' | 'verify' | 'forgot' | 'forgot-sent'
 export default function AuthScreen() {
+  const { t } = useI18n()
   const [mode, setMode]                   = useState('signin')
   const [email, setEmail]                 = useState('')
   const [password, setPassword]           = useState('')
@@ -141,16 +144,16 @@ export default function AuthScreen() {
 
     if (isSignUp) {
       const trimmed = username.trim()
-      if (!trimmed) { setError('Please choose a username.'); return }
-      if (trimmed.length < 3 || trimmed.length > 20) { setError('Username must be between 3 and 20 characters.'); return }
-      if (!USERNAME_RE.test(trimmed)) { setError('Username may only contain letters, numbers, underscores, and hyphens.'); return }
-      if (password !== confirm) { setError("Passwords don't match."); return }
-      if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+      if (!trimmed) { setError(t('auth.err.chooseUsername')); return }
+      if (trimmed.length < 3 || trimmed.length > 20) { setError(t('auth.err.usernameLength')); return }
+      if (!USERNAME_RE.test(trimmed)) { setError(t('auth.err.usernameChars')); return }
+      if (password !== confirm) { setError(t('auth.err.mismatch')); return }
+      if (password.length < 6) { setError(t('auth.err.shortPassword')); return }
 
       setLoading(true)
       const { data: existing } = await supabase
         .from('profiles').select('id').eq('username', trimmed.toLowerCase()).maybeSingle()
-      if (existing) { setError('That username is already taken. Please choose another.'); setLoading(false); return }
+      if (existing) { setError(t('auth.err.taken')); setLoading(false); return }
 
       const { error: err } = await supabase.auth.signUp({
         email, password,
@@ -161,11 +164,11 @@ export default function AuthScreen() {
       setMode('verify')
 
     } else {
-      if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
+      if (password.length < 6) { setError(t('auth.err.shortPassword')); return }
       setLoading(true)
       const { error: err } = await supabase.auth.signInWithPassword({ email, password })
       setLoading(false)
-      if (err) { setError('Incorrect email or password.'); return }
+      if (err) { setError(t('auth.err.badLogin')); return }
     }
   }
 
@@ -190,23 +193,23 @@ export default function AuthScreen() {
       <AuthShell>
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1.15, letterSpacing: '-0.01em', marginBottom: 6 }}>
-            Check your email
+            {t('auth.verifyTitle')}
           </h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            We sent a confirmation link to <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>.
+            {t('auth.verifySent', { email })}
           </p>
         </div>
         <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-            Click the link in the email to verify your account, then come back here to sign in.
+            {t('auth.verifyBody')}
           </p>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-            Can't find it? Check your spam folder.
+            {t('auth.spam')}
           </p>
         </div>
         <p style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          Already verified?{' '}
-          <button onClick={() => switchMode('signin')} style={linkBtn}>Sign in</button>
+          {t('auth.alreadyVerified')}{' '}
+          <button onClick={() => switchMode('signin')} style={linkBtn}>{t('auth.signIn')}</button>
         </p>
       </AuthShell>
     )
@@ -218,10 +221,10 @@ export default function AuthScreen() {
       <AuthShell>
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1.15, letterSpacing: '-0.01em', marginBottom: 6 }}>
-            Reset your password
+            {t('auth.forgotTitle')}
           </h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Enter your email and we'll send you a reset link.
+            {t('auth.forgotIntro')}
           </p>
         </div>
 
@@ -234,11 +237,11 @@ export default function AuthScreen() {
         <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
           <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label style={lbl}>Email</label>
+              <label style={lbl}>{t('auth.email')}</label>
               <input
                 type="email" required autoComplete="email"
                 value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 style={inp} onFocus={focus} onBlur={blur}
               />
             </div>
@@ -248,13 +251,13 @@ export default function AuthScreen() {
               onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'var(--green-mid)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
             >
-              {loading ? 'Sending…' : 'Send reset link'}
+              {loading ? t('auth.sending') : t('auth.sendReset')}
             </button>
           </form>
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          <button onClick={() => switchMode('signin')} style={linkBtn}>Back to sign in</button>
+          <button onClick={() => switchMode('signin')} style={linkBtn}>{t('auth.backToSignIn')}</button>
         </p>
       </AuthShell>
     )
@@ -266,22 +269,22 @@ export default function AuthScreen() {
       <AuthShell>
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1.15, letterSpacing: '-0.01em', marginBottom: 6 }}>
-            Check your email
+            {t('auth.verifyTitle')}
           </h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            If that account exists, we've sent a reset link to <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>.
+            {t('auth.forgotSentIntro', { email })}
           </p>
         </div>
         <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-            Click the link in the email to choose a new password. It expires in 1 hour.
+            {t('auth.forgotSentBody')}
           </p>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-            Can't find it? Check your spam folder.
+            {t('auth.spam')}
           </p>
         </div>
         <p style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          <button onClick={() => switchMode('signin')} style={linkBtn}>Back to sign in</button>
+          <button onClick={() => switchMode('signin')} style={linkBtn}>{t('auth.backToSignIn')}</button>
         </p>
       </AuthShell>
     )
@@ -292,10 +295,10 @@ export default function AuthScreen() {
     <AuthShell>
       <div style={{ marginBottom: 24, textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1.15, letterSpacing: '-0.01em', marginBottom: 6 }}>
-          {isSignUp ? 'Create your account' : 'Welcome back'}
+          {isSignUp ? t('auth.createTitle') : t('auth.welcomeBack')}
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          {isSignUp ? 'Your recipes, your photos, yours fully.' : 'Sign in to access your recipes.'}
+          {isSignUp ? t('auth.createSub') : t('auth.signInSub')}
         </p>
       </div>
 
@@ -309,18 +312,18 @@ export default function AuthScreen() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           <div>
-            <label style={lbl}>Email</label>
+            <label style={lbl}>{t('auth.email')}</label>
             <input
               type="email" required autoComplete="email"
               value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               style={inp} onFocus={focus} onBlur={blur}
             />
           </div>
 
           <div>
             <PasswordField
-              label="Password"
+              label={t('auth.password')}
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
@@ -341,7 +344,7 @@ export default function AuthScreen() {
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--green-primary)'}
                   onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
-                  Forgot your password?
+                  {t('auth.forgotLink')}
                 </button>
               </div>
             )}
@@ -350,7 +353,7 @@ export default function AuthScreen() {
           {isSignUp && (
             <>
               <PasswordField
-                label="Confirm password"
+                label={t('auth.confirmPassword')}
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}
                 autoComplete="new-password"
@@ -358,16 +361,16 @@ export default function AuthScreen() {
                 onToggle={() => setShowConfirm(v => !v)}
               />
               <div>
-                <label style={lbl}>Choose a username</label>
+                <label style={lbl}>{t('auth.chooseUsername')}</label>
                 <input
                   type="text" required autoComplete="username"
                   value={username} onChange={e => setUsername(e.target.value)}
-                  placeholder="e.g. chef_juan"
+                  placeholder={t('auth.usernamePlaceholder')}
                   maxLength={20}
                   style={inp} onFocus={focus} onBlur={blur}
                 />
                 <p style={{ marginTop: 6, fontSize: '0.78rem', lineHeight: 1.4, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                  This username may be visible to others when you share recipes publicly.
+                  {t('auth.usernameNote')}
                 </p>
               </div>
             </>
@@ -380,17 +383,17 @@ export default function AuthScreen() {
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
           >
             {loading
-              ? (isSignUp ? 'Creating account…' : 'Signing in…')
-              : (isSignUp ? 'Create account' : 'Sign in')}
+              ? (isSignUp ? t('auth.creating') : t('auth.signingIn'))
+              : (isSignUp ? t('auth.createAccount') : t('auth.signIn'))}
           </button>
 
         </form>
       </div>
 
       <p style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-        {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+        {isSignUp ? t('auth.haveAccount') : t('auth.noAccount')}
         <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} style={linkBtn}>
-          {isSignUp ? 'Sign in' : 'Sign up'}
+          {isSignUp ? t('auth.signIn') : t('auth.signUp')}
         </button>
       </p>
     </AuthShell>

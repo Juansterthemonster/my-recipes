@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import MasonryGrid from './MasonryGrid'
+import { useI18n, tagLabel, translate } from '../i18n'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
 function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }) {
+  const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const [addOpen,  setAddOpen]  = useState(false)
   const menuRef = useRef(null)
@@ -54,7 +56,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }
               padding: '9px 22px', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center',
             }}
-          >Add</button>
+          >{t('nav.add')}</button>
 
           {addOpen && (
             <div role="menu" style={{
@@ -69,14 +71,14 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }
                 style={{ ...addItemStyle, borderBottom: '1px solid var(--border-soft)' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >Add a recipe</button>
+              >{t('nav.addRecipe')}</button>
               <button
                 role="menuitem"
                 onClick={() => { setAddOpen(false); onAddCollection() }}
                 style={addItemStyle}
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >Add a collection</button>
+              >{t('nav.addCollection')}</button>
             </div>
           )}
         </div>
@@ -84,7 +86,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }
         <div ref={menuRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(o => !o)}
-            aria-label="Account menu"
+            aria-label={t('nav.accountMenu')}
             style={{
               width: 34, height: 34,
               background: 'none', border: 'none',
@@ -120,7 +122,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >Profile &amp; settings</button>
+              >{t('nav.profile')}</button>
               <button
                 onClick={() => { setMenuOpen(false); onSignOut() }}
                 style={{
@@ -130,7 +132,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >Sign out</button>
+              >{t('nav.signOut')}</button>
             </div>
           )}
         </div>
@@ -162,6 +164,7 @@ function FilterIcon() {
 
 /* ─── SEARCH BAR ───────────────────────────────────────────────────────────── */
 function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFilters }) {
+  const { t } = useI18n()
   const filterActive = filtersOpen || hasActiveFilters
   return (
     <div
@@ -175,7 +178,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
     >
       <div className="w-full lg:max-w-2xl" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <input
-          type="text" placeholder="Search recipes…"
+          type="text" placeholder={t('browse.searchPlaceholder')}
           value={search} onChange={e => onSearch(e.target.value)}
           className="search-input"
           style={{
@@ -188,7 +191,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
         />
         <button
           onClick={onToggleFilters}
-          aria-label={filtersOpen ? 'Close filters' : 'Open filters'}
+          aria-label={filtersOpen ? t('browse.closeFilters') : t('browse.openFilters')}
           style={{
             flexShrink: 0,
             width: 42, height: 42,
@@ -212,13 +215,13 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
 const DIETARY_FILTERS   = ['Vegetarian', 'Vegan', 'Pescatarian', 'Gluten free', 'Keto']
 const MEAL_TYPE_FILTERS = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Side']
 const TIME_FILTERS      = [
-  { label: 'Under 15 mins', maxMins: 15 },
-  { label: 'Under 30 mins', maxMins: 30 },
-  { label: 'Under 1 h',     maxMins: 60 },
+  { label: 'Under 15 mins', tkey: 'filter.time.15', maxMins: 15 },
+  { label: 'Under 30 mins', tkey: 'filter.time.30', maxMins: 30 },
+  { label: 'Under 1 h',     tkey: 'filter.time.60', maxMins: 60 },
 ]
 
 /* ─── FILTER BAR ───────────────────────────────────────────────────────────── */
-function PillGroup({ label, options, active, onToggle }) {
+function PillGroup({ label, options, active, onToggle, renderLabel = o => o }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{
@@ -249,7 +252,7 @@ function PillGroup({ label, options, active, onToggle }) {
                 fontFamily: 'var(--font-body)', cursor: 'pointer',
                 transition: 'background 150ms, color 150ms, border-color 150ms',
               }}
-            >{opt}</button>
+            >{renderLabel(opt)}</button>
           )
         })}
       </div>
@@ -258,6 +261,7 @@ function PillGroup({ label, options, active, onToggle }) {
 }
 
 function FilterBar({ activeDietary, activeMealTypes, activeTime, onToggleDietary, onToggleMealType, onToggleTime }) {
+  const { t } = useI18n()
   return (
     <div
       style={{ background: '#F9F6F0' }}
@@ -269,20 +273,23 @@ function FilterBar({ activeDietary, activeMealTypes, activeTime, onToggleDietary
       "
     >
       <PillGroup
-        label="Dietary"
+        label={t('filter.dietary')}
         options={DIETARY_FILTERS}
+        renderLabel={o => tagLabel(t, 'dietary', o)}
         active={activeDietary}
         onToggle={onToggleDietary}
       />
       <PillGroup
-        label="Meal type"
+        label={t('filter.mealType')}
         options={MEAL_TYPE_FILTERS}
+        renderLabel={o => tagLabel(t, 'meal', o)}
         active={activeMealTypes}
         onToggle={onToggleMealType}
       />
       <PillGroup
-        label="Time"
-        options={TIME_FILTERS.map(t => t.label)}
+        label={t('filter.time')}
+        options={TIME_FILTERS.map(f => f.label)}
+        renderLabel={o => t(TIME_FILTERS.find(f => f.label === o)?.tkey || '')}
         active={activeTime}
         onToggle={onToggleTime}
       />
@@ -292,13 +299,14 @@ function FilterBar({ activeDietary, activeMealTypes, activeTime, onToggleDietary
 
 /* ─── TAB BAR ──────────────────────────────────────────────────────────────── */
 const TABS = [
-  { key: 'mine',        label: 'My recipes' },
-  { key: 'favourites',  label: 'Liked' },
-  { key: 'collections', label: 'My Collections' },
-  { key: 'public',      label: 'Explore' },
+  { key: 'mine',        tkey: 'tab.mine' },
+  { key: 'favourites',  tkey: 'tab.favourites' },
+  { key: 'collections', tkey: 'tab.collections' },
+  { key: 'public',      tkey: 'tab.public' },
 ]
 
 function TabBar({ active, onChange }) {
+  const { t } = useI18n()
   return (
     <div
       style={{
@@ -333,7 +341,7 @@ function TabBar({ active, onChange }) {
             onMouseEnter={e => { if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)' }}
             onMouseLeave={e => { if (active !== tab.key) e.currentTarget.style.color = 'var(--text-secondary)' }}
           >
-            <span style={{ paddingBottom: 10 }}>{tab.label}</span>
+            <span style={{ paddingBottom: 10 }}>{t(tab.tkey)}</span>
             <span style={{
               display: 'block', width: '100%', height: 3,
               background: active === tab.key ? 'var(--green-primary)' : 'transparent',
@@ -412,8 +420,8 @@ function SectionLabel({ children }) {
 function fmtTime(mins) {
   if (!mins) return null
   const h = Math.floor(mins / 60), m = mins % 60
-  if (h > 0 && m > 0) return `${h}h ${m}m`
-  return h > 0 ? `${h}h` : `${m}m`
+  if (h > 0 && m > 0) return `${h}h ${m}${translate('time.min')}`
+  return h > 0 ? `${h}h` : `${m}${translate('time.min')}`
 }
 
 /* ─── PORTRAIT CARD CONSTANTS ──────────────────────────────────────────────── */
@@ -470,12 +478,13 @@ const blurBtn = {
 
 /* ─── MY RECIPE CARD ───────────────────────────────────────────────────────── */
 function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
+  const { t } = useI18n()
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
-    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).join(' · ')
+    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(v => tagLabel(t, 'meal', v)).join(' · ')
     : null
   const dietaryLabel = recipe.dietary && recipe.dietary.length > 0
-    ? (Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
+    ? tagLabel(t, 'dietary', Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
     : null
 
   /* ── IMAGE CARD: 2:3 ratio, absolute layout, white text ── */
@@ -498,7 +507,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
           <div><PrepTimePill mins={recipe.total_time_min} onPhoto /></div>
           <button
             onClick={onToggleFavourite}
-            aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+            aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
             style={{ ...blurBtn, padding: 10, color: recipe.is_favourite ? '#D7191D' : '#fff', flexShrink: 0 }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -528,7 +537,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
                   background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.9)',
                   borderRadius: 999, padding: '2px 8px',
                   backdropFilter: 'blur(4px)',
-                }}>Public</span>
+                }}>{t('card.public')}</span>
               )}
               {dietaryLabel && (
                 <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}>
@@ -557,7 +566,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
         <div><PrepTimePill mins={recipe.total_time_min} /></div>
         <button
           onClick={onToggleFavourite}
-          aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+          aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 6,
             color: recipe.is_favourite ? '#D7191D' : '#0C3D4E',
@@ -594,7 +603,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
                 fontSize: '0.72rem', fontWeight: 600, fontFamily: 'var(--font-body)',
                 background: 'var(--green-light)', color: 'var(--green-primary)',
                 borderRadius: 999, padding: '2px 8px',
-              }}>Public</span>
+              }}>{t('card.public')}</span>
             )}
             {dietaryLabel && (
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
@@ -614,12 +623,13 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
   Liking adds the recipe to the user's Liked tab without copying it to My recipes.
 */
 function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
+  const { t } = useI18n()
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
-    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).join(' · ')
+    ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(v => tagLabel(t, 'meal', v)).join(' · ')
     : null
   const dietaryLabel = recipe.dietary && recipe.dietary.length > 0
-    ? (Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
+    ? tagLabel(t, 'dietary', Array.isArray(recipe.dietary) ? recipe.dietary[0] : recipe.dietary)
     : null
 
   /* ── IMAGE CARD ── */
@@ -642,7 +652,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
           <div><PrepTimePill mins={recipe.total_time_min} onPhoto /></div>
           <button
             onClick={onToggleLike}
-            aria-label={recipe.is_liked ? 'Unlike recipe' : 'Like recipe'}
+            aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
             style={{ ...blurBtn, padding: 10, color: recipe.is_liked ? '#D7191D' : '#fff', flexShrink: 0 }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -675,7 +685,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
               color: 'rgba(255,255,255,0.55)',
               marginTop: 6, letterSpacing: '0.01em',
             }}>
-              by @{recipe.author_username}
+              {t('card.by', { author: recipe.author_username })}
             </div>
           )}
         </div>
@@ -698,7 +708,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
         <div><PrepTimePill mins={recipe.total_time_min} /></div>
         <button
           onClick={onToggleLike}
-          aria-label={recipe.is_liked ? 'Unlike recipe' : 'Like recipe'}
+          aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 6,
             color: recipe.is_liked ? '#D7191D' : '#0C3D4E',
@@ -739,7 +749,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
             color: 'var(--text-tertiary)',
             marginTop: 6, letterSpacing: '0.01em',
           }}>
-            by @{recipe.author_username}
+            {t('card.by', { author: recipe.author_username })}
           </div>
         )}
       </div>
@@ -765,6 +775,7 @@ function EmptyState({ title, sub }) {
 
 /* My Recipes — first-time user, clickable */
 function EmptyMyRecipes({ onAdd }) {
+  const { t } = useI18n()
   return (
     <button
       type="button"
@@ -790,17 +801,18 @@ function EmptyMyRecipes({ onAdd }) {
       <div style={{
         fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
         color: 'var(--text-primary)', marginBottom: 8,
-      }}>Your recipes live here</div>
+      }}>{t('empty.mine.title')}</div>
       <div style={{
         fontSize: '0.85rem', color: 'var(--text-secondary)',
         fontFamily: 'var(--font-body)', lineHeight: 1.5,
-      }}>Add your first one and start building your collection.</div>
+      }}>{t('empty.mine.body')}</div>
     </button>
   )
 }
 
 /* Liked — no liked recipes yet */
 function EmptyLiked() {
+  const { t } = useI18n()
   return (
     <div style={{
       background: 'var(--white)', borderRadius: 14,
@@ -818,17 +830,18 @@ function EmptyLiked() {
       <div style={{
         fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
         color: 'var(--text-primary)', marginBottom: 8,
-      }}>Nothing liked yet</div>
+      }}>{t('empty.liked.title')}</div>
       <div style={{
         fontSize: '0.85rem', color: 'var(--text-secondary)',
         fontFamily: 'var(--font-body)', lineHeight: 1.5, maxWidth: 260,
-      }}>Tap the heart on any recipe to like it. Your liked recipes will show up right here.</div>
+      }}>{t('empty.liked.body')}</div>
     </div>
   )
 }
 
 /* Explore — no public recipes yet */
 function EmptyExplore() {
+  const { t } = useI18n()
   return (
     <div style={{
       background: 'var(--white)', borderRadius: 14,
@@ -846,11 +859,11 @@ function EmptyExplore() {
       <div style={{
         fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
         color: 'var(--text-primary)', marginBottom: 8,
-      }}>Nothing to explore yet</div>
+      }}>{t('empty.explore.title')}</div>
       <div style={{
         fontSize: '0.85rem', color: 'var(--text-secondary)',
         fontFamily: 'var(--font-body)', lineHeight: 1.5, maxWidth: 280,
-      }}>When other cooks share recipes publicly, you'll find them here. Like what you discover and it saves to your Liked page.</div>
+      }}>{t('empty.explore.body')}</div>
     </div>
   )
 }
@@ -907,6 +920,7 @@ function CollectionPhotoGrid({ photos = [], cover = null }) {
    Accepts an async onSave({ name, description, cover }) callback — caller is
    responsible for the DB write and for closing the modal.                    */
 function CollectionEditModal({ title, collectionId = null, initial = {}, onSave, onClose }) {
+  const { t } = useI18n()
   const [name,        setName]        = useState(initial.name || '')
   const [description, setDescription] = useState(initial.description || '')
   const [cover,       setCover]       = useState(initial.cover_photo_url || null)
@@ -942,7 +956,7 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
 
   async function handleSave() {
     const trimmed = name.trim()
-    if (!trimmed) { setError('Please enter a collection name'); return }
+    if (!trimmed) { setError(t('col.nameRequired')); return }
     setError(null)
     setSaving(true)
     await onSave({ name: trimmed, description: description.trim(), cover })
@@ -986,13 +1000,13 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
           color: 'var(--text-primary)', marginBottom: 18,
         }}>{title}</div>
 
-        <label style={labelStyle}>Name</label>
+        <label style={labelStyle}>{t('col.name')}</label>
         <input
           ref={inputRef}
           value={name}
           onChange={e => { setName(e.target.value); if (error) setError(null) }}
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
-          placeholder="e.g. Weeknight dinners"
+          placeholder={t('col.namePlaceholder')}
           maxLength={60}
           style={{ ...fieldStyle, borderColor: error ? '#f5baba' : 'var(--border-soft)', marginBottom: error ? 8 : 16 }}
           onFocus={e => e.target.style.borderColor = error ? '#f5baba' : 'var(--green-primary)'}
@@ -1012,11 +1026,11 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
           </div>
         )}
 
-        <label style={labelStyle}>Description <span style={{ fontWeight: 400 }}>(optional)</span></label>
+        <label style={labelStyle}>{t('col.description')} <span style={{ fontWeight: 400 }}>{t('col.optional')}</span></label>
         <textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder="What's this collection about?"
+          placeholder={t('col.descPlaceholder')}
           maxLength={300}
           rows={3}
           style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.45, marginBottom: 16 }}
@@ -1027,13 +1041,13 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
         {/* Cover picker — only when editing a collection that has recipe photos */}
         {collectionId && coverOptions.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <label style={labelStyle}>Cover photo</label>
+            <label style={labelStyle}>{t('col.cover')}</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {/* Default collage */}
               <button
                 type="button"
                 onClick={() => setCover(null)}
-                aria-label="Use default collage"
+                aria-label={t('col.useDefault')}
                 aria-pressed={cover === null}
                 style={{
                   aspectRatio: '1/1', borderRadius: 8, cursor: 'pointer',
@@ -1042,13 +1056,13 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
                   fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
                   lineHeight: 1.15, padding: 4,
                 }}
-              >Default</button>
+              >{t('col.default')}</button>
               {coverOptions.map(url => (
                 <button
                   type="button"
                   key={url}
                   onClick={() => setCover(url)}
-                  aria-label="Use this photo as cover"
+                  aria-label={t('col.useThisPhoto')}
                   aria-pressed={cover === url}
                   style={{
                     aspectRatio: '1/1', borderRadius: 8, cursor: 'pointer', padding: 0, overflow: 'hidden',
@@ -1072,7 +1086,7 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
               color: 'var(--text-secondary)', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500,
             }}
-          >Cancel</button>
+          >{t('col.cancel')}</button>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -1085,7 +1099,7 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
               fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
               opacity: saving ? 0.7 : 1,
             }}
-          >{saving ? 'Saving…' : 'Save'}</button>
+          >{saving ? t('col.saving') : t('col.save')}</button>
         </div>
       </div>
     </>
@@ -1097,6 +1111,7 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
    white text on the image. Count pill top-left, kebab top-right, then
    title + description at the bottom.                                          */
 function CollectionCard({ collection, onClick, onRename, onDelete }) {
+  const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
   const count = collection.recipe_count || 0
@@ -1117,7 +1132,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
         <div ref={menuRef} style={{ position: 'relative', flexShrink: 0, pointerEvents: 'auto' }}>
           <button
             onClick={e => { e.stopPropagation(); setMenuOpen(o => !o) }}
-            aria-label="Collection options"
+            aria-label={t('col.options')}
             style={{ ...blurBtn, padding: 8, color: '#fff' }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -1142,7 +1157,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >Edit</button>
+              >{t('col.edit')}</button>
               <button
                 onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
                 style={{
@@ -1153,7 +1168,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#F43F5E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#C0392B' }}
-              >Delete</button>
+              >{t('col.delete')}</button>
             </div>
           )}
         </div>
@@ -1165,7 +1180,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
           fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
           textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)',
           fontFamily: 'var(--font-body)', marginBottom: 5,
-        }}>Collection</div>
+        }}>{t('col.eyebrow')}</div>
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
           color: '#fff', lineHeight: 1.25, marginBottom: hasDescription ? 6 : 0,
@@ -1184,7 +1199,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
         <div style={{
           fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)',
           fontFamily: 'var(--font-body)', marginTop: hasDescription ? 8 : 5,
-        }}>{count} {count === 1 ? 'recipe' : 'recipes'}</div>
+        }}>{t('col.recipeCount', { count })}</div>
     </>
   )
 
@@ -1251,6 +1266,7 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
    Card-shaped empty state — sits as the first item in the collections grid.
    Matches CollectionCard dimensions (2/3 photo area + bottom info section).  */
 function EmptyCollectionCard({ onCreate }) {
+  const { t } = useI18n()
   return (
     <div
       onClick={onCreate}
@@ -1279,11 +1295,11 @@ function EmptyCollectionCard({ onCreate }) {
           <div style={{
             fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600,
             color: 'var(--text-primary)', marginBottom: 2, lineHeight: 1.3,
-          }}>New collection</div>
+          }}>{t('col.newTitle')}</div>
           <div style={{
             fontSize: '0.72rem', color: 'var(--text-secondary)',
             fontFamily: 'var(--font-body)', lineHeight: 1.4,
-          }}>Tap to create</div>
+          }}>{t('col.tapToCreate')}</div>
         </div>
       </div>
     </div>
@@ -1292,6 +1308,7 @@ function EmptyCollectionCard({ onCreate }) {
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
 export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection }) {
+  const { t } = useI18n()
   const [myRecipes, setMyRecipes]         = useState([])
   const [publicRecipes, setPublicRecipes] = useState([])
   const [collections, setCollections]     = useState([])
@@ -1478,7 +1495,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   }
 
   async function handleDeleteCollection(collection) {
-    if (!window.confirm(`Delete "${collection.name}"? This cannot be undone.`)) return
+    if (!window.confirm(t('col.confirmDelete', { name: collection.name }))) return
     const { error } = await supabase
       .from('collections')
       .delete()
@@ -1510,7 +1527,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
           Lives at page level so the nav "Add" menu can open it from any tab. */}
       {modalMode && (
         <CollectionEditModal
-          title={modalMode === 'create' ? 'New collection' : 'Edit collection'}
+          title={modalMode === 'create' ? t('col.newTitle') : t('col.editTitle')}
           collectionId={modalMode === 'rename' ? renameTarget?.id : null}
           initial={modalMode === 'rename' ? (renameTarget || {}) : {}}
           onSave={modalMode === 'create' ? handleCreateCollection : handleRenameCollection}
@@ -1539,7 +1556,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
             border: '1px solid var(--border-soft)',
             padding: '48px 20px', textAlign: 'center',
             fontSize: '0.9rem', color: 'var(--text-secondary)',
-          }}>Loading…</div>
+          }}>{t('browse.loading')}</div>
         ) : (
           <>
             {/* ── MY RECIPES TAB ── */}
@@ -1547,7 +1564,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
               myFiltered.length === 0 ? (
                 myRecipes.length === 0
                   ? <EmptyMyRecipes onAdd={onAdd} />
-                  : <EmptyState title="No matches" sub="Try a different search" />
+                  : <EmptyState title={t('empty.noMatches')} sub={t('empty.tryDifferent')} />
               ) : (
                 <div className="masonry-grid">
                   {myFiltered.map((recipe, idx) => (
@@ -1621,7 +1638,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
               pubFiltered.length === 0 ? (
                 publicRecipes.length === 0
                   ? <EmptyExplore />
-                  : <EmptyState title="No matches" sub="Try a different search" />
+                  : <EmptyState title={t('empty.noMatches')} sub={t('empty.tryDifferent')} />
               ) : (
                 <div className="masonry-grid">
                   {pubFiltered.map(recipe => (

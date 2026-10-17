@@ -3,6 +3,8 @@ import { supabase } from '../supabase'
 import { toMins, fromMins } from './TimePicker'
 import { compressImage } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
+import { useI18n, tagLabel } from '../i18n'
+import PasteIngredientsModal from './PasteIngredientsModal'
 
 // Generates a UUID, falling back to a manual v4 implementation when
 // crypto.randomUUID isn't available — it requires a secure context (HTTPS or
@@ -49,13 +51,14 @@ function groupsFromFlat(flat) {
 
 /* ─── PHOTO UPLOAD CARD ─────────────────────────────────────────────────────── */
 function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
+  const { t } = useI18n()
   return (
     <div>
       <label style={{
         display: 'block', fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.08em',
         textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 10,
         fontFamily: 'var(--font-body)',
-      }}>{photos.length > 1 ? 'Photos' : 'Photo'}</label>
+      }}>{photos.length > 1 ? t('form.photos') : t('form.photo')}</label>
 
       {/* Hidden file input — accepts multiple photos at once */}
       <input
@@ -71,7 +74,7 @@ function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
             {photos.map((p, i) => (
               <div key={p.key} style={{ position: 'relative', flex: '0 0 92px', borderRadius: 8, overflow: 'hidden' }}>
                 <img
-                  src={p.preview} alt={`Recipe photo ${i + 1}`}
+                  src={p.preview} alt={t('form.photoAlt', { n: i + 1 })}
                   style={{ width: 92, height: 92, objectFit: 'cover', display: 'block' }}
                 />
                 {i === 0 && (
@@ -80,11 +83,11 @@ function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
                     background: 'rgba(0,0,0,0.55)', color: '#fff',
                     fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.04em',
                     textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
-                  }}>Cover</span>
+                  }}>{t('form.cover')}</span>
                 )}
                 <button
                   type="button" onClick={() => onRemove(p.key)}
-                  aria-label="Remove photo"
+                  aria-label={t('form.removePhoto')}
                   style={{
                     position: 'absolute', top: 4, right: 4,
                     background: 'rgba(0,0,0,0.55)', border: 'none',
@@ -111,7 +114,7 @@ function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
             {photos.length < MAX_PHOTOS && (
               <button
                 type="button" onClick={() => fileInputRef.current?.click()}
-                aria-label="Add another photo"
+                aria-label={t('form.addAnotherPhoto')}
                 style={{
                   flex: '0 0 92px', height: 92,
                   background: 'var(--cream)', border: '2px dashed var(--border)',
@@ -152,7 +155,7 @@ function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
           </svg>
-          <span style={{ fontSize: '0.82rem' }}>Add photos</span>
+          <span style={{ fontSize: '0.82rem' }}>{t('form.addPhotos')}</span>
         </button>
       )}
     </div>
@@ -201,14 +204,15 @@ function TimeBox({ val, onChange, unit }) {
    Mobile: single column, stacked. sm+: 3-col side by side.
 */
 function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, serves, setServes }) {
+  const { t } = useI18n()
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-6 items-start">
 
       {/* Serves — first, compact auto-width column */}
       <div>
-        <label style={lbl}>Serves</label>
+        <label style={lbl}>{t('form.serves')}</label>
         <p style={{ fontSize:'0.68rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', marginBottom:10 }}>
-          Portions
+          {t('form.portions')}
         </p>
         <input
           type="number" min="1" value={serves}
@@ -220,9 +224,9 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, s
 
       {/* Prep time — second */}
       <div>
-        <label style={lbl}>Prep time</label>
+        <label style={lbl}>{t('form.prepTime')}</label>
         <p style={{ fontSize:'0.68rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', marginBottom:10 }}>
-          Hands-on cooking
+          {t('form.handsOn')}
         </p>
         <div style={{ display:'flex', gap:8 }}>
           <TimeBox val={aH} onChange={setAH} unit="h" />
@@ -232,9 +236,9 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, s
 
       {/* Total time — third */}
       <div>
-        <label style={lbl}>Total time</label>
+        <label style={lbl}>{t('form.totalTime')}</label>
         <p style={{ fontSize:'0.68rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', marginBottom:10 }}>
-          From start to finish
+          {t('form.startToFinish')}
         </p>
         <div style={{ display:'flex', gap:8 }}>
           <TimeBox val={tMinH} onChange={setTMinH} unit="h" />
@@ -247,6 +251,7 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, s
 }
 
 export default function RecipeForm({ recipe, onBack, onSave, session }) {
+  const { t } = useI18n()
   const isEdit = !!recipe
   const [name, setName]               = useState(recipe?.name || '')
   const [description, setDescription] = useState(recipe?.description || '')
@@ -267,6 +272,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     : []
   )
   const [ingredientGroups, setIngredientGroups] = useState(() => groupsFromFlat(recipe?.ingredients))
+  const [pasteOpen, setPasteOpen] = useState(false)
   const [steps, setSteps]     = useState(recipe?.steps?.join('\n') || '')
   const [isPublic, setIsPublic] = useState(recipe?.is_public || false)
   const initialPhotoUrls = recipe?.photos?.length ? recipe.photos : (recipe?.photo_url ? [recipe.photo_url] : [])
@@ -344,6 +350,24 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       return next
     })
   }
+  // Merge pasted ingredients: replace an untouched/empty list; otherwise a single
+  // unlabeled pasted group joins the last group and labeled groups are appended.
+  function addPastedIngredients(parsed) {
+    setIngredientGroups(gs => {
+      const isBlank = gs.every(g => !g.label.trim() && g.items.every(it => !it.name.trim() && !it.amount.trim()))
+      const toGroup = g => ({ id: newId(), label: g.label, items: g.items })
+      if (isBlank) return parsed.map(toGroup)
+      if (parsed.length === 1 && !parsed[0].label) {
+        const next = [...gs]
+        const last = next.length - 1
+        const kept = next[last].items.filter(it => it.name.trim() || it.amount.trim())
+        next[last] = { ...next[last], items: [...kept, ...parsed[0].items] }
+        return next
+      }
+      return [...gs, ...parsed.map(toGroup)]
+    })
+    setPasteOpen(false)
+  }
   function addGroup() {
     setIngredientGroups(gs => [...gs, { id: newId(), label: '', items: [{ name:'', amount:'', optional:false }] }])
   }
@@ -352,7 +376,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
   }
 
   async function handleSave() {
-    if (!name.trim()) { setError('Please add a recipe name.'); return }
+    if (!name.trim()) { setError(t('form.errName')); return }
     setSaving(true); setError('')
 
     // For new recipes, generate the UUID now so the storage path and DB row
@@ -371,7 +395,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         finalPhotos.push(await uploadToR2(compressed, recipeId))
       } catch (e) {
         console.error('Photo upload failed:', e)
-        setError(`Failed to upload one or more photos${e?.message ? ` (${e.message})` : ''}. Please try again.`)
+        setError(t('form.errPhotos', { reason: e?.message ? ` (${e.message})` : '' }))
         setSaving(false)
         return
       }
@@ -412,7 +436,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
     setSaving(false)
     if (err) {
       console.error('Save recipe failed:', err)
-      setError('Something went wrong. Please try again.')
+      setError(t('form.errGeneric'))
       return
     }
     onSave()
@@ -435,7 +459,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         <span style={{
           fontFamily:'var(--font-body)', fontSize:'1.1rem',
           fontWeight:600, color:'#0C3D4E'
-        }}>{isEdit ? 'Edit recipe' : 'New recipe'}</span>
+        }}>{isEdit ? t('form.editRecipe') : t('form.newRecipe')}</span>
 
         {/* Cancel + Save — right, together */}
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -446,7 +470,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
             borderRadius:'var(--r-full)', fontFamily:'var(--font-body)',
             fontSize:'0.82rem', fontWeight:400, padding:'9px 22px',
             cursor:'pointer',
-          }}>Cancel</button>
+          }}>{t('col.cancel')}</button>
 
           {/* Save — primary: Dark Teal fill */}
           <button onClick={handleSave} disabled={saving}
@@ -457,7 +481,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
               fontWeight:600, padding:'9px 22px',
               cursor:'pointer', opacity: saving ? 0.6 : 1,
             }}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? t('col.saving') : t('col.save')}
           </button>
         </div>
       </div>
@@ -486,14 +510,14 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
             {/* Name + Notes */}
             <div style={card} className="space-y-4">
               <div>
-                <label style={lbl}>Name</label>
+                <label style={lbl}>{t('form.name')}</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
-                  placeholder="Recipe name" style={inp} onFocus={focus} onBlur={blur} />
+                  placeholder={t('form.namePlaceholder')} style={inp} onFocus={focus} onBlur={blur} />
               </div>
               <div>
-                <label style={lbl}>Notes</label>
+                <label style={lbl}>{t('form.notes')}</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)}
-                  placeholder="Any context, variations, or reminders…" rows={3}
+                  placeholder={t('form.notesPlaceholder')} rows={3}
                   style={{ ...inp, resize:'none', lineHeight:1.6 }} onFocus={focus} onBlur={blur} />
               </div>
             </div>
@@ -511,18 +535,18 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
             {/* Cuisine + Dietary + Meal type */}
             <div style={card}>
               <div style={{ marginBottom:16 }}>
-                <label style={lbl}>Cuisine</label>
+                <label style={lbl}>{t('form.cuisine')}</label>
                 <input type="text" value={cuisine} onChange={e => setCuisine(e.target.value)}
-                  placeholder="e.g. Italian, Indian, Japanese…"
+                  placeholder={t('form.cuisinePlaceholder')}
                   style={inp} onFocus={focus} onBlur={blur} />
               </div>
               {/* Dietary — Amber Gold active state, single-select (radio behaviour).
                   Clicking an active option deselects it; clicking another replaces it.
                   DB receives a one-item array (or empty) to stay schema-compatible. */}
               <div style={{ marginBottom:16 }}>
-                <label style={lbl}>Dietary</label>
+                <label style={lbl}>{t('form.dietary')}</label>
                 <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', fontFamily:'var(--font-body)', marginBottom:8, marginTop:2 }}>
-                  Select one
+                  {t('form.selectOne')}
                 </p>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                   {['Vegetarian','Vegan','Pescatarian','Gluten free','Keto'].map(opt => {
@@ -538,7 +562,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                           background: active ? '#FEFAD6'             : 'var(--white)',
                           color:      active ? '#6B4F00'             : 'var(--text-secondary)',
                         }}
-                      >{opt}</button>
+                      >{tagLabel(t, 'dietary', opt)}</button>
                     )
                   })}
                 </div>
@@ -546,9 +570,9 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
 
               {/* Meal type — Graphite active state (#2c302e) */}
               <div>
-                <label style={lbl}>Meal type</label>
+                <label style={lbl}>{t('form.mealType')}</label>
                 <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', fontFamily:'var(--font-body)', marginBottom:8, marginTop:2 }}>
-                  Select all that apply
+                  {t('form.selectAll')}
                 </p>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                   {['Breakfast','Lunch','Dinner','Dessert','Snack','Side'].map(opt => {
@@ -564,7 +588,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                           background: active ? '#f2f3f2'             : 'var(--white)',
                           color:      active ? '#2c302e'             : 'var(--text-secondary)',
                         }}
-                      >{opt}</button>
+                      >{tagLabel(t, 'meal', opt)}</button>
                     )
                   })}
                 </div>
@@ -598,7 +622,18 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                 unchanged until you actually add a second list.
             */}
             <div style={card}>
-              <label style={{ ...lbl, marginBottom:16 }}>Ingredients</label>
+              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:12, marginBottom:16 }}>
+                <label style={{ ...lbl, marginBottom:0 }}>{t('form.ingredients')}</label>
+                <button type="button" onClick={() => setPasteOpen(true)}
+                  style={{ fontSize:'0.78rem', fontWeight:500, color:'var(--green-primary)', background:'none',
+                    border:'none', cursor:'pointer', fontFamily:'var(--font-body)', padding:0, textDecoration:'underline',
+                    textDecorationStyle:'dotted', textUnderlineOffset:3 }}>
+                  {t('paste.button')}
+                </button>
+              </div>
+              {pasteOpen && (
+                <PasteIngredientsModal onAdd={addPastedIngredients} onClose={() => setPasteOpen(false)} />
+              )}
 
               <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
                 {ingredientGroups.map((group, gi) => (
@@ -608,7 +643,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                         <input
                           type="text" value={group.label}
                           onChange={e => updateGroupLabel(gi, e.target.value)}
-                          placeholder={`Group ${gi + 1} name (e.g. Sauce)`}
+                          placeholder={t('form.groupPlaceholder', { n: gi + 1 })}
                           style={{ ...inp, fontSize:'0.82rem', padding:'7px 10px', fontWeight:600, flex:1 }}
                           onFocus={focus} onBlur={blur}
                         />
@@ -617,7 +652,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                             border:'none', cursor:'pointer', fontFamily:'var(--font-body)', whiteSpace:'nowrap' }}
                           onMouseEnter={e => e.target.style.color='var(--text-secondary)'}
                           onMouseLeave={e => e.target.style.color='var(--text-tertiary)'}>
-                          Remove group
+                          {t('form.removeGroup')}
                         </button>
                       </div>
                     )}
@@ -635,14 +670,14 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                               ref={el => ingRefs.current[`${gi}:${ii}`] = el}
                               type="text" value={ing.name}
                               onChange={e => updateIng(gi, ii, 'name', e.target.value)}
-                              placeholder="Ingredient"
+                              placeholder={t('form.ingredient')}
                               style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
                               onFocus={focus} onBlur={blur}
                             />
                             <input
                               type="text" value={ing.amount}
                               onChange={e => updateIng(gi, ii, 'amount', e.target.value)}
-                              placeholder="Amount"
+                              placeholder={t('form.amount')}
                               style={{ ...inp, fontSize:'0.9rem', padding:'9px 11px' }}
                               onFocus={focus} onBlur={blur}
                             />
@@ -662,7 +697,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                               onChange={e => updateIng(gi, ii, 'optional', e.target.checked)}
                               style={{ width:16, height:16, accentColor:'var(--green-primary)', cursor:'pointer', flexShrink:0 }} />
                             <span style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)' }}>
-                              Optional
+                              {t('form.optional')}
                             </span>
                           </label>
                         </div>
@@ -674,7 +709,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                         background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)' }}
                       onMouseEnter={e => e.target.style.color='var(--green-primary)'}
                       onMouseLeave={e => e.target.style.color='var(--text-secondary)'}>
-                      + Add ingredient
+                      {t('form.addIngredient')}
                     </button>
                   </div>
                 ))}
@@ -688,19 +723,19 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                 }}
                 onMouseEnter={e => e.target.style.color='var(--green-primary)'}
                 onMouseLeave={e => e.target.style.color='var(--text-tertiary)'}>
-                + Add ingredient group (e.g. "Sauce", "Marinade")
+                {t('form.addGroup')}
               </button>
             </div>
 
             {/* Steps */}
             <div style={card}>
-              <label style={lbl}>Steps</label>
+              <label style={lbl}>{t('form.steps')}</label>
               <textarea value={steps} onChange={e => setSteps(e.target.value)} rows={6}
-                placeholder={"Write each step on a new line…\n\nBoil pasta in salted water\nFry garlic in olive oil\nToss together and serve"}
+                placeholder={t('form.stepsPlaceholder')}
                 style={{ ...inp, resize:'none', lineHeight:1.65 }} onFocus={focus} onBlur={blur}
               />
               <p style={{ fontSize:'0.72rem', color:'var(--text-tertiary)', marginTop:6, fontFamily:'var(--font-body)' }}>
-                Each line becomes a numbered step
+                {t('form.stepsHint')}
               </p>
             </div>
 
@@ -713,15 +748,15 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         <div className="lg:grid lg:grid-cols-2 lg:gap-x-5" style={{ marginTop: 12 }}>
         <div style={{ ...card, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ ...lbl, marginBottom:2 }}>Make recipe public</div>
+            <div style={{ ...lbl, marginBottom:2 }}>{t('form.makePublic')}</div>
             <p style={{ fontSize:'0.78rem', color:'var(--text-secondary)', fontFamily:'var(--font-body)', margin:0, lineHeight:1.5 }}>
-              Anyone using the app will be able to see and add this recipe to their own recipes
+              {t('form.publicHint')}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setIsPublic(p => !p)}
-            aria-label={isPublic ? 'Make private' : 'Make public'}
+            aria-label={isPublic ? t('form.makePrivateLabel') : t('form.makePublicLabel')}
             style={{
               width:44, height:26, borderRadius:13, flexShrink:0,
               background: isPublic ? 'var(--green-primary)' : 'var(--border)',

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { useI18n, LANGUAGES, translate } from '../i18n'
 
 /* ─── SHARED STYLE TOKENS ────────────────────────────────────────────────────
    These mirror the values defined in AuthScreen.jsx — kept local so this
@@ -67,6 +68,7 @@ function EyeIcon({ visible }) {
 
 /* ─── PASSWORD FIELD ──────────────────────────────────────────────────────── */
 function PasswordField({ label, value, onChange, autoComplete }) {
+  const { t } = useI18n()
   const [visible, setVisible] = useState(false)
   return (
     <div>
@@ -87,7 +89,7 @@ function PasswordField({ label, value, onChange, autoComplete }) {
           type="button"
           onClick={() => setVisible(v => !v)}
           tabIndex={-1}
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? t('profile.hidePassword') : t('profile.showPassword')}
           style={{
             position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
             background: 'none', border: 'none', cursor: 'pointer', padding: 2,
@@ -134,7 +136,9 @@ function StatGrid({ items }) {
 }
 
 /* ─── PROFILE ─────────────────────────────────────────────────────────────── */
-export default function Profile({ session, username, onBack, onSignOut, onUsernameChange }) {
+export default function Profile({ session, username, onBack, onSignOut, onUsernameChange, onToast }) {
+  const { t, lang, setLang } = useI18n()
+  const [languageSaving, setLanguageSaving] = useState(false)
   // ── Stats
   const [stats, setStats] = useState({
     totalCount:       null, // all my recipes (including private, copied, etc.)
@@ -259,23 +263,23 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
 
     // Tell the user what to fix instead of silently disabling the button
     if (!trimmedUsername) {
-      setUsernameError('Enter a username to save.')
+      setUsernameError(t('profile.err.enterUsername'))
       return
     }
     if (trimmedUsername === username) {
-      setUsernameError("That's already your username. Enter a different one to change it.")
+      setUsernameError(t('profile.err.sameUsername'))
       return
     }
     if (usernameStatus === 'invalid') {
-      setUsernameError('Usernames must be 3–20 characters and use only letters, numbers, - or _.')
+      setUsernameError(t('profile.err.invalidUsername'))
       return
     }
     if (usernameStatus === 'taken') {
-      setUsernameError('That username is already taken. Try a different one.')
+      setUsernameError(t('profile.err.takenUsername'))
       return
     }
     if (usernameStatus !== 'available') {
-      setUsernameError('Still checking if that username is available. Try again in a moment.')
+      setUsernameError(t('profile.err.stillChecking'))
       return
     }
 
@@ -295,7 +299,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       onUsernameChange(trimmedUsername)
       setTimeout(() => setUsernameSaved(false), 3000)
     } catch (err) {
-      setUsernameError(err.message || 'Could not save username. Please try again.')
+      setUsernameError(err.message || t('profile.err.saveUsername'))
     } finally {
       setUsernameLoading(false)
     }
@@ -307,20 +311,20 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     setPasswordError(null)
 
     if (!newPassword) {
-      setPasswordError('Enter a new password.')
+      setPasswordError(t('profile.err.enterPassword'))
       return
     }
     if (!confirmPassword) {
-      setPasswordError('Re-enter your new password in the confirm field.')
+      setPasswordError(t('profile.err.confirmPassword'))
       return
     }
 
     if (newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters.')
+      setPasswordError(t('profile.err.shortPassword'))
       return
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords don't match.")
+      setPasswordError(t('profile.err.mismatch'))
       return
     }
 
@@ -329,7 +333,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     setPasswordLoading(false)
 
     if (error) {
-      setPasswordError(error.message || 'Could not update password. Please try again.')
+      setPasswordError(error.message || t('profile.err.updatePassword'))
     } else {
       setNewPassword('')
       setConfirmPassword('')
@@ -338,19 +342,36 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     }
   }
 
+  /* ── Change interface language (saved on the profile) ───────────────────── */
+  async function handleLanguageChange(code) {
+    if (code === lang || languageSaving) return
+    const previous = lang
+    setLang(code)                       // apply immediately
+    setLanguageSaving(true)
+    const { error } = await supabase
+      .from('profiles').update({ language: code }).eq('id', session.user.id)
+    setLanguageSaving(false)
+    if (error) {
+      setLang(previous)                 // couldn't persist → roll back
+      onToast?.(translate('profile.languageError'))
+    } else {
+      onToast?.(translate('profile.languageSaved'))   // new language is already active
+    }
+  }
+
   /* ── Username status hint ───────────────────────────────────────────────── */
   function UsernameHint() {
     if (usernameSaved) return (
       <p style={{ marginTop: 6, fontSize: '0.8rem', fontFamily: 'var(--font-body)', color: '#4A7C59' }}>
-        ✓ Username saved
+        {t('profile.usernameSaved')}
       </p>
     )
     if (!usernameStatus) return null
     const map = {
-      checking:  { color: 'var(--text-tertiary)', text: 'Checking…' },
-      available: { color: '#4A7C59',              text: '✓ Available' },
-      taken:     { color: '#A03030',              text: 'Username already taken' },
-      invalid:   { color: '#A03030',              text: 'Must be 3–20 chars, letters, numbers, - or _' },
+      checking:  { color: 'var(--text-tertiary)', text: t('profile.checking') },
+      available: { color: '#4A7C59',              text: t('profile.available') },
+      taken:     { color: '#A03030',              text: t('profile.taken') },
+      invalid:   { color: '#A03030',              text: t('profile.invalid') },
     }
     const { color, text } = map[usernameStatus]
     return (
@@ -383,13 +404,13 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Recipes
+          {t('profile.back')}
         </button>
       </div>
 
       {/* ── Stats card ── */}
       <div className="mx-4 mt-4 lg:mx-10" style={card}>
-        <div style={sectionLabel}>Your profile</div>
+        <div style={sectionLabel}>{t('profile.yourProfile')}</div>
 
         {/* Username display */}
         <h1
@@ -405,20 +426,20 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 0 18px' }} />
 
         {/* ── My stats ── */}
-        <div style={sectionLabel}>Your stats</div>
+        <div style={sectionLabel}>{t('profile.yourStats')}</div>
         <StatGrid items={[
-          { value: stats.totalCount,    label: 'Total recipes'      },
-          { value: stats.publicCount,   label: 'Public recipes'     },
-          { value: stats.myCopiedCount, label: "Recipes I've copied" },
-          { value: stats.myLikedCount,  label: "Recipes I've liked"  },
+          { value: stats.totalCount,    label: t('profile.totalRecipes') },
+          { value: stats.publicCount,   label: t('profile.publicRecipes') },
+          { value: stats.myCopiedCount, label: t('profile.recipesCopied') },
+          { value: stats.myLikedCount,  label: t('profile.recipesLiked') },
         ]} />
 
         {/* ── Others' activity ── */}
         <div style={{ height: 1, background: 'var(--border-soft)', margin: '20px 0 18px' }} />
-        <div style={sectionLabel}>Others' activity on your recipes</div>
+        <div style={sectionLabel}>{t('profile.othersActivity')}</div>
         <StatGrid items={[
-          { value: stats.theirCopiedCount, label: 'Times copied' },
-          { value: stats.theirLikedCount,  label: 'Times liked'  },
+          { value: stats.theirCopiedCount, label: t('profile.timesCopied') },
+          { value: stats.theirLikedCount,  label: t('profile.timesLiked') },
         ]} />
       </div>
 
@@ -427,16 +448,16 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
 
       {/* ── Change username card ── */}
       <div style={card}>
-        <div style={sectionLabel}>Username</div>
+        <div style={sectionLabel}>{t('profile.username')}</div>
         <form onSubmit={handleUsernameSubmit} noValidate>
           {usernameError && <div style={errBlock}>{usernameError}</div>}
           <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>New username</label>
+            <label style={lbl}>{t('profile.newUsername')}</label>
             <input
               type="text"
               value={newUsername}
               onChange={e => { setNewUsername(e.target.value); setUsernameError(null) }}
-              placeholder="your_username"
+              placeholder={t('profile.usernamePlaceholder')}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -457,14 +478,14 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             onMouseEnter={e => { if (!usernameLoading) e.currentTarget.style.background = 'var(--green-mid)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
           >
-            {usernameLoading ? 'Saving…' : 'Save username'}
+            {usernameLoading ? t('profile.saving') : t('profile.saveUsername')}
           </button>
         </form>
       </div>
 
       {/* ── Change password card ── */}
       <div style={card}>
-        <div style={sectionLabel}>Password</div>
+        <div style={sectionLabel}>{t('profile.password')}</div>
         <form onSubmit={handlePasswordSubmit} noValidate>
           {passwordError && <div style={errBlock}>{passwordError}</div>}
           {passwordSaved && (
@@ -473,12 +494,12 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
               padding: '10px 14px', color: '#2E6B47',
               fontFamily: 'var(--font-body)', fontSize: '0.875rem', marginBottom: 16,
             }}>
-              ✓ Password updated successfully
+              {t('profile.passwordUpdated')}
             </div>
           )}
           <div style={{ marginBottom: 14 }}>
             <PasswordField
-              label="New password"
+              label={t('profile.newPassword')}
               value={newPassword}
               onChange={e => { setNewPassword(e.target.value); setPasswordError(null) }}
               autoComplete="new-password"
@@ -486,7 +507,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           </div>
           <div style={{ marginBottom: 16 }}>
             <PasswordField
-              label="Confirm new password"
+              label={t('profile.confirmPassword')}
               value={confirmPassword}
               onChange={e => { setConfirmPassword(e.target.value); setPasswordError(null) }}
               autoComplete="new-password"
@@ -503,16 +524,49 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             onMouseEnter={e => { if (!passwordLoading) e.currentTarget.style.background = 'var(--green-mid)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
           >
-            {passwordLoading ? 'Updating…' : 'Update password'}
+            {passwordLoading ? t('profile.updating') : t('profile.updatePassword')}
           </button>
         </form>
       </div>
 
       </div>
 
+      {/* ── Language card ── */}
+      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+        <div style={sectionLabel}>{t('profile.language')}</div>
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
+          margin: '0 0 14px', lineHeight: 1.5,
+        }}>{t('profile.languageHint')}</p>
+        <div role="radiogroup" aria-label={t('profile.language')} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {LANGUAGES.map(l => {
+            const active = l.code === lang
+            return (
+              <button
+                key={l.code}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={languageSaving}
+                onClick={() => handleLanguageChange(l.code)}
+                style={{
+                  padding: '8px 18px', borderRadius: 'var(--r-full)',
+                  border: `1.5px solid ${active ? '#0C3D4E' : 'var(--border-soft)'}`,
+                  background: active ? '#0C3D4E' : 'transparent',
+                  color: active ? '#F9F6F0' : 'var(--text-primary)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500,
+                  cursor: languageSaving ? 'default' : 'pointer',
+                  transition: 'background 150ms, color 150ms, border-color 150ms',
+                }}
+              >{l.label}</button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* ── Sign out ── */}
       <div className="mx-4 mt-3 mb-10 lg:mx-10" style={card}>
-        <div style={sectionLabel}>Account</div>
+        <div style={sectionLabel}>{t('profile.account')}</div>
         <button
           onClick={onSignOut}
           style={{
@@ -525,7 +579,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           onMouseEnter={e => { e.currentTarget.style.borderColor = '#0C3D4E'; e.currentTarget.style.color = '#0C3D4E' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-soft)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
         >
-          Sign out
+          {t('profile.signOut')}
         </button>
       </div>
 

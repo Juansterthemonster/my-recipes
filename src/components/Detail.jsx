@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
+import { useI18n, tagLabel } from '../i18n'
 import { compressImage } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
 import { slugify } from '../utils/slugify'
@@ -31,11 +32,12 @@ function HeartIcon({ filled }) {
 
 /* ─── WARN ICON — shown next to amounts that couldn't be scaled ────────────── */
 function WarnIcon() {
+  const { t } = useI18n()
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2.5"
       strokeLinecap="round" strokeLinejoin="round"
-      aria-label="Amount could not be scaled automatically"
+      aria-label={t('detail.warnAmount')}
       style={{ color: 'var(--amber-accent)', flexShrink: 0 }}
     >
       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -49,11 +51,12 @@ function WarnIcon() {
    44 × 44 px touch target (Apple / Google HIG minimum) with a centred 18 px
    icon — matches the visual weight of the existing kebab and back buttons.  */
 function ShareBtn({ onClick, copied }) {
+  const { t } = useI18n()
   return (
     <button
       onClick={onClick}
-      aria-label={copied ? 'Link copied!' : 'Share recipe'}
-      title={copied ? 'Link copied!' : 'Share recipe'}
+      aria-label={copied ? t('detail.linkCopied') : t('detail.share')}
+      title={copied ? t('detail.linkCopied') : t('detail.share')}
       style={{
         /* 44 × 44 touch target so the button is easy to tap on mobile */
         width: 44, height: 44,
@@ -150,6 +153,7 @@ function bucketByGroup(ingredients) {
 
 /* ─── INGREDIENT CARD ──────────────────────────────────────────────────────── */
 function IngredientCard({ ingredients, scaleFactor }) {
+  const { t } = useI18n()
   const factor = scaleFactor ?? 1
   const groups = bucketByGroup(ingredients)
   const sectionLabelStyle = {
@@ -187,7 +191,7 @@ function IngredientCard({ ingredients, scaleFactor }) {
       background: 'var(--white)', borderRadius: 'var(--r-lg)',
       border: '1px solid var(--border-soft)', padding: '20px 24px',
     }}>
-      <div style={{ ...sectionLabelStyle, color: 'var(--text-tertiary)', marginBottom: 14 }}>Ingredients</div>
+      <div style={{ ...sectionLabelStyle, color: 'var(--text-tertiary)', marginBottom: 14 }}>{t('detail.ingredients')}</div>
       {groups.map((group, gi) => {
         const required = group.items.filter(i => !i.optional)
         const optional = group.items.filter(i => i.optional)
@@ -197,7 +201,7 @@ function IngredientCard({ ingredients, scaleFactor }) {
             <IngList items={required} />
             {optional.length > 0 && (
               <div style={{ marginTop: 28 }}>
-                <div style={sectionLabelStyle}>Optional ingredients</div>
+                <div style={sectionLabelStyle}>{t('detail.optionalIngredients')}</div>
                 <IngList items={optional} />
               </div>
             )}
@@ -214,6 +218,7 @@ function IngredientCard({ ingredients, scaleFactor }) {
    mount so checkboxes are pre-populated correctly.
    ─────────────────────────────────────────────────────────────────────────── */
 function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
+  const { t } = useI18n()
   const [collections,  setCollections]  = useState([])
   const [loading,      setLoading]      = useState(true)
   const [originalIds,  setOriginalIds]  = useState(new Set())
@@ -292,11 +297,11 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
 
     // Toast copy reflects what actually changed
     const nameOf = id => collections.find(c => c.id === id)?.name
-    let message = 'Collections updated'
+    let message = t('detail.collectionsUpdated')
     if (toAdd.length === 1 && toRemove.length === 0 && nameOf(toAdd[0]))
-      message = `Added to ${nameOf(toAdd[0])}`
+      message = t('detail.addedTo', { name: nameOf(toAdd[0]) })
     else if (toRemove.length === 1 && toAdd.length === 0 && nameOf(toRemove[0]))
-      message = `Removed from ${nameOf(toRemove[0])}`
+      message = t('detail.removedFrom', { name: nameOf(toRemove[0]) })
 
     onSaved?.(checkedIds.size > 0, true)
     onClose()
@@ -364,10 +369,10 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
           <span style={{
             fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
             color: 'var(--text-primary)',
-          }}>Add to collection</span>
+          }}>{t('detail.addToCollection')}</span>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('detail.close')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: 'var(--text-secondary)', padding: 4, borderRadius: 6,
@@ -395,7 +400,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
                 value={newColName}
                 onChange={e => setNewColName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowInput(false); setNewColName('') } }}
-                placeholder="Collection name…"
+                placeholder={t('detail.collectionName')}
                 maxLength={60}
                 style={{
                   flex: 1, minWidth: 0,
@@ -419,7 +424,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
                   fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
                   transition: 'background 150ms, color 150ms',
                 }}
-              >{creating ? 'Creating…' : 'Create'}</button>
+              >{creating ? t('detail.creating') : t('detail.create')}</button>
               <button
                 onClick={() => { setShowInput(false); setNewColName('') }}
                 style={{
@@ -445,7 +450,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
                 stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              New collection
+              {t('detail.newCollection')}
             </button>
           )}
 
@@ -454,12 +459,12 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
             <div style={{
               padding: '32px 20px', textAlign: 'center',
               fontSize: '0.9rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
-            }}>Loading…</div>
+            }}>{t('browse.loading')}</div>
           ) : collections.length === 0 ? (
             <div style={{
               padding: '32px 20px', textAlign: 'center',
               fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
-            }}>Create your first collection above.</div>
+            }}>{t('detail.createFirst')}</div>
           ) : (
             collections.map(col => {
               const checked = checkedIds.has(col.id)
@@ -519,7 +524,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
               transition: 'background 150ms, color 150ms',
               opacity: saving ? 0.7 : 1,
             }}
-          >{saving ? 'Saving…' : 'Save'}</button>
+          >{saving ? t('col.saving') : t('col.save')}</button>
         </div>
       </div>
     </>
@@ -540,6 +545,7 @@ export default function Detail({
   fromCollection = false,
   username = null,
 }) {
+  const { t, formatDate } = useI18n()
   const [recipe, setRecipe]               = useState(initialRecipe)
   const [menuOpen, setMenuOpen]           = useState(false)
   const [sheetOpen, setSheetOpen]         = useState(false)
@@ -565,9 +571,7 @@ export default function Detail({
   // A copy of someone else's recipe (mine, with copied_from set) credits the ORIGINAL creator and
   // the original's date, plus a second line with when I saved it. If the original is no longer
   // visible (deleted / made private) the creator and date are simply omitted — never my own name.
-  const fmtDate = iso => iso
-    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : null
+  const fmtDate = formatDate
   const isCopy = isOwner && !!recipe.copied_from
   const authorName = isCopy ? originalAuthor : (isOwner ? username : recipe.author_username)
   const addedDate = fmtDate(isCopy ? originalDate : recipe.created_at)
@@ -669,7 +673,7 @@ export default function Detail({
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Delete "${recipe.name}"?`)) return
+    if (!window.confirm(t('detail.confirmDelete', { name: recipe.name }))) return
     await supabase.from('recipes').delete().eq('id', recipe.id)
     onDelete()
   }
@@ -677,7 +681,7 @@ export default function Detail({
   async function handleRemoveFromCollections() {
     await supabase.from('collection_recipes').delete().eq('recipe_id', recipe.id)
     setIsInAnyCollection(false)
-    onToast?.('Removed from collections')
+    onToast?.(t('detail.removedFromCollections'))
   }
 
   async function handleToggleFavourite() {
@@ -708,8 +712,8 @@ export default function Detail({
       }
     }
     if (failed) {
-      const base = failed === 1 ? "A photo couldn't be uploaded" : `${failed} photos couldn't be uploaded`
-      onToast?.(`${base}${lastReason ? ` (${lastReason})` : ''}. Please try again.`)
+      const base = failed === 1 ? t('detail.photoFailedOne') : t('detail.photoFailedMany', { count: failed })
+      onToast?.(t('detail.tryAgain', { base, reason: lastReason ? ` (${lastReason})` : '' }))
     }
     if (uploaded.length) {
       const newPhotos = [...photos, ...uploaded]
@@ -808,7 +812,7 @@ export default function Detail({
     if (copied) {
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
-      onToast?.('Recipe link copied')
+      onToast?.(t('detail.linkCopiedToast'))
     }
   }
 
@@ -870,7 +874,7 @@ export default function Detail({
               background: 'transparent', color: '#0C3D4E',
               cursor: 'pointer', fontFamily: 'var(--font-body)',
             }}
-          >Sign in to save</button>
+          >{t('detail.signInToSave')}</button>
         </div>
       ) : (
         /* Normal nav */
@@ -894,7 +898,7 @@ export default function Detail({
             >
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Recipes
+            {t('detail.back')}
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -907,13 +911,13 @@ export default function Detail({
                   borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
                   background: 'transparent', color: '#0C3D4E',
                   cursor: 'pointer', fontFamily: 'var(--font-body)',
-                }}>Edit</button>
+                }}>{t('detail.edit')}</button>
 
                 {/* Kebab menu */}
                 <div ref={menuRef} style={{ position: 'relative' }}>
                   <button
                     onClick={() => setMenuOpen(o => !o)}
-                    aria-label="More options"
+                    aria-label={t('detail.moreOptions')}
                     style={{
                       width: 34, height: 34,
                       background: 'none', border: 'none',
@@ -951,7 +955,7 @@ export default function Detail({
                           }}
                           onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                        >Add to another collection</button>
+                        >{t('detail.addToAnother')}</button>
                         <button
                           onClick={() => { setMenuOpen(false); handleRemoveFromCollections() }}
                           style={{
@@ -962,7 +966,7 @@ export default function Detail({
                           }}
                           onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                        >Remove from collection</button>
+                        >{t('detail.removeFromCollection')}</button>
                         </>
                       ) : (
                         <button
@@ -975,7 +979,7 @@ export default function Detail({
                           }}
                           onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                        >Add to collection</button>
+                        >{t('detail.addToCollection')}</button>
                       )}
                       {/* Make public / Make private */}
                       <button
@@ -989,7 +993,7 @@ export default function Detail({
                         onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                       >
-                        {recipe.is_public ? 'Make recipe private' : 'Make recipe public'}
+                        {recipe.is_public ? t('detail.makePrivate') : t('detail.makePublic')}
                       </button>
                       {/* Delete */}
                       <button
@@ -1001,7 +1005,7 @@ export default function Detail({
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#F43F5E'; e.currentTarget.style.color = '#F9F6F0' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#C0392B' }}
-                      >Delete recipe</button>
+                      >{t('detail.deleteRecipe')}</button>
                     </div>
                   )}
                 </div>
@@ -1016,7 +1020,7 @@ export default function Detail({
                     fontSize: '0.78rem', color: 'var(--text-secondary)',
                     fontFamily: 'var(--font-body)', fontStyle: 'italic',
                   }}>
-                    Saved to my recipes
+                    {t('detail.savedToMine')}
                   </span>
                 ) : (
                   <button
@@ -1030,7 +1034,7 @@ export default function Detail({
                       opacity: adding ? 0.6 : 1, transition: 'opacity 150ms',
                     }}
                   >
-                    {adding ? 'Adding…' : 'Add to my recipes'}
+                    {adding ? t('detail.adding') : t('detail.addToMine')}
                   </button>
                 )}
 
@@ -1038,7 +1042,7 @@ export default function Detail({
                 <div ref={menuRef} style={{ position: 'relative' }}>
                   <button
                     onClick={() => setMenuOpen(o => !o)}
-                    aria-label="More options"
+                    aria-label={t('detail.moreOptions')}
                     style={{
                       width: 34, height: 34,
                       background: 'none', border: 'none',
@@ -1073,7 +1077,7 @@ export default function Detail({
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                      >{isInAnyCollection ? 'Add to another collection' : 'Add to collection'}</button>
+                      >{isInAnyCollection ? t('detail.addToAnother') : t('detail.addToCollection')}</button>
                     </div>
                   )}
                 </div>
@@ -1117,7 +1121,7 @@ export default function Detail({
                     {photos.map((url, i) => (
                       <div key={url + i} style={{ flex: '0 0 100%', scrollSnapAlign: 'start' }}>
                         <img
-                          src={url} alt={`${recipe.name} photo ${i + 1}`}
+                          src={url} alt={t('detail.photoAlt', { name: recipe.name, n: i + 1 })}
                           style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
                         />
                       </div>
@@ -1134,7 +1138,7 @@ export default function Detail({
                     2 rows of 2). */}
                 <div className="hidden lg:flex" style={{ gap: 4, height: 420 }}>
                   <img
-                    src={photos[0]} alt={`${recipe.name} photo 1`}
+                    src={photos[0]} alt={t('detail.photoAlt', { name: recipe.name, n: 1 })}
                     style={{
                       flex: photos.length > 2 ? '1.4 1 0' : '1 1 0', minWidth: 0,
                       width: '100%', height: '100%', objectFit: 'cover', display: 'block',
@@ -1147,7 +1151,7 @@ export default function Detail({
                     }}>
                       {photos.slice(1).map((url, i, rest) => (
                         <img
-                          key={url + i} src={url} alt={`${recipe.name} photo ${i + 2}`}
+                          key={url + i} src={url} alt={t('detail.photoAlt', { name: recipe.name, n: i + 2 })}
                           style={{
                             width: '100%', height: '100%', minHeight: 0, objectFit: 'cover', display: 'block',
                             gridColumn: rest.length % 2 === 1 && i === rest.length - 1 ? 'span 2' : undefined,
@@ -1157,7 +1161,7 @@ export default function Detail({
                     </div>
                   ) : (
                     <img
-                      src={photos[1]} alt={`${recipe.name} photo 2`}
+                      src={photos[1]} alt={t('detail.photoAlt', { name: recipe.name, n: 2 })}
                       style={{ flex: '1 1 0', minWidth: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />
                   )}
@@ -1184,7 +1188,7 @@ export default function Detail({
                     key={i}
                     type="button"
                     onClick={() => scrollToPhoto(i)}
-                    aria-label={`Go to photo ${i + 1}`}
+                    aria-label={t('detail.goToPhoto', { n: i + 1 })}
                     style={{
                       width: 6, height: 6, borderRadius: '50%', padding: 0, border: 'none',
                       background: i === activePhoto ? '#fff' : 'rgba(255,255,255,0.45)',
@@ -1204,7 +1208,7 @@ export default function Detail({
                 type="button"
                 className="carousel-arrow lg:hidden"
                 onClick={() => scrollToPhoto(activePhoto - 1)}
-                aria-label="Previous photo"
+                aria-label={t('detail.prevPhoto')}
                 style={{ ...blurBtn, position: 'absolute', top: '50%', left: 10, transform: 'translateY(-50%)', width: 34, height: 34, color: '#fff' }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -1219,7 +1223,7 @@ export default function Detail({
                 type="button"
                 className="carousel-arrow lg:hidden"
                 onClick={() => scrollToPhoto(activePhoto + 1)}
-                aria-label="Next photo"
+                aria-label={t('detail.nextPhoto')}
                 style={{ ...blurBtn, position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', width: 34, height: 34, color: '#fff' }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -1235,7 +1239,7 @@ export default function Detail({
                 type="button"
                 onClick={triggerAddPhotos}
                 disabled={uploading}
-                aria-label="Add more photos"
+                aria-label={t('detail.addMorePhotosLabel')}
                 style={{
                   ...blurBtn, position: 'absolute', top: 12, left: 12, gap: 6,
                   padding: '9px 14px', color: '#fff', borderRadius: 'var(--r-full)',
@@ -1245,13 +1249,13 @@ export default function Detail({
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
               >
-                {uploading ? 'Uploading…' : (
+                {uploading ? t('detail.uploading') : (
                   <>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    Add photos
+                    {t('detail.addPhotos')}
                   </>
                 )}
               </button>
@@ -1261,7 +1265,7 @@ export default function Detail({
               isOwner ? (
                 <button
                   onClick={handleToggleFavourite}
-                  aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+                  aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
                   style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
                     color: recipe.is_favourite ? '#D7191D' : '#fff' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
@@ -1272,7 +1276,7 @@ export default function Detail({
               ) : session?.user ? (
                 <button
                   onClick={handleToggleLike}
-                  aria-label={isLiked ? 'Unlike recipe' : 'Like recipe'}
+                  aria-label={isLiked ? t('card.unlike') : t('card.like')}
                   style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
                     color: isLiked ? '#D7191D' : '#fff' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
@@ -1319,7 +1323,7 @@ export default function Detail({
                   onMouseLeave={e => { e.currentTarget.style.background = '#EFEFED'; e.currentTarget.style.color = '#9CA3AF' }}
                 >
                   {uploading ? (
-                    <span style={{ fontSize: '0.85rem' }}>Uploading…</span>
+                    <span style={{ fontSize: '0.85rem' }}>{t('detail.uploading')}</span>
                   ) : (
                     <>
                       <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
@@ -1328,14 +1332,14 @@ export default function Detail({
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                         <circle cx="12" cy="13" r="4" />
                       </svg>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 500 }}>Add photo</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 500 }}>{t('detail.addPhoto')}</span>
                     </>
                   )}
                 </button>
 
                 <button
                   onClick={handleToggleFavourite}
-                  aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+                  aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
                   style={{
                     ...blurBtn,
                     position: 'absolute', top: 12, right: 12, padding: 10,
@@ -1380,7 +1384,7 @@ export default function Detail({
                 isOwner ? (
                   <button
                     onClick={handleToggleFavourite}
-                    aria-label={recipe.is_favourite ? 'Remove from favourites' : 'Add to favourites'}
+                    aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
                     style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
                       color: recipe.is_favourite ? '#D7191D' : '#fff' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
@@ -1391,7 +1395,7 @@ export default function Detail({
                 ) : session?.user ? (
                   <button
                     onClick={handleToggleLike}
-                    aria-label={isLiked ? 'Unlike recipe' : 'Like recipe'}
+                    aria-label={isLiked ? t('card.unlike') : t('card.like')}
                     style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
                       color: isLiked ? '#D7191D' : '#fff' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
@@ -1419,13 +1423,13 @@ export default function Detail({
                 onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = '#E9E8E5'; e.currentTarget.style.color = '#0C3D4E'; e.currentTarget.style.borderColor = '#0C3D4E' } }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#F3F3F1'; e.currentTarget.style.color = '#8A9096'; e.currentTarget.style.borderColor = '#C9CDD1' }}
               >
-                {uploading ? <span>Uploading…</span> : (
+                {uploading ? <span>{t('detail.uploading')}</span> : (
                   <>
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    <span>Add more photos</span>
+                    <span>{t('detail.addMorePhotos')}</span>
                   </>
                 )}
               </button>
@@ -1454,7 +1458,7 @@ export default function Detail({
                   textTransform: 'uppercase', color: 'var(--text-tertiary)',
                   fontFamily: 'var(--font-body)',
                 }}>
-                  {mealItems.join(' · ')}
+                  {mealItems.map(v => tagLabel(t, 'meal', v)).join(' · ')}
                 </div>
               ) : <span />}
               {showShare && (
@@ -1483,8 +1487,8 @@ export default function Detail({
             fontStyle: 'italic', lineHeight: 1.4,
           }}>
             {originalAuthor
-              ? `Original recipe by @${originalAuthor} edited by you`
-              : 'You\'ve made changes to the original recipe'}
+              ? t('detail.originalEdited', { author: originalAuthor })
+              : t('detail.changedOriginal')}
           </p>
         )}
 
@@ -1497,13 +1501,13 @@ export default function Detail({
           }}>
             {(authorName || addedDate) && (
               <p style={{ margin: 0 }}>
-                {authorName && `by @${authorName}`}
+                {authorName && t('detail.by', { author: authorName })}
                 {authorName && addedDate && ' · '}
-                {addedDate && `Added on ${addedDate}`}
+                {addedDate && t('detail.addedOn', { date: addedDate })}
               </p>
             )}
             {savedToMineDate && (
-              <p style={{ margin: 0 }}>Added to my recipes on {savedToMineDate}</p>
+              <p style={{ margin: 0 }}>{t('detail.addedToMineOn', { date: savedToMineDate })}</p>
             )}
           </div>
         )}
@@ -1528,24 +1532,24 @@ export default function Detail({
           >
             {totalTimeText && (
               <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
-                <div style={factLabel}>Total time</div>
+                <div style={factLabel}>{t('detail.totalTime')}</div>
                 <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{totalTimeText}</div>
               </div>
             )}
             {prepTimeText && (
               <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
-                <div style={factLabel}>Prep time</div>
+                <div style={factLabel}>{t('detail.prepTime')}</div>
                 <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{prepTimeText}</div>
               </div>
             )}
             {recipe.serves ? (
               <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
-                <div style={factLabel}>Serves</div>
+                <div style={factLabel}>{t('detail.serves')}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 26 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <button
                     onClick={() => setScaledServings(s => Math.max(1, (s || recipe.serves) - 1))}
-                    aria-label="Fewer servings"
+                    aria-label={t('detail.fewer')}
                     style={stepperBtn}
                     onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0'; e.currentTarget.style.borderColor = '#0C3D4E' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-soft)' }}
@@ -1564,7 +1568,7 @@ export default function Detail({
                   </span>
                   <button
                     onClick={() => setScaledServings(s => (s || recipe.serves) + 1)}
-                    aria-label="More servings"
+                    aria-label={t('detail.more')}
                     style={stepperBtn}
                     onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0'; e.currentTarget.style.borderColor = '#0C3D4E' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-soft)' }}
@@ -1587,14 +1591,14 @@ export default function Detail({
                       fontFamily: 'var(--font-body)', cursor: 'pointer',
                       textDecoration: 'underline', textDecorationStyle: 'dotted',
                     }}
-                  >Reset</button>
+                  >{t('detail.reset')}</button>
                 )}
                 </div>
               </div>
             ) : null}
             {recipe.cuisine && (
               <div className="basis-full first:pl-0 lg:basis-auto lg:ml-6 lg:pl-6 lg:border-l lg:border-[#E0E8EA] lg:first:ml-0 lg:first:border-l-0 lg:first:pl-0">
-                <div style={factLabel}>Cuisine</div>
+                <div style={factLabel}>{t('detail.cuisine')}</div>
                 <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{recipe.cuisine}</div>
               </div>
             )}
@@ -1610,7 +1614,7 @@ export default function Detail({
                 'Vegan':        { background: 'var(--white)',        color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' },
                 'Pescatarian':  { background: 'var(--violet-light)', color: 'var(--violet-accent)' },
               }[d] || {}
-              return <span key={d} style={{ ...pill, ...s }}>{d}</span>
+              return <span key={d} style={{ ...pill, ...s }}>{tagLabel(t, 'dietary', d)}</span>
             })}
           </div>
         )}
@@ -1632,7 +1636,7 @@ export default function Detail({
             fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: 'var(--text-tertiary)',
             marginBottom: 14, fontFamily: 'var(--font-body)',
-          }}>Method</div>
+          }}>{t('detail.method')}</div>
           {steps.map((step, i) => (
             <div key={i} className="flex gap-4" style={{
               padding: '11px 0',

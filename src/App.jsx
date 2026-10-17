@@ -8,8 +8,10 @@ import Toast from './components/Toast'
 import AuthScreen from './components/AuthScreen'
 import ResetPassword from './components/ResetPassword'
 import Profile from './components/Profile'
+import { useI18n } from './i18n'
 
 export default function App() {
+  const { t, setLang } = useI18n()
   const [session, setSession] = useState(undefined) // undefined = loading, null = signed out
   const [view, setView]       = useState('browse')
   const [selectedRecipe, setSelectedRecipe] = useState(null)
@@ -111,6 +113,12 @@ export default function App() {
       } else {
         setUsername(existing.username || metaUsername || null)
       }
+
+      // Interface language is stored on the profile. Read separately and ignore
+      // errors so the app still works before supabase_migration_language.sql is run.
+      const { data: langRow, error: langErr } = await supabase
+        .from('profiles').select('language').eq('id', userId).maybeSingle()
+      if (!langErr && langRow?.language) setLang(langRow.language)
     }
     ensureProfileAndLoadUsername()
   }, [session?.user?.id])
@@ -222,11 +230,11 @@ export default function App() {
 
   function handleSaved(isEdit) {
     goHome()
-    showToast(isEdit ? 'Saved your changes.' : 'Saved. Nice one.')
+    showToast(isEdit ? t('app.toast.savedChanges') : t('app.toast.saved'))
   }
 
   function handleAddedToMyRecipes(copiedRecipe) {
-    showToast('Added to your recipes.')
+    showToast(t('app.toast.added'))
     openDetail(copiedRecipe)
   }
 
@@ -263,12 +271,12 @@ export default function App() {
             <p style={{
               fontFamily: 'var(--font-display)', fontSize: '1.3rem',
               color: 'var(--text-primary)', marginBottom: 10, fontWeight: 400,
-            }}>Recipe not found</p>
+            }}>{t('app.notFound.title')}</p>
             <p style={{
               fontFamily: 'var(--font-body)', fontSize: '0.9rem',
               color: 'var(--text-secondary)', marginBottom: 28, lineHeight: 1.5,
             }}>
-              This recipe may have been made private or no longer exists.
+              {t('app.notFound.body')}
             </p>
             <button
               onClick={exitShareView}
@@ -278,7 +286,7 @@ export default function App() {
                 background: 'transparent', color: '#0C3D4E',
                 cursor: 'pointer', fontFamily: 'var(--font-body)',
               }}
-            >Go to Mi Sazón</button>
+            >{t('app.notFound.cta')}</button>
           </div>
         </div>
       )
@@ -316,6 +324,7 @@ export default function App() {
             onBack={goBack}
             onSignOut={signOut}
             onUsernameChange={newName => setUsername(newName)}
+            onToast={showToast}
           />
         )}
         {view === 'browse' && (

@@ -1,3 +1,5 @@
+import { translate } from '../i18n'
+
 export function toMins(h, m) {
   const total = parseInt(h || 0) * 60 + parseInt(m || 0)
   return total > 0 ? total : null
@@ -12,9 +14,9 @@ export function formatTime(totalMins) {
   if (!totalMins) return null
   const h = Math.floor(totalMins / 60)
   const m = totalMins % 60
-  if (h > 0 && m > 0) return `${h}h ${m}m`
+  if (h > 0 && m > 0) return `${h}h ${m}${translate('time.min')}`
   if (h > 0) return `${h}h`
-  return `${m}m`
+  return `${m}${translate('time.min')}`
 }
 
 export default function TimePicker({ label, hours, minutes, onHoursChange, onMinutesChange }) {

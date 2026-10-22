@@ -55,8 +55,9 @@ my-recipes/
   supabase_migration_admin_dashboard.sql   admins table + is_admin() + admin_user_stats() (v4.10)
   supabase_migration_admin_recent_recipes.sql admin_recent_recipes() (v4.11)
   supabase_migration_explore.sql           recipes.made_public_at + trigger, profiles.explore_seen_at (v4.12)
+  supabase_migration_delete_account.sql    delete_my_account() (v4.15)
   src/i18n/                index.jsx (provider, t, tagLabel, translate) + locales/*.js (en/fr/es, auto-merged)
-  src/components/AdminDashboard.jsx, PasteIngredientsModal.jsx   (v4.10 / v4.9)
+  src/components/AdminDashboard.jsx, PasteIngredientsModal.jsx, LegalPage.jsx, ChooseUsername.jsx   (v4.10 / v4.9 / v4.14 / v4.16)
   src/utils/parseIngredients.js, adminSeen.js                    (v4.9 / v4.11)
   vercel.json             SPA rewrite rule for /recipe/:id deep links
   vite.config.js          Vite config — server.host:true for WiFi local dev
@@ -835,6 +836,31 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 **Edit points:** contact address = `CONTACT_EMAIL` and date = `UPDATED` at the top of `LegalPage.jsx`. Draft content (not legal advice): data collected (account, recipes/photos/collections/likes, language, Explore last-seen), providers (Supabase, Cloudflare, Vercel, Google), admin access disclosure, deletion by email within 30 days, under-13 clause, governing law = Ontario, Canada.
 
 **Still to do for the Play Store:** Google Play requires an account-deletion path — ideally an in-app "Delete my account" plus a public web page/URL for it; currently deletion is by emailing the contact address.
+
+### v4.15 — Delete my account (staged, 2026-10-22)
+
+**What shipped:** Profile & settings → Account card now has **Delete my account** (red outline) beside **Sign out**. It opens a confirmation modal: explains what is deleted (profile, all recipes incl. public, photos, collections, likes), "This cannot be undone", and requires typing **DELETE** (any case) before the red button enables. On success the user is signed out locally and sees "Your account has been deleted." (green notice on the sign-in screen, via `sessionStorage` flag `sazon_account_deleted`). Errors show inside the modal; details go to `console.error('Delete account failed:', …)`. Translated en/fr/es (the typed word stays `DELETE` in every language).
+
+**DB (run once):** `supabase_migration_delete_account.sql` — `delete_my_account()`, `SECURITY DEFINER`, no arguments, acts only on `auth.uid()`; deletes `collection_recipes` → `collections` → `likes` → `recipes` → `profiles` → `admins` → `auth.users` explicitly (doesn't rely on cascades). Without the migration the modal shows the error message and nothing is deleted.
+
+**Known gap:** photo files in Cloudflare R2 are **not** deleted by the function (R2 needs the server-side keys in `api/`). The Privacy Policy promises photos are removed from storage within 30 days, so either purge them by hand or build `api/delete-account.js` (verify the user's JWT with the Supabase service-role key, delete R2 objects by prefix, then call the same deletion). Recommended before relying on this for the Play Store.
+
+**Also:** Privacy Policy text updated to describe in-app deletion (`LegalPage.jsx`). Play Store still wants a public web page URL describing how to request deletion — `/privacy` section 6 can serve, or add a dedicated `/delete-account` page.
+
+### v4.16 — Continue with Google + username step (staged, 2026-10-22)
+
+**What shipped:** "Continue with Google" button (with "or" divider) at the top of the sign-in / sign-up card (`AuthScreen.jsx`, `handleGoogle` → `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: origin + '/' } })`). Default implicit flow (tokens come back in the URL hash, same mechanism the password-reset links already use — `flowType` untouched). Google accounts arrive **without a username**, so `App.jsx` sets `needsUsername` (no profile row, or a row with empty username and no `user_metadata.username`) and renders `ChooseUsername.jsx` before the app: 3–20 chars, letters/numbers/`_`/`-`, unique (case-insensitive, stored lowercase), saved with `profiles.upsert`; "Sign out" link available. Existing email accounts are unaffected.
+
+**Profile:** the Change-password card is hidden for accounts with no email identity (`hasPassword` from `session.user.identities`), i.e. Google-only accounts.
+
+**Translations:** `auth.google`, `auth.or`, `auth.err.google`, `username.*` (en/fr/es).
+
+**Setup (done outside the code):** Google Cloud → Google Auth Platform (consent screen + Web OAuth client, redirect URI = Supabase callback), Supabase → Authentication → Providers → Google (Client ID/secret). Supabase → Authentication → **URL Configuration** must list the Site URL and Redirect URLs (`https://misazon.app`, the Vercel address, `http://localhost:5173`), otherwise Google sign-in returns to the wrong place.
+
+**Notes / open items:**
+- Same email already registered with a password: Supabase links the Google identity to the existing account (Google emails are verified) — worth confirming under Authentication → Settings.
+- Google may show "requires verification" in the Verification Center (brand/domain verification). Sign-in works for everyone with basic scopes (`openid email profile`) either way; verification only affects how the consent screen looks.
+- Play Store: embedded WebViews can't do Google sign-in (`disallowed_useragent`); a Trusted Web Activity (Chrome) works.
 
 ---
 

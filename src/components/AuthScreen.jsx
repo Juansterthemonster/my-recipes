@@ -133,6 +133,14 @@ export default function AuthScreen() {
   const [showConfirm, setShowConfirm]     = useState(false)
   const [loading, setLoading]             = useState(false)
   const [error, setError]                 = useState('')
+  // Set by Profile right after an account is deleted; shown once on the sign-in screen
+  const [accountDeleted] = useState(() => {
+    try {
+      const v = sessionStorage.getItem('sazon_account_deleted') === '1'
+      if (v) sessionStorage.removeItem('sazon_account_deleted')
+      return v
+    } catch { return false }
+  })
 
   const isSignUp = mode === 'signup'
 
@@ -179,6 +187,17 @@ export default function AuthScreen() {
   }
 
   /* ── Forgot password ── */
+  /* ── Continue with Google (Supabase OAuth; returns to this site signed in) ── */
+  async function handleGoogle() {
+    setError(''); setLoading(true)
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/' },
+    })
+    if (err) { setError(t('auth.err.google')); setLoading(false) }
+    // on success the browser is redirected to Google, so nothing more to do here
+  }
+
   async function handleForgot(e) {
     e.preventDefault()
     setError('')
@@ -308,6 +327,12 @@ export default function AuthScreen() {
         </p>
       </div>
 
+      {accountDeleted && (
+        <div style={{ background: 'var(--green-light)', color: 'var(--green-primary)', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
+          {t('auth.accountDeleted')}
+        </div>
+      )}
+
       {error && (
         <div style={{ background: '#FFF0F0', border: '1px solid #F5BABA', color: '#A03030', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
           {error}
@@ -315,6 +340,29 @@ export default function AuthScreen() {
       )}
 
       <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
+        <button
+          type="button" onClick={handleGoogle} disabled={loading}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            background: 'var(--white)', color: 'var(--text-primary)', border: '1.5px solid var(--border)',
+            borderRadius: 'var(--r-full)', padding: '11px 24px', fontFamily: 'var(--font-body)',
+            fontSize: '0.95rem', fontWeight: 500, cursor: loading ? 'default' : 'pointer',
+            opacity: loading ? 0.6 : 1, transition: 'background 150ms',
+          }}
+          onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#F5F5F2' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--white)' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          {t('auth.google')}
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />{t('auth.or')}<span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
+        </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           <div>

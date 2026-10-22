@@ -138,7 +138,14 @@ function StatGrid({ items }) {
 /* ─── PROFILE ─────────────────────────────────────────────────────────────── */
 export default function Profile({ session, username, onBack, onSignOut, onUsernameChange, onToast, isAdmin, onOpenAdmin, adminNewCount = 0 }) {
   const { t, lang, setLang } = useI18n()
+  // Google-only accounts have no password to change
+  const hasPassword = !session?.user?.identities || session.user.identities.some(i => i.provider === 'email')
   const [languageSaving, setLanguageSaving] = useState(false)
+  // ── Delete account (confirmation modal)
+  const [deleteOpen, setDeleteOpen]       = useState(false)
+  const [deleteText, setDeleteText]       = useState('')
+  const [deleting, setDeleting]           = useState(false)
+  const [deleteError, setDeleteError]     = useState('')
   // ── Stats
   const [stats, setStats] = useState({
     totalCount:       null, // all my recipes (including private, copied, etc.)
@@ -342,6 +349,25 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     }
   }
 
+  /* ── Delete account: server function removes everything, then we sign out locally ── */
+  function closeDelete() {
+    if (deleting) return
+    setDeleteOpen(false); setDeleteText(''); setDeleteError('')
+  }
+  async function handleDeleteAccount() {
+    if (deleteText.trim().toUpperCase() !== 'DELETE' || deleting) return
+    setDeleting(true); setDeleteError('')
+    const { error } = await supabase.rpc('delete_my_account')
+    if (error) {
+      console.error('Delete account failed:', error)
+      setDeleteError(t('profile.deleteError'))
+      setDeleting(false)
+      return
+    }
+    try { sessionStorage.setItem('sazon_account_deleted', '1') } catch { /* ignore */ }
+    await supabase.auth.signOut({ scope: 'local' })   // account no longer exists server-side
+  }
+
   /* ── Change interface language (saved on the profile) ───────────────────── */
   async function handleLanguageChange(code) {
     if (code === lang || languageSaving) return
@@ -483,7 +509,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         </form>
       </div>
 
-      {/* ── Change password card ── */}
+      {/* ── Change password card (only for accounts that have a password; Google-only accounts don't) ── */}
+      {hasPassword && (
       <div style={card}>
         <div style={sectionLabel}>{t('profile.password')}</div>
         <form onSubmit={handlePasswordSubmit} noValidate>
@@ -528,6 +555,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           </button>
         </form>
       </div>
+      )}
 
       </div>
 
@@ -611,7 +639,71 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         >
           {t('profile.signOut')}
         </button>
+        <button
+          onClick={() => setDeleteOpen(true)}
+          style={{
+            background: 'none', border: '1.5px solid #F5BABA',
+            borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
+            fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px',
+            cursor: 'pointer', color: '#A03030', marginLeft: 12, marginTop: 0,
+            transition: 'background 150ms',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#FFF0F0' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+        >
+          {t('profile.deleteAccount')}
+        </button>
       </div>
+
+      {/* ── Delete-account confirmation modal ── */}
+      {deleteOpen && (
+        <div
+          onClick={closeDelete}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            role="alertdialog" aria-modal="true" aria-labelledby="delete-title"
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => { if (e.key === 'Escape') closeDelete() }}
+            style={{ background: '#F9F6F0', borderRadius: 16, padding: '26px 24px', width: 'min(420px, 100%)', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
+          >
+            <div id="delete-title" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: '#A03030', marginBottom: 10 }}>
+              {t('profile.deleteTitle')}
+            </div>
+            <p style={{ margin: '0 0 10px', fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--text-primary)' }}>
+              {t('profile.deleteBody')}
+            </p>
+            <p style={{ margin: '0 0 16px', fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.55, fontWeight: 600, color: '#A03030' }}>
+              {t('profile.deleteWarning')}
+            </p>
+            <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+              {t('profile.deleteTypeLabel')}
+            </label>
+            <input
+              autoFocus value={deleteText} onChange={e => setDeleteText(e.target.value)}
+              placeholder="DELETE" autoComplete="off" autoCapitalize="characters" spellCheck={false}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--border-soft)', background: 'var(--white)', fontFamily: 'var(--font-body)', fontSize: '1rem', outline: 'none', marginBottom: 14 }}
+            />
+            {deleteError && <div style={{ ...errBlock, marginBottom: 14 }}>{deleteError}</div>}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button
+                onClick={closeDelete} disabled={deleting}
+                style={{ background: 'none', border: '1.5px solid var(--border-soft)', borderRadius: 'var(--r-full)', padding: '10px 20px', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-secondary)', cursor: deleting ? 'default' : 'pointer' }}
+              >{t('col.cancel')}</button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteText.trim().toUpperCase() !== 'DELETE'}
+                style={{
+                  background: '#A03030', color: '#fff', border: 'none', borderRadius: 'var(--r-full)',
+                  padding: '10px 20px', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+                  opacity: (deleting || deleteText.trim().toUpperCase() !== 'DELETE') ? 0.45 : 1,
+                  cursor: (deleting || deleteText.trim().toUpperCase() !== 'DELETE') ? 'default' : 'pointer',
+                }}
+              >{deleting ? t('profile.deleting') : t('profile.deleteConfirm')}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

@@ -1,5 +1,9 @@
 export default {
   en: {
+    'auth.accountDeleted': 'Your account has been deleted.',
+    'auth.google': 'Continue with Google', 'auth.or': 'or', 'auth.err.google': "Couldn't start Google sign-in. Please try again.",
+    'username.title': 'Choose your username', 'username.sub': 'One last step. Pick a username for your Mi Sazón account.',
+    'username.continue': 'Continue', 'username.saveError': "Couldn't save your username. Please try again.",
     'auth.verifyTitle': 'Check your email',
     'auth.verifySent': 'We sent a confirmation link to {email}.',
     'auth.verifyBody': 'Click the link in the email to verify your account, then come back here to sign in.',
@@ -49,6 +53,10 @@ export default {
     'reset.err.failed': 'Something went wrong. Your reset link may have expired — please request a new one.',
   },
   fr: {
+    'auth.accountDeleted': 'Ton compte a été supprimé.',
+    'auth.google': 'Continuer avec Google', 'auth.or': 'ou', 'auth.err.google': "Impossible de démarrer la connexion avec Google. Réessaie.",
+    'username.title': "Choisis ton nom d'utilisateur", 'username.sub': "Une dernière étape. Choisis un nom d'utilisateur pour ton compte Mi Sazón.",
+    'username.continue': 'Continuer', 'username.saveError': "Impossible d'enregistrer ton nom d'utilisateur. Réessaie.",
     'auth.verifyTitle': 'Vérifie ton courriel',
     'auth.verifySent': 'Nous avons envoyé un lien de confirmation à {email}.',
     'auth.verifyBody': 'Clique sur le lien dans le courriel pour vérifier ton compte, puis reviens ici pour te connecter.',
@@ -98,6 +106,10 @@ export default {
     'reset.err.failed': "Une erreur s'est produite. Ton lien de réinitialisation a peut-être expiré — demande-en un nouveau.",
   },
   es: {
+    'auth.accountDeleted': 'Tu cuenta ha sido eliminada.',
+    'auth.google': 'Continuar con Google', 'auth.or': 'o', 'auth.err.google': 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.',
+    'username.title': 'Elige tu nombre de usuario', 'username.sub': 'Un último paso. Elige un nombre de usuario para tu cuenta de Mi Sazón.',
+    'username.continue': 'Continuar', 'username.saveError': 'No se pudo guardar tu nombre de usuario. Inténtalo de nuevo.',
     'auth.verifyTitle': 'Revisa tu correo',
     'auth.verifySent': 'Enviamos un enlace de confirmación a {email}.',
     'auth.verifyBody': 'Haz clic en el enlace del correo para verificar tu cuenta y luego vuelve aquí para iniciar sesión.',

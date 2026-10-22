@@ -1,4 +1,5 @@
 import AdminDashboard from './components/AdminDashboard'
+import ChooseUsername from './components/ChooseUsername'
 import { getLastSeen } from './utils/adminSeen'
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
@@ -17,6 +18,8 @@ export default function App() {
   const [session, setSession] = useState(undefined) // undefined = loading, null = signed out
   const [view, setView]       = useState('browse')
   const [isAdmin, setIsAdmin]  = useState(false)
+  // true once we know this account has no username yet (first Google sign-in) → ChooseUsername screen
+  const [needsUsername, setNeedsUsername] = useState(false)
   const [adminNewCount, setAdminNewCount] = useState(0)   // recipes added since the admin last opened the dashboard
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [selectedCollection, setSelectedCollection] = useState(null)
@@ -114,7 +117,11 @@ export default function App() {
         if (metaUsername) {
           await supabase.from('profiles').insert({ id: userId, username: metaUsername })
           setUsername(metaUsername)
+        } else {
+          setNeedsUsername(true)   // e.g. first "Continue with Google": must pick a username
         }
+      } else if (!existing.username && !metaUsername) {
+        setNeedsUsername(true)
       } else {
         setUsername(existing.username || metaUsername || null)
       }
@@ -339,6 +346,15 @@ export default function App() {
 
   // No session — show auth screen
   if (!session) return <AuthScreen />
+  if (needsUsername) {
+    return (
+      <ChooseUsername
+        session={session}
+        onDone={name => { setUsername(name); setNeedsUsername(false) }}
+        onSignOut={() => { setNeedsUsername(false); supabase.auth.signOut() }}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#F9F6F0]">

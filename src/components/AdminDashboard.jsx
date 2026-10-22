@@ -158,7 +158,7 @@ export default function AdminDashboard({ onBack }) {
                             {' '}by {r.author_username ? `@${r.author_username}` : '(no username)'}
                           </span>
                           {r.is_copy && <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}> · saved from another recipe</span>}
-                          {!r.is_public && <span style={{ color: 'var(--text-tertiary)' }}> · private</span>}
+                          <span style={{ color: r.is_public ? 'var(--violet-accent)' : 'var(--text-tertiary)' }}> · {r.is_public ? 'public' : 'private'}</span>
                         </div>
                         <div style={{ color: 'var(--text-tertiary)', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{fmtDateTime(r.created_at)}</div>
                       </div>

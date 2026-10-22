@@ -674,7 +674,16 @@ export default function Detail({
 
   async function handleDelete() {
     if (!window.confirm(t('detail.confirmDelete', { name: recipe.name }))) return
-    await supabase.from('recipes').delete().eq('id', recipe.id)
+    // Remove collection memberships first (the link table may not cascade), then the
+    // recipe. .select() returns the deleted rows so a silent no-op (e.g. a row-level
+    // security rule blocking the delete) is caught instead of looking like success.
+    const { error: linkErr } = await supabase.from('collection_recipes').delete().eq('recipe_id', recipe.id)
+    const { data: deleted, error } = await supabase.from('recipes').delete().eq('id', recipe.id).select('id')
+    if (linkErr || error || !deleted?.length) {
+      console.error('Delete recipe failed:', linkErr || error || 'no rows deleted')
+      onToast?.(t('detail.deleteFailed'), 'error')
+      return
+    }
     onDelete()
   }
 
@@ -713,7 +722,7 @@ export default function Detail({
     }
     if (failed) {
       const base = failed === 1 ? t('detail.photoFailedOne') : t('detail.photoFailedMany', { count: failed })
-      onToast?.(t('detail.tryAgain', { base, reason: lastReason ? ` (${lastReason})` : '' }))
+      onToast?.(t('detail.tryAgain', { base, reason: lastReason ? ` (${lastReason})` : '' }), 'error')
     }
     if (uploaded.length) {
       const newPhotos = [...photos, ...uploaded]

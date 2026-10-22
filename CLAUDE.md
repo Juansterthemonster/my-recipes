@@ -51,6 +51,13 @@ my-recipes/
   supabase_migration_username.sql          SQL to create profiles + likes tables (run once in Supabase SQL editor)
   supabase_migration_activity_counts.sql   SQL for get_recipe_activity_counts RPC — needed for "Others' activity" stats (run once)
   supabase_migration_collection_details.sql SQL adding collections.description + cover_photo_url (run once, v4.5)
+  supabase_migration_language.sql          profiles.language (v4.8)
+  supabase_migration_admin_dashboard.sql   admins table + is_admin() + admin_user_stats() (v4.10)
+  supabase_migration_admin_recent_recipes.sql admin_recent_recipes() (v4.11)
+  supabase_migration_explore.sql           recipes.made_public_at + trigger, profiles.explore_seen_at (v4.12)
+  src/i18n/                index.jsx (provider, t, tagLabel, translate) + locales/*.js (en/fr/es, auto-merged)
+  src/components/AdminDashboard.jsx, PasteIngredientsModal.jsx   (v4.10 / v4.9)
+  src/utils/parseIngredients.js, adminSeen.js                    (v4.9 / v4.11)
   vercel.json             SPA rewrite rule for /recipe/:id deep links
   vite.config.js          Vite config — server.host:true for WiFi local dev
   CLAUDE.md               ← this file
@@ -766,6 +773,58 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 **Files:** `src/utils/parseIngredients.js`, `src/components/PasteIngredientsModal.jsx`, `src/i18n/locales/paste.js`, `RecipeForm.jsx`. No DB changes.
 
 **Ideas not done:** AI fallback for lines the rules can't split; same paste flow for steps.
+
+### v4.10 — Owner-only app dashboard (staged, 2026-10-20)
+
+**What shipped:** Profile & settings shows an **Admin → App dashboard** card, but only for admin accounts. The dashboard lists every account: username, **email**, sign-up date, recipes (and how many are public), likes given, collections — with sortable columns and headline totals (accounts, new this week, recipes, public recipes, likes, collections). English only.
+
+**Security model (all in the database — hiding the button is cosmetic):**
+- `public.admins` table (RLS on, no policies → the app can't read or edit it). Seeded with the account whose email is `juansterthemonster@gmail.com`.
+- `admin_user_stats()` is `SECURITY DEFINER`, raises "not authorized" unless `auth.uid()` is in `admins`, and reads `auth.users` for email + sign-up date. `is_admin()` only decides whether to show the menu item.
+- To add another admin later: `insert into public.admins (user_id) select id from auth.users where email = '...';`
+
+**Run once:** `supabase_migration_admin_dashboard.sql` in the Supabase SQL editor. Without it the card never appears and nothing else changes.
+
+**Files:** `supabase_migration_admin_dashboard.sql`, `src/components/AdminDashboard.jsx`, `App.jsx` (`isAdmin` state via `rpc('is_admin')`, `view === 'admin'`, `#admin` history entry), `Profile.jsx` (admin card).
+
+### v4.11 — Admin: new-recipes feed (staged, 2026-10-22)
+
+**What shipped:** The admin dashboard has a **New recipes** card (latest 10): recipe name, author `@username` + email, date/time, tags for *public* and *saved from another recipe* (copies), and a **NEW** badge on anything added since the admin last opened the dashboard. The Profile page's **App dashboard** button shows an "N new" badge.
+
+**How "new" works:** the last-opened time is kept in this browser's `localStorage` (`sazon_admin_last_seen`, `src/utils/adminSeen.js`), so it is per-browser. The badge count is refreshed each time the admin lands on Profile (`App.jsx`, `adminNewCount`).
+
+**DB (run once, after the v4.10 migration):** `supabase_migration_admin_recent_recipes.sql` — `admin_recent_recipes(p_limit)`, `SECURITY DEFINER`, same `admins` check as the user table.
+
+**Not built:** push/email alerts (would need a database trigger or webhook + an email/push service).
+
+### v4.12 — Explore: "Latest recipes added" + new-recipes dot (staged, 2026-10-22)
+
+**What shipped:**
+- Top of **Explore**: "Latest recipes added" — the 4 recipes most recently **made public** (not most recently created). Hidden while a search or any filter is active. Each recipe appears once: the "All recipes" grid below skips the 4 shown above.
+- A dark-teal dot beside the **Explore** tab text when someone else has made a recipe public since this user last opened Explore. Opening Explore clears it. Your own recipes never trigger it.
+
+**DB (run once):** `supabase_migration_explore.sql`
+- `recipes.made_public_at` (backfilled from `created_at` for existing public recipes) + trigger `recipes_set_made_public_at` that stamps it when a recipe is inserted as public or switched private → public.
+- `profiles.explore_seen_at` — last time the user opened Explore (so the dot is right on every device). A null value is initialised to "now" so new users don't see a dot for old recipes.
+- Tolerant of the migration not being run: before it, "latest" falls back to `created_at` and the dot stays off.
+
+**Code:** `Browse.jsx` (`exploreSeenAt` state/effects, `latestPublic` / `pubRest`, `TabBar dots` prop), `browse.js` locale keys `explore.*`.
+
+### v4.13 — Fixes: delete recipe, error toasts, Explore row, session notes (staged, 2026-10-22)
+
+- **Delete recipe was silently failing.** `Detail.jsx handleDelete` never checked the result. Root cause in the live DB: `recipes_copied_from_fkey` was *not* `on delete set null` (docs said it was), so deleting a recipe that anyone had copied was refused. **DB fix (run once, already applied):**
+  `alter table public.recipes drop constraint if exists recipes_copied_from_fkey; alter table public.recipes add constraint recipes_copied_from_fkey foreign key (copied_from) references public.recipes(id) on delete set null;`
+  Code now removes `collection_recipes` links first, then deletes with `.select('id')` and treats an error **or zero deleted rows** (e.g. RLS) as failure: red toast + `console.error('Delete recipe failed:', …)`. Technical reason is logged, not shown to the user.
+- **Error toasts:** `showToast(title, type = 'success')` in `App.jsx`; pass `'error'` for the red variant (`#FFF0F0` bg, `#F5BABA` border, `#A03030` text — same as inline error blocks). Used for delete failure, photo upload failure, language save failure. `Toast.jsx` reads `message.type`.
+- **Admin New-recipes card** (v4.11) trimmed to the latest **10**, username only (no email), non-public recipes tagged "· private".
+- **Explore "Latest recipes added"** (v4.12) always renders as **one row**: 4 across on desktop, 3 on tablet, ~2 on phones with sideways scroll (`pill-row` scrollbar-hiding class, widths `calc((100vw-44px)/2)` / `calc((100%-24px)/3)` / `calc((100%-36px)/4)`).
+
+**Things learned (read before next session):**
+- The Cowork VM can't build with Vite when `node_modules` was installed on the Mac (`@rolldown/binding-linux-arm64-gnu` missing). Workaround used: copy `package*.json`, `index.html`, `vite.config.js`, `postcss.config.js`, `tailwind.config.js`, `eslint.config.js`, `public/`, `src/` to a scratch dir (e.g. `~/bc`), `npm ci`, then `npx vite build` / `npx eslint` there. Don't touch the real `node_modules`.
+- Git from the VM leaves harmless `tmp_obj_*` warnings and sometimes a stale `.git/HEAD.lock`/`index.lock` (deleting is blocked): `mv` it aside instead (e.g. `mv .git/HEAD.lock .git/stale-head-lock-1`).
+- Supabase SQL editor warns "destructive operation" for any `drop` — expected for the constraint swap; none of the feature migrations delete data.
+- **Run order of SQL migrations added this stretch:** `supabase_migration_language.sql` → `supabase_migration_admin_dashboard.sql` → `supabase_migration_admin_recent_recipes.sql` → `supabase_migration_explore.sql`, plus the `recipes_copied_from_fkey` fix above.
+- Ideas discussed, not built: cook mode, step timers, unit conversion, shopping list, import from URL/photo, ingredient search, private sharing, cooking log, data export, PWA install, trash/undo, push/email alerts for new recipes.
 
 ---
 

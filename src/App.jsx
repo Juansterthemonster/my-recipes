@@ -1,3 +1,5 @@
+import AdminDashboard from './components/AdminDashboard'
+import { getLastSeen } from './utils/adminSeen'
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import Browse from './components/Browse'
@@ -14,6 +16,8 @@ export default function App() {
   const { t, setLang } = useI18n()
   const [session, setSession] = useState(undefined) // undefined = loading, null = signed out
   const [view, setView]       = useState('browse')
+  const [isAdmin, setIsAdmin]  = useState(false)
+  const [adminNewCount, setAdminNewCount] = useState(0)   // recipes added since the admin last opened the dashboard
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [selectedCollection, setSelectedCollection] = useState(null)
   const [detailFromCollection, setDetailFromCollection] = useState(false)
@@ -77,6 +81,7 @@ export default function App() {
       else if (s.view === 'edit' && s.recipe)     { setSelectedRecipe(s.recipe); setView('edit') }
       else if (s.view === 'add')                  { setSelectedRecipe(null);     setView('add') }
       else if (s.view === 'profile')              { setView('profile') }
+      else if (s.view === 'admin')                { setView('admin') }
       else if (s.view === 'collection' && s.collection) {
         setSelectedCollection(s.collection)
         setView('collection')
@@ -119,6 +124,11 @@ export default function App() {
       const { data: langRow, error: langErr } = await supabase
         .from('profiles').select('language').eq('id', userId).maybeSingle()
       if (!langErr && langRow?.language) setLang(langRow.language)
+
+      // Owner-only dashboard: the database says whether this account is an admin.
+      // Errors (function not created yet) simply mean "not an admin".
+      const { data: adminFlag } = await supabase.rpc('is_admin')
+      setIsAdmin(adminFlag === true)
     }
     ensureProfileAndLoadUsername()
   }, [session?.user?.id])
@@ -178,8 +188,9 @@ export default function App() {
     await supabase.auth.signOut()
   }
 
-  function showToast(title) {
-    setToast({ visible: true, message: { title } })
+  // type: 'success' (default, green) or 'error' (red error colours)
+  function showToast(title, type = 'success') {
+    setToast({ visible: true, message: { title, type } }) 
   }
 
   function hideToast() {
@@ -210,6 +221,22 @@ export default function App() {
   function openProfile() {
     window.history.pushState({ view: 'profile', tab: activeTab, recipe: null }, '', '#profile')
     setView('profile')
+  }
+  // Refresh the "new recipes" badge whenever the admin lands on their profile page.
+  useEffect(() => {
+    if (!isAdmin || view !== 'profile') return
+    let cancelled = false
+    supabase.rpc('admin_recent_recipes', { p_limit: 50 }).then(({ data, error }) => {
+      if (cancelled || error || !data) return
+      const since = getLastSeen()
+      setAdminNewCount(since > 0 ? data.filter(r => new Date(r.created_at).getTime() > since).length : 0)
+    })
+    return () => { cancelled = true }
+  }, [isAdmin, view])
+
+  function openAdmin() {
+    window.history.pushState({ view: 'admin', tab: activeTab, recipe: null }, '', '#admin')
+    setView('admin')
   }
   function openCollection(collection) {
     window.history.pushState({ view: 'collection', tab: activeTab, collection }, '', '#collection')
@@ -325,8 +352,12 @@ export default function App() {
             onSignOut={signOut}
             onUsernameChange={newName => setUsername(newName)}
             onToast={showToast}
+            isAdmin={isAdmin}
+            onOpenAdmin={openAdmin}
+            adminNewCount={adminNewCount}
           />
         )}
+        {view === 'admin' && isAdmin && <AdminDashboard onBack={() => { setAdminNewCount(0); goBack() }} />}
         {view === 'browse' && (
           <Browse
             onSelect={openDetail} onAdd={openAdd}

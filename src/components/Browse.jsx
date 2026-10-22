@@ -305,7 +305,7 @@ const TABS = [
   { key: 'public',      tkey: 'tab.public' },
 ]
 
-function TabBar({ active, onChange }) {
+function TabBar({ active, onChange, dots = {} }) {
   const { t } = useI18n()
   return (
     <div
@@ -341,7 +341,19 @@ function TabBar({ active, onChange }) {
             onMouseEnter={e => { if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)' }}
             onMouseLeave={e => { if (active !== tab.key) e.currentTarget.style.color = 'var(--text-secondary)' }}
           >
-            <span style={{ paddingBottom: 10 }}>{t(tab.tkey)}</span>
+            <span style={{ paddingBottom: 10, position: 'relative' }}>
+              {t(tab.tkey)}
+              {dots[tab.key] && (
+                <span
+                  role="img" aria-label={t('explore.newDot')}
+                  style={{
+                    position: 'absolute', top: -3, right: -10,
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: '#0C3D4E',
+                  }}
+                />
+              )}
+            </span>
             <span style={{
               display: 'block', width: '100%', height: 3,
               background: active === tab.key ? 'var(--green-primary)' : 'transparent',
@@ -1317,6 +1329,9 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   const [activeDietary,   setActiveDietary]   = useState([])
   const [activeMealTypes, setActiveMealTypes] = useState([])
   const [activeTime,      setActiveTime]      = useState([])
+  // When this user last opened Explore (profiles.explore_seen_at). undefined = not loaded /
+  // column missing (feature stays off, never breaks the page); number = ms timestamp.
+  const [exploreSeenAt, setExploreSeenAt] = useState(undefined)
   const [filtersOpen, setFiltersOpen]         = useState(false)
 
   // ── Collection management modal ───────────────────────────────────────────
@@ -1371,6 +1386,29 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   }
 
   useEffect(() => { fetchAll() }, [])
+
+  // Load the Explore "last seen" time. First time ever (null) → start counting from now.
+  useEffect(() => {
+    let cancelled = false
+    supabase.from('profiles').select('explore_seen_at').eq('id', session.user.id).maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return
+        if (data.explore_seen_at) setExploreSeenAt(new Date(data.explore_seen_at).getTime())
+        else {
+          setExploreSeenAt(Date.now())
+          supabase.from('profiles').update({ explore_seen_at: new Date().toISOString() }).eq('id', session.user.id)
+        }
+      })
+    return () => { cancelled = true }
+  }, [session.user.id])
+
+  // Opening Explore clears the dot (and remembers it on the profile, so it holds on every device).
+  useEffect(() => {
+    if (activeTab !== 'public' || loading || exploreSeenAt === undefined) return
+    const now = Date.now()
+    setExploreSeenAt(now)
+    supabase.from('profiles').update({ explore_seen_at: new Date(now).toISOString() }).eq('id', session.user.id)
+  }, [activeTab, loading, exploreSeenAt === undefined])
 
   async function fetchAll() {
     setLoading(true)
@@ -1510,6 +1548,16 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   const myFiltered          = myRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
   const myFavs              = myFiltered.filter(r => r.is_favourite)
   const pubFiltered         = publicRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
+  // "Latest recipes added" = the 4 most recently made-public recipes (falls back to created_at
+  // until the migration adds made_public_at). Hidden while searching/filtering; each recipe is
+  // shown only once, so the main grid skips the ones already in the Latest row.
+  const publicAt = r => new Date(r.made_public_at || r.created_at).getTime()
+  const isFiltering = q.trim() !== '' || activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0
+  const latestPublic = isFiltering ? [] : [...publicRecipes].sort((a, b) => publicAt(b) - publicAt(a)).slice(0, 4)
+  const latestIds = new Set(latestPublic.map(r => r.id))
+  const pubRest = pubFiltered.filter(r => !latestIds.has(r.id))
+  const hasNewExplore = typeof exploreSeenAt === 'number' && activeTab !== 'public'
+    && publicRecipes.some(r => publicAt(r) > exploreSeenAt)
   const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
 
@@ -1547,7 +1595,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
           activeTime={activeTime}           onToggleTime={makeToggle(setActiveTime)}
         />
       )}
-      <TabBar active={activeTab} onChange={onTabChange} />
+      <TabBar active={activeTab} onChange={onTabChange} dots={{ public: hasNewExplore }} />
 
       <div className="px-4 pt-6 pb-10 lg:px-10">
         {loading ? (
@@ -1640,17 +1688,53 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
                   ? <EmptyExplore />
                   : <EmptyState title={t('empty.noMatches')} sub={t('empty.tryDifferent')} />
               ) : (
-                <div className="masonry-grid">
-                  {pubFiltered.map(recipe => (
-                    <div key={recipe.id} className="masonry-item">
-                      <PublicRecipeCard
-                        recipe={recipe}
-                        onClick={() => onSelect(recipe)}
-                        onToggleLike={e => toggleLike(recipe, e)}
-                      />
+                <>
+                  {latestPublic.length > 0 && (
+                    <div style={{ marginBottom: pubRest.length > 0 ? 28 : 0 }}>
+                      <SectionLabel>{t('explore.latest')}</SectionLabel>
+                      {/* One row, always: 4 across on desktop (3 on tablet, ~2 on phones with the rest
+                          scrolling sideways). Cards keep their natural height, top-aligned. */}
+                      <div
+                        className="pill-row -mr-4 pr-4 lg:mr-0 lg:pr-0"
+                        style={{
+                          display: 'flex', gap: 12, alignItems: 'flex-start',
+                          overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+                          scrollSnapType: 'x proximity',
+                        }}
+                      >
+                        {latestPublic.map(recipe => (
+                          <div
+                            key={recipe.id}
+                            className="shrink-0 w-[calc((100vw-44px)/2)] md:w-[calc((100%-24px)/3)] lg:w-[calc((100%-36px)/4)]"
+                            style={{ scrollSnapAlign: 'start' }}
+                          >
+                            <PublicRecipeCard
+                              recipe={recipe}
+                              onClick={() => onSelect(recipe)}
+                              onToggleLike={e => toggleLike(recipe, e)}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                  {pubRest.length > 0 && (
+                    <>
+                      {latestPublic.length > 0 && <SectionLabel>{t('explore.all')}</SectionLabel>}
+                      <div className="masonry-grid">
+                        {pubRest.map(recipe => (
+                          <div key={recipe.id} className="masonry-item">
+                            <PublicRecipeCard
+                              recipe={recipe}
+                              onClick={() => onSelect(recipe)}
+                              onToggleLike={e => toggleLike(recipe, e)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
               )
             )}
           </>

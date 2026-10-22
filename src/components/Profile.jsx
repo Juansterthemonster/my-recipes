@@ -136,7 +136,7 @@ function StatGrid({ items }) {
 }
 
 /* ─── PROFILE ─────────────────────────────────────────────────────────────── */
-export default function Profile({ session, username, onBack, onSignOut, onUsernameChange, onToast }) {
+export default function Profile({ session, username, onBack, onSignOut, onUsernameChange, onToast, isAdmin, onOpenAdmin, adminNewCount = 0 }) {
   const { t, lang, setLang } = useI18n()
   const [languageSaving, setLanguageSaving] = useState(false)
   // ── Stats
@@ -353,7 +353,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     setLanguageSaving(false)
     if (error) {
       setLang(previous)                 // couldn't persist → roll back
-      onToast?.(translate('profile.languageError'))
+      onToast?.(translate('profile.languageError'), 'error')
     } else {
       onToast?.(translate('profile.languageSaved'))   // new language is already active
     }
@@ -563,6 +563,29 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           })}
         </div>
       </div>
+
+      {/* ── Owner-only: app dashboard (shown only when the database says this account is an admin) ── */}
+      {isAdmin && (
+        <div className="mx-4 mt-3 lg:mx-10" style={card}>
+          <div style={sectionLabel}>Admin</div>
+          <button
+            onClick={onOpenAdmin}
+            style={{
+              background: '#0C3D4E', color: '#F9F6F0', border: 'none',
+              borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
+              fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px', cursor: 'pointer',
+            }}
+          >
+            App dashboard
+            {adminNewCount > 0 && (
+              <span style={{
+                marginLeft: 10, background: '#F9F6F0', color: '#0C3D4E', borderRadius: 999,
+                fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
+              }}>{adminNewCount} new</span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* ── Sign out ── */}
       <div className="mx-4 mt-3 mb-10 lg:mx-10" style={card}>

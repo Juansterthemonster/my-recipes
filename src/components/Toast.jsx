@@ -28,6 +28,10 @@ export default function Toast({ message, visible, onHide }) {
 
   if (!rendered) return null
 
+  // Error toasts use the app's error colours (same as inline error blocks)
+  const isError = message.type === 'error'
+  const fg = isError ? '#A03030' : 'var(--green-primary)'
+
   return (
     <div style={{
       position: 'fixed',
@@ -47,24 +51,25 @@ export default function Toast({ message, visible, onHide }) {
         gap: 12,
         padding: '14px 18px',
         borderRadius: 'var(--r-md)',
-        background: 'var(--green-light)',
-        color: 'var(--green-primary)',
+        background: isError ? '#FFF0F0' : 'var(--green-light)',
+        color: fg,
+        border: isError ? '1px solid #F5BABA' : 'none',
         boxShadow: '0 4px 20px rgba(44, 61, 28, 0.12)',
       }}>
         <span style={{
           width: 8, height: 8, borderRadius: '50%',
-          background: 'var(--green-primary)',
+          background: fg,
           flexShrink: 0, display: 'inline-block', marginTop: 5,
         }} />
         <div>
           <div style={{
             fontFamily: 'var(--font-body)', fontSize: '0.82rem',
-            fontWeight: 500, color: 'var(--green-primary)', marginBottom: 2,
+            fontWeight: 500, color: fg, marginBottom: 2,
           }}>{message.title}</div>
           {message.sub && (
             <div style={{
               fontFamily: 'var(--font-body)', fontSize: '0.75rem',
-              color: 'var(--green-primary)', opacity: 0.75,
+              color: fg, opacity: 0.75,
             }}>{message.sub}</div>
           )}
         </div>

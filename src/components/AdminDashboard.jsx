@@ -107,7 +107,7 @@ export default function AdminDashboard({ onBack }) {
 
       <div className="mx-4 mt-4 lg:mx-10">
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.6rem', color: 'var(--text-primary)', margin: '0 0 16px' }}>
-          App dashboard
+          Admin Dashboard
         </h1>
 
         {error && (

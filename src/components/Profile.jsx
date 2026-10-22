@@ -604,7 +604,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
               fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px', cursor: 'pointer',
             }}
           >
-            App dashboard
+            Admin Dashboard
             {adminNewCount > 0 && (
               <span style={{
                 marginLeft: 10, background: '#F9F6F0', color: '#0C3D4E', borderRadius: 999,

@@ -10,11 +10,6 @@ import LegalPage from './components/LegalPage.jsx'
 try {
   const hp = new URLSearchParams(window.location.hash.replace(/^#/, ''))
   const qp = new URLSearchParams(window.location.search)
-  // TEMPORARY sign-in diagnostics: remember which parameter NAMES (never values) came back
-  const names = [...hp.keys(), ...qp.keys()]
-  if (names.some(k => /token|code|error|provider/i.test(k))) {
-    sessionStorage.setItem('sazon_auth_return', JSON.stringify({ hash: [...hp.keys()], query: [...qp.keys()] }))
-  }
   const desc = hp.get('error_description') || qp.get('error_description')
   if (desc) {
     sessionStorage.setItem('sazon_auth_error', desc.replace(/\+/g, ' '))

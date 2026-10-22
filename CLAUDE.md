@@ -855,6 +855,8 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 
 **Translations:** `auth.google`, `auth.or`, `auth.err.google`, `username.*` (en/fr/es).
 
+**Google sign-in return fixes (v4.16.1):** (1) `App.jsx` no longer rewrites the URL hash on mount while it still carries sign-in params (`access_token`, `code`, `type=recovery`, `error_description`) — it used to risk wiping them before supabase-js read them. (2) `main.jsx` captures a failed sign-in's `error_description` from the URL into `sessionStorage` (`sazon_auth_error`) and `AuthScreen` shows it in the red error box. Debugging story: a failed return looked like "back on the sign-in page, no error"; the real cause in testing was stale browser state (old saved auth data / other open tabs / service worker) — incognito worked. If it recurs: clear site data for the origin, close other tabs, unregister the service worker.
+
 **Setup (done outside the code):** Google Cloud → Google Auth Platform (consent screen + Web OAuth client, redirect URI = Supabase callback), Supabase → Authentication → Providers → Google (Client ID/secret). Supabase → Authentication → **URL Configuration** must list the Site URL and Redirect URLs (`https://misazon.app`, the Vercel address, `http://localhost:5173`), otherwise Google sign-in returns to the wrong place.
 
 **Notes / open items:**

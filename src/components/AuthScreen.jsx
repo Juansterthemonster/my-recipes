@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
 
@@ -132,7 +132,14 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword]   = useState(false)
   const [showConfirm, setShowConfirm]     = useState(false)
   const [loading, setLoading]             = useState(false)
-  const [error, setError]                 = useState('')
+  // A failed Google sign-in comes back to this page with an error in the URL (kept by main.jsx)
+  const [error, setError]                 = useState(() => {
+    try {
+      const d = sessionStorage.getItem('sazon_auth_error')
+      if (d) { sessionStorage.removeItem('sazon_auth_error'); return `${t('auth.err.google')} (${d})` }
+    } catch { /* ignore */ }
+    return ''
+  })
   // Set by Profile right after an account is deleted; shown once on the sign-in screen
   const [accountDeleted] = useState(() => {
     try {
@@ -143,6 +150,19 @@ export default function AuthScreen() {
   })
 
   const isSignUp = mode === 'signup'
+
+  // TEMPORARY: if we just came back from a sign-in redirect but are still signed out, show what
+  // came back (parameter names only) and what Supabase said, so the cause can be found.
+  const [diag, setDiag] = useState('')
+  useEffect(() => {
+    let ret = null
+    try { ret = JSON.parse(sessionStorage.getItem('sazon_auth_return') || 'null') } catch { /* ignore */ }
+    if (!ret) return
+    try { sessionStorage.removeItem('sazon_auth_return') } catch { /* ignore */ }
+    supabase.auth.getSession().then(({ data, error: e }) => {
+      setDiag(`returned hash=[${ret.hash.join(',')}] query=[${ret.query.join(',')}] · getSession: ${e ? 'ERROR ' + e.message : (data.session ? 'has session' : 'no session')}`)
+    })
+  }, [])
 
   function switchMode(next) {
     setMode(next)
@@ -326,6 +346,12 @@ export default function AuthScreen() {
           {isSignUp ? t('auth.createSub') : t('auth.signInSub')}
         </p>
       </div>
+
+      {diag && (
+        <div style={{ background: '#F3F3F0', border: '1px dashed #BBB', color: '#555', fontSize: '0.72rem', padding: '8px 12px', borderRadius: 8, fontFamily: 'monospace', marginBottom: 16, wordBreak: 'break-word' }}>
+          {diag}
+        </div>
+      )}
 
       {accountDeleted && (
         <div style={{ background: 'var(--green-light)', color: 'var(--green-primary)', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>

@@ -5,6 +5,23 @@ import App from './App.jsx'
 import { I18nProvider } from './i18n'
 import LegalPage from './components/LegalPage.jsx'
 
+// If a sign-in attempt (e.g. Google) came back with an error, Supabase puts it in the URL.
+// Keep the message for the sign-in screen and clean the address bar.
+try {
+  const hp = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const qp = new URLSearchParams(window.location.search)
+  // TEMPORARY sign-in diagnostics: remember which parameter NAMES (never values) came back
+  const names = [...hp.keys(), ...qp.keys()]
+  if (names.some(k => /token|code|error|provider/i.test(k))) {
+    sessionStorage.setItem('sazon_auth_return', JSON.stringify({ hash: [...hp.keys()], query: [...qp.keys()] }))
+  }
+  const desc = hp.get('error_description') || qp.get('error_description')
+  if (desc) {
+    sessionStorage.setItem('sazon_auth_error', desc.replace(/\+/g, ' '))
+    window.history.replaceState(null, '', window.location.pathname)
+  }
+} catch { /* ignore */ }
+
 // Public legal pages are served before the app (no sign-in needed).
 const legalPath = window.location.pathname.replace(/\/+$/, '')
 const legalKind = legalPath === '/privacy' ? 'privacy' : legalPath === '/terms' ? 'terms' : null

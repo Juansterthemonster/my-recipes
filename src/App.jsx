@@ -70,7 +70,12 @@ export default function App() {
   // Seed the initial history entry. If it's a share link, leave the real path
   // in place so the URL stays clean; otherwise restore the hash-based approach.
   useEffect(() => {
-    if (!shareRecipeId) {
+    // Don't overwrite the URL hash while it still carries a sign-in result (Google / email
+    // links return tokens or a code in the hash) — Supabase must read and clear it itself.
+    const authReturn = /access_token|refresh_token|error_description|type=recovery|[?&#]code=/.test(
+      window.location.hash + window.location.search
+    )
+    if (!shareRecipeId && !authReturn) {
       window.history.replaceState({ view: 'browse', tab: activeTab, recipe: null }, '', `#${activeTab}`)
     }
   }, [])

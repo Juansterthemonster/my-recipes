@@ -826,6 +826,16 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 - **Run order of SQL migrations added this stretch:** `supabase_migration_language.sql` → `supabase_migration_admin_dashboard.sql` → `supabase_migration_admin_recent_recipes.sql` → `supabase_migration_explore.sql`, plus the `recipes_copied_from_fkey` fix above.
 - Ideas discussed, not built: cook mode, step timers, unit conversion, shopping list, import from URL/photo, ingredient search, private sharing, cooking log, data export, PWA install, trash/undo, push/email alerts for new recipes.
 
+### v4.14 — Public Privacy Policy and Terms of Service pages (staged, 2026-10-22)
+
+**What shipped:** `https://misazon.app/privacy` and `/terms` — public pages (no sign-in), English only, `src/components/LegalPage.jsx`. `main.jsx` checks `window.location.pathname` and renders `LegalPage` *before* `<App/>` (outside the i18n provider); `vercel.json` already rewrites every path to `index.html`. Links ("Privacy Policy · Terms of Service", translated via `legal.privacy` / `legal.terms` in `locales/app.js`) are in the sign-in/sign-up footer (`AuthShell`) and on Profile & settings.
+
+**Why:** needed for the Google OAuth consent screen and the Play Store listing.
+
+**Edit points:** contact address = `CONTACT_EMAIL` and date = `UPDATED` at the top of `LegalPage.jsx`. Draft content (not legal advice): data collected (account, recipes/photos/collections/likes, language, Explore last-seen), providers (Supabase, Cloudflare, Vercel, Google), admin access disclosure, deletion by email within 30 days, under-13 clause, governing law = Ontario, Canada.
+
+**Still to do for the Play Store:** Google Play requires an account-deletion path — ideally an in-app "Delete my account" plus a public web page/URL for it; currently deletion is by emailing the contact address.
+
 ---
 
 ## How to work with Claude (Cowork)

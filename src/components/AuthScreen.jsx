@@ -91,6 +91,7 @@ function PasswordField({ label, value, onChange, autoComplete, visible, onToggle
 
 /* ─── SHARED CHROME ──────────────────────────────────────────────────────────── */
 function AuthShell({ children }) {
+  const { t } = useI18n()
   return (
     <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
       <div
@@ -109,6 +110,11 @@ function AuthShell({ children }) {
       </div>
       <div style={{ maxWidth: 420, margin: '20px auto 0', padding: '0 20px 40px' }}>
         {children}
+        <p style={{ textAlign: 'center', marginTop: 24, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
+          {' · '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
+        </p>
       </div>
     </div>
   )

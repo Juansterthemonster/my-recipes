@@ -3,12 +3,21 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { I18nProvider } from './i18n'
+import LegalPage from './components/LegalPage.jsx'
+
+// Public legal pages are served before the app (no sign-in needed).
+const legalPath = window.location.pathname.replace(/\/+$/, '')
+const legalKind = legalPath === '/privacy' ? 'privacy' : legalPath === '/terms' ? 'terms' : null
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <I18nProvider>
-      <App />
-    </I18nProvider>
+    {legalKind ? (
+      <LegalPage kind={legalKind} />
+    ) : (
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    )}
   </StrictMode>,
 )
 

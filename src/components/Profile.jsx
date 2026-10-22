@@ -587,6 +587,13 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         </div>
       )}
 
+      {/* ── Legal links ── */}
+      <p className="mx-4 mt-6 lg:mx-10" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
+        {' · '}
+        <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
+      </p>
+
       {/* ── Sign out ── */}
       <div className="mx-4 mt-3 mb-10 lg:mx-10" style={card}>
         <div style={sectionLabel}>{t('profile.account')}</div>

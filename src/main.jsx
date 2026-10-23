@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import { I18nProvider } from './i18n'
 import LegalPage from './components/LegalPage.jsx'
+import PullToRefresh from './components/PullToRefresh.jsx'
 
 // If a sign-in attempt (e.g. Google) came back with an error, Supabase puts it in the URL.
 // Keep the message for the sign-in screen and clean the address bar.
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')).render(
       <LegalPage kind={legalKind} />
     ) : (
       <I18nProvider>
+        <PullToRefresh />
         <App />
       </I18nProvider>
     )}

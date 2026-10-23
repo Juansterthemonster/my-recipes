@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
+import { IN_APP_WEBVIEW } from '../utils/inApp'
 
 /* ─── SHARED STYLES ──────────────────────────────────────────────────────────── */
 const inp = {
@@ -122,13 +123,6 @@ function AuthShell({ children }) {
 
 /* ─── AUTH SCREEN ────────────────────────────────────────────────────────────── */
 // modes: 'signin' | 'signup' | 'verify' | 'forgot' | 'forgot-sent'
-// Google blocks sign-in inside embedded WebViews (the Android app shell), so the
-// "Continue with Google" button is hidden there. Browsers and the website are unaffected.
-const IN_APP_WEBVIEW = typeof window !== 'undefined' && (
-  !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
-  || /;\s*wv\)/.test(navigator.userAgent)
-)
-
 export default function AuthScreen() {
   const { t } = useI18n()
   const [mode, setMode]                   = useState('signin')

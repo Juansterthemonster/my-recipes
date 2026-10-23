@@ -6,6 +6,7 @@ import { useI18n, tagLabel } from '../i18n'
 import { compressImage } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
 import { slugify } from '../utils/slugify'
+import { getNativeShare } from '../utils/inApp'
 
 // Must match the MAX_PHOTOS check in RecipeForm.jsx — same cap, enforced on
 // both places a photo can be added to a recipe.
@@ -780,6 +781,17 @@ export default function Detail({
        navigator.share() works on mobile over HTTP as well as HTTPS, so it's
        the most reliable path on phones. We only treat AbortError (user
        dismissed the sheet) as a non-error; anything else falls through.      */
+    // In the Android app, the web Share API isn't available — use the native share sheet plugin.
+    const nativeShare = getNativeShare()
+    if (nativeShare) {
+      try {
+        await nativeShare.share({ title: recipe.name, text: recipe.name, url, dialogTitle: recipe.name })
+        return
+      } catch (err) {
+        if (/cancel/i.test(String(err?.message || err))) return   // user dismissed the sheet
+        // Anything else: fall through to the clipboard
+      }
+    }
     if (navigator.share) {
       try {
         await navigator.share({ title: recipe.name, url })

@@ -634,7 +634,19 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
   Mirrors MyRecipeCard. Top-right shows a like heart (same pattern as My recipes).
   Liking adds the recipe to the user's Liked tab without copying it to My recipes.
 */
-function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
+function NewBadge({ onPhoto = false }) {
+  const { t } = useI18n()
+  return (
+    <span style={{
+      display: 'inline-block', marginBottom: 8,
+      background: onPhoto ? '#FFFFFF' : '#0C3D4E', color: onPhoto ? '#0C3D4E' : '#F9F6F0',
+      fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+      padding: '3px 8px', borderRadius: 999, fontFamily: 'var(--font-body)',
+    }}>{t('explore.new')}</span>
+  )
+}
+
+function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
   const { t } = useI18n()
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
@@ -673,6 +685,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
 
         {/* Bottom: eyebrow → title → dietary → attribution */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 16px', zIndex: 2 }}>
+          {isNew && <NewBadge onPhoto />}
           {mealTypeLabel && (
             <div style={{
               fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
@@ -737,6 +750,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike }) {
 
       {/* Bottom: eyebrow → title → dietary → attribution */}
       <div style={{ padding: '0 14px 16px' }}>
+        {isNew && <NewBadge />}
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
@@ -1548,14 +1562,12 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   const myFiltered          = myRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
   const myFavs              = myFiltered.filter(r => r.is_favourite)
   const pubFiltered         = publicRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
-  // "Latest recipes added" = the 4 most recently made-public recipes (falls back to created_at
-  // until the migration adds made_public_at). Hidden while searching/filtering; each recipe is
-  // shown only once, so the main grid skips the ones already in the Latest row.
+  // Explore is one masonry grid, newest-made-public first. The 4 most recently made-public
+  // recipes (overall, even while searching/filtering) carry a NEW tag. made_public_at falls back
+  // to created_at until the migration has run.
   const publicAt = r => new Date(r.made_public_at || r.created_at).getTime()
-  const isFiltering = q.trim() !== '' || activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0
-  const latestPublic = isFiltering ? [] : [...publicRecipes].sort((a, b) => publicAt(b) - publicAt(a)).slice(0, 4)
-  const latestIds = new Set(latestPublic.map(r => r.id))
-  const pubRest = pubFiltered.filter(r => !latestIds.has(r.id))
+  const latestIds = new Set([...publicRecipes].sort((a, b) => publicAt(b) - publicAt(a)).slice(0, 4).map(r => r.id))
+  const pubSorted = [...pubFiltered].sort((a, b) => publicAt(b) - publicAt(a))
   const hasNewExplore = typeof exploreSeenAt === 'number' && activeTab !== 'public'
     && publicRecipes.some(r => publicAt(r) > exploreSeenAt)
   const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
@@ -1689,51 +1701,19 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
                   : <EmptyState title={t('empty.noMatches')} sub={t('empty.tryDifferent')} />
               ) : (
                 <>
-                  {latestPublic.length > 0 && (
-                    <div style={{ marginBottom: pubRest.length > 0 ? 28 : 0 }}>
-                      <SectionLabel>{t('explore.latest')}</SectionLabel>
-                      {/* One row, always: 4 across on desktop (3 on tablet, ~2 on phones with the rest
-                          scrolling sideways). Cards keep their natural height, top-aligned. */}
-                      <div
-                        className="pill-row -mr-4 pr-4 lg:mr-0 lg:pr-0"
-                        style={{
-                          display: 'flex', gap: 12, alignItems: 'flex-start',
-                          overflowX: 'auto', WebkitOverflowScrolling: 'touch',
-                          scrollSnapType: 'x proximity',
-                        }}
-                      >
-                        {latestPublic.map(recipe => (
-                          <div
-                            key={recipe.id}
-                            className="shrink-0 w-[calc((100vw-44px)/2)] md:w-[calc((100%-24px)/3)] lg:w-[calc((100%-36px)/4)]"
-                            style={{ scrollSnapAlign: 'start' }}
-                          >
-                            <PublicRecipeCard
-                              recipe={recipe}
-                              onClick={() => onSelect(recipe)}
-                              onToggleLike={e => toggleLike(recipe, e)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {pubRest.length > 0 && (
-                    <>
-                      {latestPublic.length > 0 && <SectionLabel>{t('explore.all')}</SectionLabel>}
-                      <div className="masonry-grid">
-                        {pubRest.map(recipe => (
-                          <div key={recipe.id} className="masonry-item">
-                            <PublicRecipeCard
-                              recipe={recipe}
-                              onClick={() => onSelect(recipe)}
-                              onToggleLike={e => toggleLike(recipe, e)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  <MasonryGrid
+                    items={pubSorted}
+                    getKey={r => r.id}
+                    estimateHeight={(r, w) => r.photo_url ? w * 1.5 : 170}
+                    renderItem={recipe => (
+                      <PublicRecipeCard
+                        recipe={recipe}
+                        isNew={latestIds.has(recipe.id)}
+                        onClick={() => onSelect(recipe)}
+                        onToggleLike={e => toggleLike(recipe, e)}
+                      />
+                    )}
+                  />
                 </>
               )
             )}

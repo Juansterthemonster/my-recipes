@@ -1346,6 +1346,9 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   // When this user last opened Explore (profiles.explore_seen_at). undefined = not loaded /
   // column missing (feature stays off, never breaks the page); number = ms timestamp.
   const [exploreSeenAt, setExploreSeenAt] = useState(undefined)
+  // When the newest recipe by someone else was made public (checked in the background, so the
+  // Explore dot appears without reopening the app).
+  const [newestPublicAt, setNewestPublicAt] = useState(0)
   const [filtersOpen, setFiltersOpen]         = useState(false)
 
   // ── Collection management modal ───────────────────────────────────────────
@@ -1416,10 +1419,37 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     return () => { cancelled = true }
   }, [session.user.id])
 
+  // Background check for new public recipes: on open, every minute, and when the app comes back to
+  // the foreground. A light one-row query, so the dot shows up even if the app stayed open all day.
+  useEffect(() => {
+    let cancelled = false
+    async function check() {
+      const base = () => supabase.from('recipes').select('made_public_at, created_at')
+        .eq('is_public', true).neq('user_id', session.user.id).limit(1)
+      let res = await base().order('made_public_at', { ascending: false, nullsFirst: false })
+      if (res.error) res = await base().order('created_at', { ascending: false })   // migration not run yet
+      const r = res.data && res.data[0]
+      if (!cancelled && r) setNewestPublicAt(new Date(r.made_public_at || r.created_at).getTime())
+    }
+    check()
+    const timer = setInterval(check, 60000)
+    const onVisible = () => { if (document.visibilityState === 'visible') check() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', check)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', check)
+    }
+  }, [session.user.id])
+
   // Opening Explore clears the dot (and remembers it on the profile, so it holds on every device).
   useEffect(() => {
     if (activeTab !== 'public' || loading || exploreSeenAt === undefined) return
     const now = Date.now()
+    // The list may be older than the dot (it was found by the background check): reload it.
+    if (newestPublicAt > exploreSeenAt && !publicRecipes.some(r => new Date(r.made_public_at || r.created_at).getTime() >= newestPublicAt)) fetchAll()
     setExploreSeenAt(now)
     supabase.from('profiles').update({ explore_seen_at: new Date(now).toISOString() }).eq('id', session.user.id)
   }, [activeTab, loading, exploreSeenAt === undefined])
@@ -1569,7 +1599,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   const latestIds = new Set([...publicRecipes].sort((a, b) => publicAt(b) - publicAt(a)).slice(0, 4).map(r => r.id))
   const pubSorted = [...pubFiltered].sort((a, b) => publicAt(b) - publicAt(a))
   const hasNewExplore = typeof exploreSeenAt === 'number' && activeTab !== 'public'
-    && publicRecipes.some(r => publicAt(r) > exploreSeenAt)
+    && (newestPublicAt > exploreSeenAt || publicRecipes.some(r => publicAt(r) > exploreSeenAt))
   const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
 

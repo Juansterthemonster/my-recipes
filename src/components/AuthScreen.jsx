@@ -122,6 +122,13 @@ function AuthShell({ children }) {
 
 /* ─── AUTH SCREEN ────────────────────────────────────────────────────────────── */
 // modes: 'signin' | 'signup' | 'verify' | 'forgot' | 'forgot-sent'
+// Google blocks sign-in inside embedded WebViews (the Android app shell), so the
+// "Continue with Google" button is hidden there. Browsers and the website are unaffected.
+const IN_APP_WEBVIEW = typeof window !== 'undefined' && (
+  !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  || /;\s*wv\)/.test(navigator.userAgent)
+)
+
 export default function AuthScreen() {
   const { t } = useI18n()
   const [mode, setMode]                   = useState('signin')
@@ -348,6 +355,7 @@ export default function AuthScreen() {
       )}
 
       <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
+        {!IN_APP_WEBVIEW && (<>
         <button
           type="button" onClick={handleGoogle} disabled={loading}
           style={{
@@ -371,6 +379,7 @@ export default function AuthScreen() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />{t('auth.or')}<span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
         </div>
+        </>)}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           <div>

@@ -1404,16 +1404,26 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   useEffect(() => { fetchAll() }, [])
 
-  // Load the Explore "last seen" time. First time ever (null) → start counting from now.
+  // Load the Explore "last seen" time (profiles.explore_seen_at, so it follows the user across
+  // devices). First time ever → start counting from now. If the profile column can't be read or
+  // written (migration not run, no profile row yet) fall back to this browser's copy so the dot
+  // still works.
   useEffect(() => {
     let cancelled = false
+    const localKey = 'sazon_explore_seen_' + session.user.id
+    const readLocal = () => { try { return Number(localStorage.getItem(localKey)) || 0 } catch { return 0 } }
     supabase.from('profiles').select('explore_seen_at').eq('id', session.user.id).maybeSingle()
       .then(({ data, error }) => {
-        if (cancelled || error || !data) return
-        if (data.explore_seen_at) setExploreSeenAt(new Date(data.explore_seen_at).getTime())
-        else {
-          setExploreSeenAt(Date.now())
-          supabase.from('profiles').update({ explore_seen_at: new Date().toISOString() }).eq('id', session.user.id)
+        if (cancelled) return
+        if (!error && data && data.explore_seen_at) {
+          setExploreSeenAt(new Date(data.explore_seen_at).getTime())
+          return
+        }
+        const start = readLocal() || Date.now()
+        setExploreSeenAt(start)
+        try { localStorage.setItem(localKey, String(start)) } catch { /* ignore */ }
+        if (!error && data) {
+          supabase.from('profiles').update({ explore_seen_at: new Date(start).toISOString() }).eq('id', session.user.id)
         }
       })
     return () => { cancelled = true }
@@ -1451,6 +1461,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     // The list may be older than the dot (it was found by the background check): reload it.
     if (newestPublicAt > exploreSeenAt && !publicRecipes.some(r => new Date(r.made_public_at || r.created_at).getTime() >= newestPublicAt)) fetchAll()
     setExploreSeenAt(now)
+    try { localStorage.setItem('sazon_explore_seen_' + session.user.id, String(now)) } catch { /* ignore */ }
     supabase.from('profiles').update({ explore_seen_at: new Date(now).toISOString() }).eq('id', session.user.id)
   }, [activeTab, loading, exploreSeenAt === undefined])
 

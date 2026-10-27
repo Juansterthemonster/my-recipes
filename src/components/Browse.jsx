@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import MasonryGrid from './MasonryGrid'
+import { getListCache, setListCache, beginListFetch } from '../utils/listCache'
 import { useI18n, tagLabel, translate } from '../i18n'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
@@ -1335,10 +1336,13 @@ function EmptyCollectionCard({ onCreate }) {
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
 export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection }) {
   const { t } = useI18n()
-  const [myRecipes, setMyRecipes]         = useState([])
-  const [publicRecipes, setPublicRecipes] = useState([])
-  const [collections, setCollections]     = useState([])
-  const [loading, setLoading]             = useState(true)
+  // Start from the cached lists when they're still fresh (coming back from a recipe), so the
+  // database isn't hit again for nothing. Any write or two minutes makes the cache stale.
+  const [cached] = useState(() => getListCache(session.user.id))
+  const [myRecipes, setMyRecipes]         = useState(cached ? cached.my : [])
+  const [publicRecipes, setPublicRecipes] = useState(cached ? cached.pub : [])
+  const [collections, setCollections]     = useState(cached ? cached.collections : [])
+  const [loading, setLoading]             = useState(!cached)
   const [search, setSearch]               = useState('')
   const [activeDietary,   setActiveDietary]   = useState([])
   const [activeMealTypes, setActiveMealTypes] = useState([])
@@ -1346,8 +1350,8 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   // When this user last opened Explore (profiles.explore_seen_at). undefined = not loaded /
   // column missing (feature stays off, never breaks the page); number = ms timestamp.
   const [exploreSeenAt, setExploreSeenAt] = useState(undefined)
-  // When the newest recipe by someone else was made public (checked in the background, so the
-  // Explore dot appears without reopening the app).
+  // When the newest recipe by someone else was made public (checked in the background — every 5 min while
+  // the app is open and visible — so the Explore dot appears without reopening the app).
   const [newestPublicAt, setNewestPublicAt] = useState(0)
   const [filtersOpen, setFiltersOpen]         = useState(false)
 
@@ -1402,7 +1406,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     return false
   }
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => { if (!cached) fetchAll() }, [])
 
   // Load the Explore "last seen" time (profiles.explore_seen_at, so it follows the user across
   // devices). First time ever → start counting from now. If the profile column can't be read or
@@ -1433,7 +1437,11 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   // the foreground. A light one-row query, so the dot shows up even if the app stayed open all day.
   useEffect(() => {
     let cancelled = false
+    let lastCheck = 0
     async function check() {
+      if (document.visibilityState === 'hidden') return        // nobody is looking
+      if (Date.now() - lastCheck < 60000) return              // at most once a minute
+      lastCheck = Date.now()
       const base = () => supabase.from('recipes').select('made_public_at, created_at')
         .eq('is_public', true).neq('user_id', session.user.id).limit(1)
       let res = await base().order('made_public_at', { ascending: false, nullsFirst: false })
@@ -1442,7 +1450,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
       if (!cancelled && r) setNewestPublicAt(new Date(r.made_public_at || r.created_at).getTime())
     }
     check()
-    const timer = setInterval(check, 60000)
+    const timer = setInterval(check, 5 * 60000)
     const onVisible = () => { if (document.visibilityState === 'visible') check() }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', check)
@@ -1467,6 +1475,8 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   async function fetchAll() {
     setLoading(true)
+    beginListFetch()
+    let finalMy = null, finalPub = null, finalCols = null
     const [myRes, pubRes, likesRes, colRes] = await Promise.all([
       supabase.from('recipes').select('*')
         .eq('user_id', session.user.id)
@@ -1481,7 +1491,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false }),
     ])
-    if (!myRes.error) setMyRecipes(myRes.data || [])
+    if (!myRes.error) { finalMy = myRes.data || []; setMyRecipes(finalMy) }
 
     if (!pubRes.error) {
       const pubData  = pubRes.data || []
@@ -1499,11 +1509,12 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         }
       }
       // Attach author_username + is_liked to each public recipe
-      setPublicRecipes(pubData.map(r => ({
+      finalPub = pubData.map(r => ({
         ...r,
         author_username: profileMap[r.user_id] || null,
         is_liked: likedIds.has(r.id),
-      })))
+      }))
+      setPublicRecipes(finalPub)
     }
 
     // ── Collections: fetch member recipe photos + counts in one query ──────
@@ -1527,15 +1538,19 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         }
       }
 
-      setCollections(colData.map(c => ({
+      finalCols = colData.map(c => ({
         ...c,
         recipe_count: grouped[c.id]?.count  || 0,
         photos:       grouped[c.id]?.photos || [],
-      })))
+      }))
+      setCollections(finalCols)
     } else if (!colRes.error) {
+      finalCols = []
       setCollections([])
     }
 
+    // Remember the lists for a quick return from a recipe — only when everything loaded.
+    if (finalMy && finalPub && finalCols) setListCache(session.user.id, { my: finalMy, pub: finalPub, collections: finalCols })
     setLoading(false)
   }
 

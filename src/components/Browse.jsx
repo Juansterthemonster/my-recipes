@@ -5,7 +5,7 @@ import { getListCache, setListCache, beginListFetch } from '../utils/listCache'
 import { useI18n, tagLabel, translate } from '../i18n'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
-function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }) {
+function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, isAdmin = false, adminNewCount = 0, onAdmin }) {
   const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const [addOpen,  setAddOpen]  = useState(false)
@@ -124,6 +124,29 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile }
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
               >{t('nav.profile')}</button>
+              {isAdmin && onAdmin && (
+                <button
+                  onClick={() => { setMenuOpen(false); onAdmin() }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                    width: '100%', padding: '12px 16px', textAlign: 'left',
+                    fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
+                    border: 'none', borderBottom: '1px solid var(--border-soft)',
+                    cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                >
+                  <span>{t('nav.admin')}</span>
+                  {adminNewCount > 0 && (
+                    <span style={{
+                      background: '#0C3D4E', color: '#F9F6F0', borderRadius: 999,
+                      fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', whiteSpace: 'nowrap',
+                      border: '1px solid #F9F6F0',
+                    }}>{adminNewCount} new</span>
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => { setMenuOpen(false); onSignOut() }}
                 style={{
@@ -1334,7 +1357,7 @@ function EmptyCollectionCard({ onCreate }) {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection }) {
+export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin }) {
   const { t } = useI18n()
   // Start from the cached lists when they're still fresh (coming back from a recipe), so the
   // database isn't hit again for nothing. Any write or two minutes makes the cache stale.
@@ -1637,6 +1660,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         onAdd={onAdd}
         onAddCollection={() => setModalMode('create')}
         session={session} onSignOut={onSignOut} username={username} onProfile={onProfile}
+        isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={onAdmin}
       />
 
       {/* Collection modal — create or edit (name, description, cover).

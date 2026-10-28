@@ -1,7 +1,7 @@
 export default {
   en: {
     'nav.add': 'Add', 'nav.addRecipe': 'Add a recipe', 'nav.addCollection': 'Add a collection',
-    'nav.accountMenu': 'Account menu', 'nav.profile': 'Profile & settings', 'nav.signOut': 'Sign out',
+    'nav.accountMenu': 'Account menu', 'nav.profile': 'Profile & settings', 'nav.signOut': 'Sign out', 'nav.admin': 'Admin Dashboard',
     'browse.searchPlaceholder': 'Search recipes…',
     'browse.closeFilters': 'Close filters', 'browse.openFilters': 'Open filters',
     'filter.dietary': 'Dietary', 'filter.mealType': 'Meal type', 'filter.time': 'Time',
@@ -35,7 +35,7 @@ export default {
   },
   fr: {
     'nav.add': 'Ajouter', 'nav.addRecipe': 'Ajouter une recette', 'nav.addCollection': 'Ajouter une collection',
-    'nav.accountMenu': 'Menu du compte', 'nav.profile': 'Profil et paramètres', 'nav.signOut': 'Se déconnecter',
+    'nav.accountMenu': 'Menu du compte', 'nav.profile': 'Profil et paramètres', 'nav.signOut': 'Se déconnecter', 'nav.admin': 'Tableau de bord admin',
     'browse.searchPlaceholder': 'Rechercher des recettes…',
     'browse.closeFilters': 'Fermer les filtres', 'browse.openFilters': 'Ouvrir les filtres',
     'filter.dietary': 'Régime', 'filter.mealType': 'Type de repas', 'filter.time': 'Temps',
@@ -69,7 +69,7 @@ export default {
   },
   es: {
     'nav.add': 'Agregar', 'nav.addRecipe': 'Agregar una receta', 'nav.addCollection': 'Agregar una colección',
-    'nav.accountMenu': 'Menú de la cuenta', 'nav.profile': 'Perfil y ajustes', 'nav.signOut': 'Cerrar sesión',
+    'nav.accountMenu': 'Menú de la cuenta', 'nav.profile': 'Perfil y ajustes', 'nav.signOut': 'Cerrar sesión', 'nav.admin': 'Panel de administración',
     'browse.searchPlaceholder': 'Buscar recetas…',
     'browse.closeFilters': 'Cerrar filtros', 'browse.openFilters': 'Abrir filtros',
     'filter.dietary': 'Dieta', 'filter.mealType': 'Tipo de comida', 'filter.time': 'Tiempo',

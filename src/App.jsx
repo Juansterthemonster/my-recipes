@@ -1,7 +1,7 @@
 import AdminDashboard from './components/AdminDashboard'
 import ChooseUsername from './components/ChooseUsername'
 import { getLastSeen } from './utils/adminSeen'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
 import Browse from './components/Browse'
 import Detail from './components/Detail'
@@ -234,16 +234,18 @@ export default function App() {
     window.history.pushState({ view: 'profile', tab: activeTab, recipe: null }, '', '#profile')
     setView('profile')
   }
-  // Refresh the "new recipes" badge whenever the admin lands on their profile page.
+  // Refresh the "new recipes" badge (shown in the account menu and on the profile page) when the
+  // admin lands on the home or profile page — at most once a minute, to keep database reads low.
+  const adminCountAt = useRef(0)
   useEffect(() => {
-    if (!isAdmin || view !== 'profile') return
-    let cancelled = false
+    if (!isAdmin || (view !== 'profile' && view !== 'browse')) return
+    if (Date.now() - adminCountAt.current < 60000) return
+    adminCountAt.current = Date.now()
     supabase.rpc('admin_recent_recipes', { p_limit: 50 }).then(({ data, error }) => {
-      if (cancelled || error || !data) return
+      if (error || !data) return
       const since = getLastSeen()
       setAdminNewCount(since > 0 ? data.filter(r => new Date(r.created_at).getTime() > since).length : 0)
     })
-    return () => { cancelled = true }
   }, [isAdmin, view])
 
   function openAdmin() {
@@ -387,6 +389,7 @@ export default function App() {
             username={username}
             onProfile={openProfile}
             onSelectCollection={openCollection}
+            isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={openAdmin}
           />
         )}
         {view === 'collection' && selectedCollection && (

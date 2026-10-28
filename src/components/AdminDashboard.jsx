@@ -32,7 +32,26 @@ const card = {
   border: '1px solid var(--border-soft)', padding: '20px 24px',
 }
 
-export default function AdminDashboard({ onBack }) {
+// True on phone-sized screens (the users table becomes a stack of cards there).
+function useIsMobile(maxWidth = 640) {
+  const query = `(max-width: ${maxWidth - 1}px)`
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const onChange = e => setMobile(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [query])
+  return mobile
+}
+
+const labelStyle = {
+  fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase',
+  color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
+}
+
+export default function AdminDashboard({ onBack, onOpenRecipe }) {
+  const isMobile = useIsMobile()
   const [rows, setRows]       = useState(null)
   const [error, setError]     = useState('')
   const [sortKey, setSortKey] = useState('signed_up')
@@ -153,7 +172,18 @@ export default function AdminDashboard({ onBack }) {
                           {isNew && (
                             <span style={{ background: '#0C3D4E', color: '#F9F6F0', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 999, marginRight: 8, verticalAlign: 'middle' }}>NEW</span>
                           )}
-                          <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{r.recipe_name || '(untitled)'}</span>
+                          {r.is_public && onOpenRecipe ? (
+                            <button
+                              onClick={() => onOpenRecipe(r.recipe_id)}
+                              style={{
+                                background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+                                font: 'inherit', fontWeight: 500, color: '#0C3D4E',
+                                textDecoration: 'underline', textUnderlineOffset: 3,
+                              }}
+                            >{r.recipe_name || '(untitled)'}</button>
+                          ) : (
+                            <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{r.recipe_name || '(untitled)'}</span>
+                          )}
                           <span style={{ color: 'var(--text-secondary)' }}>
                             {' '}by {r.author_username ? `@${r.author_username}` : '(no username)'}
                           </span>
@@ -168,6 +198,52 @@ export default function AdminDashboard({ onBack }) {
               )}
             </div>
 
+            {/* ── Users ── */}
+            <div style={{ ...labelStyle, margin: '8px 2px 10px' }}>Users · {rows.length}</div>
+
+            {isMobile ? (
+              <>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
+                  <select
+                    value={sortKey} onChange={e => { setSortKey(e.target.value); setSortDir(e.target.value === 'username' ? 'asc' : 'desc') }}
+                    aria-label="Sort users by"
+                    style={{
+                      flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-soft)',
+                      background: 'var(--white)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem',
+                    }}
+                  >
+                    {COLUMNS.map(c => <option key={c.key} value={c.key}>Sort: {c.label}</option>)}
+                  </select>
+                  <button
+                    onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                    aria-label={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+                    style={{
+                      padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-soft)', background: 'var(--white)',
+                      color: '#0C3D4E', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+                    }}
+                  >{sortDir === 'asc' ? '↑' : '↓'}</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {sorted.map(r => (
+                    <div key={r.profile_id} style={{ ...card, padding: '14px 16px' }}>
+                      <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem', overflowWrap: 'anywhere' }}>
+                        {r.username ? `@${r.username}` : <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(no username)</span>}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, overflowWrap: 'anywhere' }}>{r.email || '—'}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
+                        {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].map(([label, k]) => (
+                          <div key={k} style={{ textAlign: 'center' }}>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{Number(r[k])}</div>
+                            <div style={{ ...labelStyle, fontSize: '0.56rem', letterSpacing: '0.06em', marginTop: 3 }}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
             <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 720 }}>
                 <thead>
@@ -202,6 +278,7 @@ export default function AdminDashboard({ onBack }) {
                 </tbody>
               </table>
             </div>
+            )}
           </>
         )}
       </div>

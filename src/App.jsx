@@ -220,6 +220,18 @@ export default function App() {
     setDetailFromCollection(fromCollection)
     setView('detail')
   }
+  // Admin dashboard → open a recipe from the "New recipes" list. Public recipes (and the admin's
+  // own) are readable under the normal row-level rules; someone else's private recipe is not, and
+  // that is intentional — it shows a notice instead.
+  async function openRecipeById(id) {
+    const { data: recipe } = await supabase.from('recipes').select('*').eq('id', id).maybeSingle()
+    if (!recipe) { showToast("That recipe is private, so it can't be opened.", 'error'); return }
+    const [{ data: profile }, { data: like }] = await Promise.all([
+      supabase.from('profiles').select('username').eq('id', recipe.user_id).maybeSingle(),
+      supabase.from('likes').select('recipe_id').eq('user_id', session.user.id).eq('recipe_id', id).maybeSingle(),
+    ])
+    openDetail({ ...recipe, author_username: profile?.username ?? null, is_liked: !!like })
+  }
   function openEdit(recipe) {
     window.history.pushState({ view: 'edit', tab: activeTab, recipe }, '', '#edit')
     setSelectedRecipe(recipe)
@@ -380,7 +392,7 @@ export default function App() {
             adminNewCount={adminNewCount}
           />
         )}
-        {view === 'admin' && isAdmin && <AdminDashboard onBack={() => { setAdminNewCount(0); goBack() }} />}
+        {view === 'admin' && isAdmin && <AdminDashboard onBack={() => { setAdminNewCount(0); goBack() }} onOpenRecipe={openRecipeById} />}
         {view === 'browse' && (
           <Browse
             onSelect={openDetail} onAdd={openAdd}

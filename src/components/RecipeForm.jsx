@@ -575,7 +575,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                   {t('form.selectAll')}
                 </p>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                  {['Breakfast','Lunch','Dinner','Dessert','Snack','Side'].map(opt => {
+                  {['Breakfast','Lunch','Dinner','Dessert','Snack','Side','Sauce'].map(opt => {
                     const active = mealType.includes(opt)
                     return (
                       <button key={opt} type="button"

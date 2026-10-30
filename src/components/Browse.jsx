@@ -237,7 +237,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
 
 /* ─── FILTER CONSTANTS ──────────────────────────────────────────────────────── */
 const DIETARY_FILTERS   = ['Vegetarian', 'Vegan', 'Pescatarian', 'Gluten free', 'Keto']
-const MEAL_TYPE_FILTERS = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Side']
+const MEAL_TYPE_FILTERS = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Side', 'Sauce']
 const TIME_FILTERS      = [
   { label: 'Under 15 mins', tkey: 'filter.time.15', maxMins: 15 },
   { label: 'Under 30 mins', tkey: 'filter.time.30', maxMins: 30 },

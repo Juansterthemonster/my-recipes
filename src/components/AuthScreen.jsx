@@ -216,7 +216,7 @@ export default function AuthScreen() {
       // success: onAuthStateChange in App.jsx picks up the new session
     } catch (e) {
       const msg = String((e && e.message) || e || '')
-      if (!/cancel/i.test(msg)) setError(`${t('auth.err.google')} (${msg.slice(0, 120)})`)
+      if (!/cancel/i.test(msg)) { console.error('Native Google sign-in failed:', msg); setError(t('auth.err.google')) }
       setLoading(false)
     }
   }

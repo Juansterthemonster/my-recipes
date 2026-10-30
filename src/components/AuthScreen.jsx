@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
-import { IN_APP_WEBVIEW } from '../utils/inApp'
+import { IN_APP_WEBVIEW, GOOGLE_WEB_CLIENT_ID, getNativeSocialLogin } from '../utils/inApp'
 
 /* ─── SHARED STYLES ──────────────────────────────────────────────────────────── */
 const inp = {
@@ -197,8 +197,33 @@ export default function AuthScreen() {
 
   /* ── Forgot password ── */
   /* ── Continue with Google (Supabase OAuth; returns to this site signed in) ── */
+  // In the Android app: Android's own account picker (Google blocks its web sign-in in a WebView).
+  // The Google ID token goes to Supabase, which signs the person in. A random nonce is hashed for
+  // Google and the raw value is given to Supabase, which checks they match.
+  async function nativeGoogleSignIn(social) {
+    try {
+      const rand = crypto.getRandomValues(new Uint8Array(16))
+      const rawNonce = Array.from(rand, b => b.toString(16).padStart(2, '0')).join('')
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawNonce))
+      const hashedNonce = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('')
+      await social.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID } })
+      const res = await social.login({ provider: 'google', options: { scopes: ['email', 'profile'], nonce: hashedNonce } })
+      const idToken = res && res.result && res.result.idToken
+      if (!idToken) throw new Error('no id token')
+      const { error: err } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce: rawNonce })
+      if (err) throw err
+      // success: onAuthStateChange in App.jsx picks up the new session
+    } catch (e) {
+      const msg = String((e && e.message) || e || '')
+      if (!/cancel/i.test(msg)) setError(`${t('auth.err.google')} (${msg.slice(0, 120)})`)
+      setLoading(false)
+    }
+  }
+
   async function handleGoogle() {
     setError(''); setLoading(true)
+    const nativeSocial = IN_APP_WEBVIEW ? getNativeSocialLogin() : null
+    if (nativeSocial) { await nativeGoogleSignIn(nativeSocial); return }
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin + '/' },
@@ -349,7 +374,7 @@ export default function AuthScreen() {
       )}
 
       <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
-        {!IN_APP_WEBVIEW && (<>
+        {(!IN_APP_WEBVIEW || !!getNativeSocialLogin()) && (<>
         <button
           type="button" onClick={handleGoogle} disabled={loading}
           style={{

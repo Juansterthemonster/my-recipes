@@ -207,7 +207,7 @@ export default function AuthScreen() {
       const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawNonce))
       const hashedNonce = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('')
       await social.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID } })
-      const res = await social.login({ provider: 'google', options: { scopes: ['email', 'profile'], nonce: hashedNonce } })
+      const res = await social.login({ provider: 'google', options: { nonce: hashedNonce }   // no `scopes`: the plugin's defaults already include email + profile })
       const idToken = res && res.result && res.result.idToken
       if (!idToken) throw new Error('no id token')
       const { error: err } = await supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce: rawNonce })

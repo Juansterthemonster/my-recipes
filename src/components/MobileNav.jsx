@@ -161,7 +161,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
           position: 'fixed', right: 19, zIndex: 31,
           bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
           width: 68, height: 68, borderRadius: 18,   // between the M3 baseline (56) and Expressive medium (80) sizes
-          background: '#E3EED6', color: '#0C3D4E', border: 'none', cursor: 'pointer',   // light container, teal icon (inverse of the bar)
+          background: '#3E92BF', color: '#F9F6F0', border: 'none', cursor: 'pointer',   // mid-tone: Blue Bell accent with a cream icon
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)',   // Material 3 elevation, kept small
         }}

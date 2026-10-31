@@ -5,10 +5,11 @@
 
 export function hasThumbs(url) {
   // Works for any host (the old r2.dev address or a custom image domain): our uploads all live under mi-sazon/.
-  return !!(url && url.includes('/mi-sazon/') && /\.webp$/.test(url) && !/_(640|960)\.webp$/.test(url))
+  return !!(url && url.includes('/mi-sazon/') && /\.(webp|png|jpe?g)$/i.test(url) && !/_(640|960)\.webp$/.test(url))
 }
 
 export function thumbSrcSet(url) {
   if (!hasThumbs(url)) return undefined
-  return `${url.replace(/\.webp$/, '_640.webp')} 640w, ${url.replace(/\.webp$/, '_960.webp')} 960w`
+  const base = url.replace(/\.(webp|png|jpe?g)$/i, '')
+  return `${base}_640.webp 640w, ${base}_960.webp 960w`
 }

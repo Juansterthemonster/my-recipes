@@ -44,8 +44,10 @@ do {
 } while (token)
 
 const isThumb = k => /_(640|960)\.webp$/.test(k)
-const originals = [...keys].filter(k => k.endsWith('.webp') && !isThumb(k))
-const todo = originals.filter(k => SIZES.some(w => !keys.has(k.replace(/\.webp$/, `_${w}.webp`))))
+const EXT = /\.(webp|png|jpe?g)$/i
+const baseOf = k => k.replace(EXT, '')
+const originals = [...keys].filter(k => EXT.test(k) && !isThumb(k))
+const todo = originals.filter(k => SIZES.some(w => !keys.has(`${baseOf(k)}_${w}.webp`)))
 
 console.log(`${originals.length} originals, ${todo.length} need thumbnails. ${COMMIT ? 'COMMIT mode' : 'DRY RUN (add --commit to write)'}`)
 
@@ -56,7 +58,7 @@ for (const key of todo) {
     const obj = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }))
     const input = Buffer.from(await obj.Body.transformToByteArray())
     for (const w of SIZES) {
-      const tkey = key.replace(/\.webp$/, `_${w}.webp`)
+      const tkey = `${baseOf(key)}_${w}.webp`
       if (keys.has(tkey)) continue
       const out = await sharp(input).rotate().resize({ width: w, height: w, fit: 'inside', withoutEnlargement: true })
         .webp({ quality: QUALITY }).toBuffer()

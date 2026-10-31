@@ -18,3 +18,10 @@ export function getListCache(userId) {
   if (Date.now() - cache.at > MAX_AGE_MS) return null
   return cache
 }
+
+// Update one of my recipes inside the cached list (e.g. last_opened_at) without marking the
+// cache stale, so "Recently opened" is right when coming back without re-downloading.
+export function patchCachedMyRecipe(userId, recipeId, patch) {
+  if (!cache || cache.userId !== userId || !Array.isArray(cache.my)) return
+  cache.my = cache.my.map(r => r.id === recipeId ? { ...r, ...patch } : r)
+}

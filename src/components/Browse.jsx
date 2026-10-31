@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import MasonryGrid from './MasonryGrid'
 import { getListCache, setListCache, beginListFetch } from '../utils/listCache'
+import { sortRecipes, MY_SORTS, EXPLORE_SORTS, sortSession } from '../utils/sortRecipes'
 import { useI18n, tagLabel, translate } from '../i18n'
 import CardImg from './CardImg'
 
@@ -188,7 +189,68 @@ function FilterIcon() {
 }
 
 /* ─── SEARCH BAR ───────────────────────────────────────────────────────────── */
-function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFilters }) {
+function SortIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="15" y2="12" /><line x1="4" y1="17" x2="10" y2="17" />
+    </svg>
+  )
+}
+
+// Sort button + small menu. `sort` = { options: ['newest', …], value, onChange }
+function SortButton({ sort }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [open])
+  const active = open || sort.value !== 'newest'
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label={t('sort.label')} aria-haspopup="menu" aria-expanded={open}
+        style={{
+          width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: active ? '#0C3D4E' : '#FFFFFF',
+          border: `1.5px solid ${active ? '#0C3D4E' : 'var(--border-soft)'}`,
+          borderRadius: 'var(--r-full)', color: active ? '#F9F6F0' : 'var(--text-secondary)',
+          cursor: 'pointer', transition: 'background 150ms, border-color 150ms, color 150ms',
+        }}
+      ><SortIcon /></button>
+      {open && (
+        <div role="menu" style={{
+          position: 'absolute', right: 0, top: 48, zIndex: 20, minWidth: 210,
+          background: '#FFFFFF', border: '1px solid var(--border-soft)', borderRadius: 14,
+          boxShadow: '0 8px 24px rgba(12,61,78,0.14)', padding: 6,
+        }}>
+          {sort.options.map(opt => {
+            const selected = sort.value === opt
+            return (
+              <button
+                key={opt} role="menuitemradio" aria-checked={selected}
+                onClick={() => { sort.onChange(opt); setOpen(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                  width: '100%', textAlign: 'left', padding: '10px 12px', border: 'none',
+                  borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.9rem',
+                  background: selected ? 'var(--green-tint)' : 'transparent',
+                  color: 'var(--text-primary)', fontWeight: selected ? 600 : 400,
+                }}
+              ><span>{t(`sort.${opt}`)}</span>{selected && <span aria-hidden="true">✓</span>}</button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFilters, sort = null }) {
   const { t } = useI18n()
   const filterActive = filtersOpen || hasActiveFilters
   return (
@@ -231,6 +293,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
         >
           <FilterIcon />
         </button>
+        {sort && <SortButton sort={sort} />}
       </div>
     </div>
   )
@@ -1358,8 +1421,10 @@ function EmptyCollectionCard({ onCreate }) {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin }) {
-  const { t } = useI18n()
+export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange }) {
+  const { t, lang } = useI18n()
+  // Explore's sort lives for the session only (resets to newest on reload); My Recipes' is saved on the profile.
+  const [exploreSort, setExploreSortState] = useState(sortSession.explore)
   // Start from the cached lists when they're still fresh (coming back from a recipe), so the
   // database isn't hit again for nothing. Any write or two minutes makes the cache stale.
   const [cached] = useState(() => getListCache(session.user.id))
@@ -1639,19 +1704,36 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
   // Derived state
   const q = search.toLowerCase()
-  const myFiltered          = myRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
-  const myFavs              = myFiltered.filter(r => r.is_favourite)
+  const myFilteredBase      = myRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
+  const myFavs              = myFilteredBase.filter(r => r.is_favourite)
+  const myFiltered          = sortRecipes(myFilteredBase, mySort, { dateOf: r => new Date(r.created_at).getTime(), seed: sortSession.mySeed, locale: lang })
   const pubFiltered         = publicRecipes.filter(r => matchesSearch(r, q) && matchesFilters(r))
   // Explore is one masonry grid, newest-made-public first. The 4 most recently made-public
   // recipes (overall, even while searching/filtering) carry a NEW tag. made_public_at falls back
   // to created_at until the migration has run.
   const publicAt = r => new Date(r.made_public_at || r.created_at).getTime()
   const latestIds = new Set([...publicRecipes].sort((a, b) => publicAt(b) - publicAt(a)).slice(0, 4).map(r => r.id))
-  const pubSorted = [...pubFiltered].sort((a, b) => publicAt(b) - publicAt(a))
+  // The 4 newest keep their Newest tag whatever the sort is.
+  const pubSorted = sortRecipes(pubFiltered, exploreSort, { dateOf: publicAt, seed: sortSession.exploreSeed, locale: lang })
   const hasNewExplore = typeof exploreSeenAt === 'number' && activeTab !== 'public'
     && (newestPublicAt > exploreSeenAt || publicRecipes.some(r => publicAt(r) > exploreSeenAt))
   const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
+
+  function pickMySort(mode) {
+    if (mode === 'random') sortSession.mySeed = Date.now()   // picking Random again reshuffles
+    onMySortChange?.(mode)
+  }
+  function pickExploreSort(mode) {
+    if (mode === 'random') sortSession.exploreSeed = Date.now()
+    sortSession.explore = mode
+    setExploreSortState(mode)
+  }
+  const sortProps = activeTab === 'mine'
+    ? { options: MY_SORTS, value: mySort, onChange: pickMySort }
+    : activeTab === 'public'
+      ? { options: EXPLORE_SORTS, value: exploreSort, onChange: pickExploreSort }
+      : null
 
   /* Masonry grid — columns defined in index.css .masonry-grid */
 
@@ -1680,6 +1762,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         filtersOpen={filtersOpen}
         onToggleFilters={() => setFiltersOpen(o => !o)}
         hasActiveFilters={activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0}
+        sort={sortProps}
       />
       {filtersOpen && (
         <FilterBar

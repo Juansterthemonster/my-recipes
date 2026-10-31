@@ -433,7 +433,11 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
       if (isEdit) {
         // Mark as modified if this recipe was copied from a public one
         if (recipe.copied_from) payload.is_modified = true
-        ;({ error:err } = await supabase.from('recipes').update(payload).eq('id', recipe.id))
+        ;({ error:err } = await supabase.from('recipes').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', recipe.id))
+        // supabase_migration_sort.sql not run yet → the column doesn't exist; save without it
+        if (err && /updated_at/.test(err.message || '')) {
+          ;({ error:err } = await supabase.from('recipes').update(payload).eq('id', recipe.id))
+        }
       } else {
         ({ error:err } = await supabase.from('recipes').insert({ ...payload, id: recipeId, user_id: session.user.id }))
       }

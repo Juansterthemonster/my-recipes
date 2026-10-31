@@ -12,6 +12,8 @@ import AuthScreen from './components/AuthScreen'
 import ResetPassword from './components/ResetPassword'
 import Profile from './components/Profile'
 import { useI18n } from './i18n'
+import { patchCachedMyRecipe } from './utils/listCache'
+import { MY_SORTS } from './utils/sortRecipes'
 
 export default function App() {
   const { t, setLang } = useI18n()
@@ -20,6 +22,7 @@ export default function App() {
   const [isAdmin, setIsAdmin]  = useState(false)
   // true once we know this account has no username yet (first Google sign-in) → ChooseUsername screen
   const [needsUsername, setNeedsUsername] = useState(false)
+  const [mySort, setMySort] = useState('newest')   // My Recipes sort, saved on the profile
   const [adminNewCount, setAdminNewCount] = useState(0)   // recipes added since the admin last opened the dashboard
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [selectedCollection, setSelectedCollection] = useState(null)
@@ -137,6 +140,11 @@ export default function App() {
         .from('profiles').select('language').eq('id', userId).maybeSingle()
       if (!langErr && langRow?.language) setLang(langRow.language)
 
+      // My Recipes sort order (profiles.my_recipes_sort). Errors = migration not run yet → default.
+      const { data: sortRow, error: sortErr } = await supabase
+        .from('profiles').select('my_recipes_sort').eq('id', userId).maybeSingle()
+      if (!sortErr && MY_SORTS.includes(sortRow?.my_recipes_sort)) setMySort(sortRow.my_recipes_sort)
+
       // Owner-only dashboard: the database says whether this account is an admin.
       // Errors (function not created yet) simply mean "not an admin".
       const { data: adminFlag } = await supabase.rpc('is_admin')
@@ -214,7 +222,28 @@ export default function App() {
     setActiveTab(tab)
   }
 
+  function changeMySort(mode) {
+    setMySort(mode)
+    if (!session?.user?.id) return
+    supabase.from('profiles').update({ my_recipes_sort: mode }).eq('id', session.user.id)
+      .then(({ error }) => { if (error) console.warn('Could not save sort order:', error.message) })
+  }
+
+  // Remember when I last opened one of my own recipes ("Recently opened"). At most once every
+  // 5 minutes per recipe to keep database writes low.
+  function recordOpen(recipe) {
+    const uid = session?.user?.id
+    if (!uid || !recipe || recipe.user_id !== uid) return
+    const last = recipe.last_opened_at ? new Date(recipe.last_opened_at).getTime() : 0
+    if (Date.now() - last < 5 * 60 * 1000) return
+    const nowIso = new Date().toISOString()
+    patchCachedMyRecipe(uid, recipe.id, { last_opened_at: nowIso })
+    supabase.from('recipes').update({ last_opened_at: nowIso }).eq('id', recipe.id).eq('user_id', uid)
+      .then(({ error }) => { if (error) console.warn('Could not save last opened:', error.message) })
+  }
+
   function openDetail(recipe, { fromCollection = false } = {}) {
+    recordOpen(recipe)
     window.history.pushState({ view: 'detail', tab: activeTab, recipe, fromCollection }, '', '#detail')
     setSelectedRecipe(recipe)
     setDetailFromCollection(fromCollection)
@@ -402,6 +431,7 @@ export default function App() {
             onProfile={openProfile}
             onSelectCollection={openCollection}
             isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={openAdmin}
+            mySort={mySort} onMySortChange={changeMySort}
           />
         )}
         {view === 'collection' && selectedCollection && (

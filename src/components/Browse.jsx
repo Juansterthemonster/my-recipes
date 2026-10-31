@@ -1831,7 +1831,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         </>
       )}
 
-      <div className="px-4 pt-6 pb-10 lg:px-10" style={isPhone ? { paddingTop: 6, paddingBottom: BOTTOM_NAV_CLEARANCE } : undefined}>
+      <div className="px-4 pt-6 pb-10 lg:px-10" style={isPhone ? { paddingTop: 16, paddingBottom: BOTTOM_NAV_CLEARANCE } : undefined}>
         {loading ? (
           <div style={{
             background: 'var(--white)', borderRadius: 14,

@@ -64,7 +64,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { publicId, contentType } = req.body || {}
+    const { publicId, contentType, thumbSizes } = req.body || {}
 
     if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY || !process.env.R2_BUCKET_NAME) {
       res.status(500).json({ error: 'R2 env vars not configured on the server' })
@@ -74,7 +74,8 @@ export default async function handler(req, res) {
     const safeType = EXT_FOR_TYPE[contentType] ? contentType : 'image/webp'
     const ext = EXT_FOR_TYPE[safeType] || 'webp'
     const safeId = (publicId || 'recipe').toString().replace(/[^a-zA-Z0-9_-]/g, '')
-    const key = `mi-sazon/${safeId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+    const base = `mi-sazon/${safeId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    const key = `${base}.${ext}`
 
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
@@ -88,7 +89,21 @@ export default async function handler(req, res) {
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 })
     const publicUrl = `${process.env.VITE_R2_PUBLIC_URL}/${key}`
 
-    res.status(200).json({ uploadUrl, publicUrl })
+    // Optional small copies for list cards: <base>_640.webp / <base>_960.webp.
+    // Only these two widths are allowed, so nobody can write arbitrary keys.
+    const thumbs = {}
+    for (const w of (Array.isArray(thumbSizes) ? thumbSizes : [])) {
+      if (w !== 640 && w !== 960) continue
+      const thumbCmd = new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: `${base}_${w}.webp`,
+        ContentType: 'image/webp',
+        CacheControl: 'public, max-age=31536000, immutable',
+      })
+      thumbs[w] = await getSignedUrl(s3, thumbCmd, { expiresIn: 60 })
+    }
+
+    res.status(200).json({ uploadUrl, publicUrl, thumbs })
   } catch (err) {
     console.error('presign-upload error:', err)
     res.status(500).json({ error: 'Failed to generate upload URL' })

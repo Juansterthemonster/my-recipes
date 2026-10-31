@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import MasonryGrid from './MasonryGrid'
 import { getListCache, setListCache, beginListFetch } from '../utils/listCache'
 import { useI18n, tagLabel, translate } from '../i18n'
+import CardImg from './CardImg'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
 function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, isAdmin = false, adminNewCount = 0, onAdmin }) {
@@ -530,7 +531,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
         position: 'relative', aspectRatio: '2/3',
         borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#000',
       }}>
-        <img src={recipe.photo_url} alt={recipe.name} loading="lazy" decoding="async" style={{
+        <CardImg src={recipe.photo_url} alt={recipe.name} style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
         <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
@@ -687,7 +688,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
         position: 'relative', aspectRatio: '2/3',
         borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#000',
       }}>
-        <img src={recipe.photo_url} alt={recipe.name} loading="lazy" decoding="async" style={{
+        <CardImg src={recipe.photo_url} alt={recipe.name} style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
         <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
@@ -926,7 +927,7 @@ function CollectionPhotoGrid({ photos = [], cover = null }) {
   if (cover) {
     return (
       <div style={{ height: '100%', background: 'var(--green-primary)',  overflow: 'hidden' }}>
-        <img src={cover} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <CardImg src={cover} alt="" sizes="50vw" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       </div>
     )
   }
@@ -956,7 +957,7 @@ function CollectionPhotoGrid({ photos = [], cover = null }) {
     }}>
       {slots.map((url, i) => (
         url
-          ? <img key={i} src={url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ? <CardImg key={i} src={url} alt="" sizes="25vw" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           : <div key={i} style={{ background: 'var(--green-primary)' }} />
       ))}
     </div>
@@ -1120,7 +1121,7 @@ function CollectionEditModal({ title, collectionId = null, initial = {}, onSave,
                     background: 'var(--green-primary)',
                   }}
                 >
-                  <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <CardImg src={url} alt="" sizes="25vw" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </button>
               ))}
             </div>

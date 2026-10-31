@@ -1425,6 +1425,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   const { t, lang } = useI18n()
   // Explore's sort lives for the session only (resets to newest on reload); My Recipes' is saved on the profile.
   const [exploreSort, setExploreSortState] = useState(sortSession.explore)
+  const [, setShuffleTick] = useState(0)   // bumped to re-render when Random is picked again
   // Start from the cached lists when they're still fresh (coming back from a recipe), so the
   // database isn't hit again for nothing. Any write or two minutes makes the cache stale.
   const [cached] = useState(() => getListCache(session.user.id))
@@ -1728,11 +1729,11 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   const allLiked            = [...myFavs, ...likedPublicFiltered]
 
   function pickMySort(mode) {
-    if (mode === 'random') sortSession.mySeed = Date.now()   // picking Random again reshuffles
+    if (mode === 'random') { sortSession.mySeed = Date.now(); setShuffleTick(n => n + 1) }   // picking Random again reshuffles
     onMySortChange?.(mode)
   }
   function pickExploreSort(mode) {
-    if (mode === 'random') sortSession.exploreSeed = Date.now()
+    if (mode === 'random') { sortSession.exploreSeed = Date.now(); setShuffleTick(n => n + 1) }
     sortSession.explore = mode
     setExploreSortState(mode)
   }

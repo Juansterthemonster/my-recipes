@@ -158,7 +158,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         onClick={onAdd}
         aria-label={t('nav.add')}
         style={{
-          position: 'fixed', right: 16, zIndex: 31,
+          position: 'fixed', right: 19, zIndex: 31,
           bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
           width: 68, height: 68, borderRadius: 18,   // between the M3 baseline (56) and Expressive medium (80) sizes
           background: '#0C3D4E', color: '#F9F6F0', border: 'none', cursor: 'pointer',
@@ -171,7 +171,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         aria-label="Main"
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
-          background: '#FFFFFF', borderTop: '1px solid var(--border-soft)',
+          background: '#0C3D4E',   // brand teal, matches the app's top/bottom system bars
           paddingBottom: SAFE_BOTTOM,
         }}
       >
@@ -186,7 +186,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 style={{
                   flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                  color: on ? '#0C3D4E' : 'var(--text-tertiary)',
+                  color: on ? '#F9F6F0' : 'rgba(249,246,240,0.7)',
                   fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: on ? 700 : 500,
                   WebkitTapHighlightColor: 'transparent',
                 }}
@@ -194,13 +194,14 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 <span style={{
                   position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 52, height: 30, borderRadius: 15,
-                  background: on ? 'var(--green-tint)' : 'transparent', transition: 'background 150ms',
+                  background: on ? '#E3EED6' : 'transparent', transition: 'background 150ms',
+                  color: on ? '#0C3D4E' : 'inherit',
                 }}>
                   {ICONS[tab.key]}
                   {dots[tab.key] && (
                     <span
                       role="img" aria-label={t('explore.newDot')}
-                      style={{ position: 'absolute', top: 3, right: 12, width: 8, height: 8, borderRadius: '50%', background: '#0C3D4E', border: '1.5px solid #FFFFFF' }}
+                      style={{ position: 'absolute', top: 3, right: 12, width: 8, height: 8, borderRadius: '50%', background: '#F9F6F0', border: '1.5px solid #0C3D4E' }}
                     />
                   )}
                 </span>

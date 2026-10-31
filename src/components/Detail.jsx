@@ -754,7 +754,7 @@ export default function Detail({
   async function handleAddToMyRecipes() {
     if (isAdded || adding) return
     setAdding(true)
-    const { id, created_at, updated_at, last_opened_at: _opened, author_username, is_liked: _liked, ...rest } = recipe
+    const { id, created_at, updated_at, last_opened_at: _opened, short_code: _code, author_username, is_liked: _liked, ...rest } = recipe
     const { data, error } = await supabase.from('recipes').insert({
       ...rest,
       user_id: session.user.id,
@@ -774,8 +774,12 @@ export default function Detail({
     // Slug is cosmetic only — App.jsx's share-link regex never reads it back
     // out, so a recipe renamed after sharing doesn't break the old link, and
     // a name with no a-z0-9 characters at all just falls back to no slug.
-    const slug = slugify(recipe.name)
-    const url = `${window.location.origin}/recipe/${slug ? `${slug}/` : ''}${recipe.id}`
+    // New links: /recipe/lemon-chicken-k7x2 (cosmetic name + the recipe's 4-char short code).
+    // Recipes without a code yet (SQL not run) fall back to the older /recipe/<slug>/<id> link.
+    const slug = slugify(recipe.name).slice(0, 50).replace(/-+$/, '')
+    const url = recipe.short_code
+      ? `${window.location.origin}/recipe/${slug ? `${slug}-` : ''}${recipe.short_code}`
+      : `${window.location.origin}/recipe/${slug ? `${slug}/` : ''}${recipe.id}`
 
     /* ── Tier 1: native share sheet (iOS Safari, Android Chrome, etc.) ──────
        navigator.share() works on mobile over HTTP as well as HTTPS, so it's

@@ -44,8 +44,11 @@ export default function App() {
   // shareLoading tracks whether the fetch is in progress.
   // shareError is true if the recipe was not found or is not public.
   const [shareRecipeId, setShareRecipeId] = useState(() => {
-    const m = window.location.pathname.match(/^\/recipe\/(?:[^/]+\/)?([0-9a-f-]{36})$/i)
-    return m ? m[1] : null
+    // /recipe/:id · /recipe/:slug/:id (older links) · /recipe/:slug-:code · /recipe/:code (4-char short code)
+    const path = window.location.pathname
+    const m = path.match(/^\/recipe\/(?:[^/]+\/)?([0-9a-f-]{36})$/i)
+      || path.match(/^\/recipe\/(?:[a-z0-9-]*-)?([a-z0-9]{4})$/i)
+    return m ? m[1].toLowerCase() : null
   })
   const [shareRecipe,  setShareRecipe]  = useState(null)
   const [shareLoading, setShareLoading] = useState(false)
@@ -163,7 +166,7 @@ export default function App() {
       const { data: recipeData } = await supabase
         .from('recipes')
         .select('*')
-        .eq('id', shareRecipeId)
+        .eq(/^[0-9a-f-]{36}$/.test(shareRecipeId) ? 'id' : 'short_code', shareRecipeId)
         .eq('is_public', true)
         .maybeSingle()
 

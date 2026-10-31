@@ -1,5 +1,12 @@
 {
   "rewrites": [
+    {
+      "source": "/recipe/:path*",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterest|Applebot|SkypeUriPreview|Embedly|redditbot|bingbot|Google|Viber|vkShare|Signal).*" }
+      ],
+      "destination": "/api/recipe-preview?p=:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

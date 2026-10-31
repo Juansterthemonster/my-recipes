@@ -8,23 +8,23 @@ import { useI18n } from '../i18n'
 const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)'
 const NAV_HEIGHT = 62
 
-/* ─── ICONS (24px, 1.8 stroke, currentColor) ──────────────────────────── */
+/* ─── ICONS (24px, 2.2 stroke, round caps/joins, currentColor) ──────────────────────────── */
 const svgProps = {
   width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-  strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+  strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
 }
 const ICONS = {
-  mine: (    // open book
-    <svg {...svgProps}><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2z" /><path d="M22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z" /></svg>
+  mine: (    // open book, soft corners
+    <svg {...svgProps}><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 14.5z" /><path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a2.5 2.5 0 0 0 2.5-2.5z" /></svg>
   ),
-  favourites: (    // heart
-    <svg {...svgProps}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+  favourites: (    // plump heart
+    <svg {...svgProps}><path d="M12 20.5s-8-4.9-8-10.6A4.7 4.7 0 0 1 8.7 5c1.4 0 2.7.7 3.3 1.9C12.6 5.7 13.9 5 15.3 5A4.7 4.7 0 0 1 20 9.9c0 5.7-8 10.6-8 10.6z" /></svg>
   ),
-  collections: (    // folder
-    <svg {...svgProps}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+  collections: (    // rounded folder
+    <svg {...svgProps}><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.4c.5 0 1 .2 1.3.6L11.3 7h7.2A2.5 2.5 0 0 1 21 9.5v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z" /></svg>
   ),
-  public: (    // compass
-    <svg {...svgProps}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>
+  public: (    // compass with a rounded needle
+    <svg {...svgProps}><circle cx="12" cy="12" r="9.5" /><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z" /></svg>
   ),
 }
 function PlusIcon() {

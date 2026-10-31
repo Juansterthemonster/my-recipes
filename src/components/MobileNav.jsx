@@ -1,0 +1,195 @@
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { useI18n } from '../i18n'
+
+/* Phone-only navigation: bottom tab bar + floating Add button + bottom sheets.
+   Rendered by Browse only on phone-sized screens (see useIsPhone). */
+
+const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)'
+const NAV_HEIGHT = 62
+
+/* ─── ICONS (24px, 1.8 stroke, currentColor) ──────────────────────────── */
+const svgProps = {
+  width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+  strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+}
+const ICONS = {
+  mine: (    // open book
+    <svg {...svgProps}><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2z" /><path d="M22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z" /></svg>
+  ),
+  favourites: (    // heart
+    <svg {...svgProps}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+  ),
+  collections: (    // folder
+    <svg {...svgProps}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+  ),
+  public: (    // compass
+    <svg {...svgProps}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>
+  ),
+}
+function PlusIcon() {
+  return <svg {...svgProps} width="26" height="26" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+}
+
+/* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
+// Slides up from the bottom; closes on backdrop tap, Escape, or the handle. Rendered in a portal
+// so it sits above everything regardless of where it's used.
+export function BottomSheet({ open, onClose, label, children }) {
+  const [mounted, setMounted] = useState(open)
+  const [entered, setEntered] = useState(false)
+  const shown = open && entered   // sliding in/out is driven by this
+
+  useEffect(() => {
+    if (open) {
+      let id2
+      const id1 = requestAnimationFrame(() => {
+        setMounted(true)
+        id2 = requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)))
+      })
+      return () => { cancelAnimationFrame(id1); cancelAnimationFrame(id2) }
+    }
+    // closing: let the slide-out finish, then unmount
+    const id = setTimeout(() => { setMounted(false); setEntered(false) }, 220)
+    return () => clearTimeout(id)
+  }, [open])
+
+  useEffect(() => {
+    if (!mounted) return
+    const onKey = e => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [mounted, onClose])
+
+  if (!mounted) return null
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 250 }}>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute', inset: 0, background: 'rgba(6,30,39,0.45)',
+          opacity: shown ? 1 : 0, transition: 'opacity 200ms ease',
+        }}
+      />
+      <div
+        role="dialog" aria-modal="true" aria-label={label}
+        style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0,
+          background: '#FFFFFF', borderRadius: '20px 20px 0 0',
+          boxShadow: '0 -8px 30px rgba(12,61,78,0.18)',
+          padding: `10px 16px calc(16px + ${SAFE_BOTTOM})`,
+          transform: shown ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+          maxHeight: '85vh', overflowY: 'auto',
+        }}
+      >
+        <button
+          onClick={onClose} aria-label="Close"
+          style={{ display: 'block', margin: '0 auto 6px', padding: '8px 40px', background: 'none', border: 'none', cursor: 'pointer' }}
+        ><span style={{ display: 'block', width: 40, height: 4, borderRadius: 2, background: 'var(--border-soft)' }} /></button>
+        {children}
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+// One big tappable row inside a sheet
+export function SheetRow({ onClick, children, trailing, danger = false, last = false }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        width: '100%', minHeight: 54, padding: '0 8px', textAlign: 'left',
+        background: 'none', border: 'none', borderBottom: last ? 'none' : '1px solid var(--border-soft)',
+        fontFamily: 'var(--font-body)', fontSize: '1rem', cursor: 'pointer',
+        color: danger ? '#B42318' : 'var(--text-primary)',
+      }}
+    ><span>{children}</span>{trailing}</button>
+  )
+}
+
+/* ─── BOTTOM TAB BAR + FLOATING ADD ───────────────────────────────────── */
+export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
+  const { t } = useI18n()
+  const [typing, setTyping] = useState(false)
+
+  // Hide while the keyboard is up (search box etc.) so the bar doesn't ride above the keyboard.
+  useEffect(() => {
+    const isField = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+    const onIn  = e => { if (isField(e.target)) setTyping(true) }
+    const onOut = () => setTyping(false)
+    document.addEventListener('focusin', onIn)
+    document.addEventListener('focusout', onOut)
+    return () => { document.removeEventListener('focusin', onIn); document.removeEventListener('focusout', onOut) }
+  }, [])
+
+  if (typing) return null
+  return (
+    <>
+      <button
+        onClick={onAdd}
+        aria-label={t('nav.add')}
+        style={{
+          position: 'fixed', right: 16, zIndex: 31,
+          bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
+          width: 56, height: 56, borderRadius: '50%',
+          background: '#0C3D4E', color: '#F9F6F0', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 6px 18px rgba(12,61,78,0.35)',
+        }}
+      ><PlusIcon /></button>
+
+      <nav
+        aria-label="Main"
+        style={{
+          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
+          background: '#FFFFFF', borderTop: '1px solid var(--border-soft)',
+          paddingBottom: SAFE_BOTTOM,
+        }}
+      >
+        <div style={{ display: 'flex', height: NAV_HEIGHT }}>
+          {tabs.map(tab => {
+            const on = active === tab.key
+            return (
+              <button
+                key={tab.key}
+                onClick={() => onChange(tab.key)}
+                aria-current={on ? 'page' : undefined}
+                style={{
+                  flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                  color: on ? '#0C3D4E' : 'var(--text-tertiary)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: on ? 700 : 500,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <span style={{
+                  position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 52, height: 30, borderRadius: 15,
+                  background: on ? 'var(--green-tint)' : 'transparent', transition: 'background 150ms',
+                }}>
+                  {ICONS[tab.key]}
+                  {dots[tab.key] && (
+                    <span
+                      role="img" aria-label={t('explore.newDot')}
+                      style={{ position: 'absolute', top: 3, right: 12, width: 8, height: 8, borderRadius: '50%', background: '#0C3D4E', border: '1.5px solid #FFFFFF' }}
+                    />
+                  )}
+                </span>
+                <span style={{ maxWidth: '100%', padding: '0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {t(`bnav.${tab.key}`)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+    </>
+  )
+}
+
+// Space to leave under the page content so the last cards aren't hidden by the bar + button.
+export const BOTTOM_NAV_CLEARANCE = `calc(${NAV_HEIGHT + 90}px + ${SAFE_BOTTOM})`

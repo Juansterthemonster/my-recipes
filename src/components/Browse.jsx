@@ -5,10 +5,13 @@ import { getListCache, setListCache, beginListFetch } from '../utils/listCache'
 import { sortRecipes, MY_SORTS, EXPLORE_SORTS, sortSession } from '../utils/sortRecipes'
 import { useI18n, tagLabel, translate } from '../i18n'
 import CardImg from './CardImg'
+import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './MobileNav'
+import { useIsPhone } from '../utils/useIsPhone'
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
 function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, isAdmin = false, adminNewCount = 0, onAdmin }) {
   const { t } = useI18n()
+  const isPhone = useIsPhone()   // phones: account menu is a bottom sheet, Add is the floating button
   const [menuOpen, setMenuOpen] = useState(false)
   const [addOpen,  setAddOpen]  = useState(false)
   const menuRef = useRef(null)
@@ -16,6 +19,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
 
   useEffect(() => {
     function handleClick(e) {
+      if (e.target.closest?.('[role="dialog"]')) return   // taps inside a bottom sheet
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
       if (addRef.current  && !addRef.current.contains(e.target))  setAddOpen(false)
     }
@@ -46,7 +50,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
       }}>MI SAZÓN</span>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div ref={addRef} style={{ position: 'relative' }}>
+        <div ref={addRef} style={{ position: 'relative', display: isPhone ? 'none' : undefined }}>
           <button
             onClick={() => setAddOpen(o => !o)}
             aria-haspopup="menu"
@@ -91,7 +95,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
             onClick={() => setMenuOpen(o => !o)}
             aria-label={t('nav.accountMenu')}
             style={{
-              width: 34, height: 34,
+              width: isPhone ? 44 : 34, height: isPhone ? 44 : 34,
               background: 'none', border: 'none',
               color: '#0C3D4E', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -101,7 +105,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           ><KebabIcon /></button>
 
-          {menuOpen && (
+          {menuOpen && !isPhone && (
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 8px)',
               background: 'var(--white)', border: '1px solid var(--border-soft)',
@@ -161,6 +165,28 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
               >{t('nav.signOut')}</button>
             </div>
           )}
+
+          {/* Phones: same items as a bottom sheet */}
+          <BottomSheet open={menuOpen && isPhone} onClose={() => setMenuOpen(false)} label={t('nav.accountMenu')}>
+            <div style={{
+              padding: '2px 8px 10px', fontSize: '0.82rem', color: 'var(--text-secondary)',
+              fontFamily: 'var(--font-body)', borderBottom: '1px solid var(--border-soft)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>{username ? `@${username}` : session?.user?.email}</div>
+            <SheetRow onClick={() => { setMenuOpen(false); onProfile() }}>{t('nav.profile')}</SheetRow>
+            {isAdmin && onAdmin && (
+              <SheetRow
+                onClick={() => { setMenuOpen(false); onAdmin() }}
+                trailing={adminNewCount > 0 && (
+                  <span style={{
+                    background: '#0C3D4E', color: '#F9F6F0', borderRadius: 999,
+                    fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', whiteSpace: 'nowrap',
+                  }}>{adminNewCount} new</span>
+                )}
+              >{t('nav.admin')}</SheetRow>
+            )}
+            <SheetRow last onClick={() => { setMenuOpen(false); onSignOut() }}>{t('nav.signOut')}</SheetRow>
+          </BottomSheet>
         </div>
       </div>
     </div>
@@ -1434,6 +1460,8 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   // Explore's sort lives for the session only (resets to newest on reload); My Recipes' is saved on the profile.
   const [exploreSort, setExploreSortState] = useState(sortSession.explore)
   const [, setShuffleTick] = useState(0)   // bumped to re-render when Random is picked again
+  const isPhone = useIsPhone()
+  const [addSheetOpen, setAddSheetOpen] = useState(false)
   // Start from the cached lists when they're still fresh (coming back from a recipe), so the
   // database isn't hit again for nothing. Any write or two minutes makes the cache stale.
   const [cached] = useState(() => getListCache(session.user.id))
@@ -1787,9 +1815,22 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
           activeTime={activeTime}           onToggleTime={makeToggle(setActiveTime)}
         />
       )}
-      <TabBar active={activeTab} onChange={onTabChange} dots={{ public: hasNewExplore }} />
+      {/* Desktop/tablet: tab row under the top bar. Phones: bottom tab bar + floating Add (thumb-friendly). */}
+      {!isPhone && <TabBar active={activeTab} onChange={onTabChange} dots={{ public: hasNewExplore }} />}
+      {isPhone && (
+        <>
+          <BottomNav
+            tabs={TABS} active={activeTab} onChange={onTabChange}
+            dots={{ public: hasNewExplore }} onAdd={() => setAddSheetOpen(true)}
+          />
+          <BottomSheet open={addSheetOpen} onClose={() => setAddSheetOpen(false)} label={t('nav.add')}>
+            <SheetRow onClick={() => { setAddSheetOpen(false); onAdd() }}>{t('nav.addRecipe')}</SheetRow>
+            <SheetRow last onClick={() => { setAddSheetOpen(false); setModalMode('create') }}>{t('nav.addCollection')}</SheetRow>
+          </BottomSheet>
+        </>
+      )}
 
-      <div className="px-4 pt-6 pb-10 lg:px-10">
+      <div className="px-4 pt-6 pb-10 lg:px-10" style={isPhone ? { paddingBottom: BOTTOM_NAV_CLEARANCE } : undefined}>
         {loading ? (
           <div style={{
             background: 'var(--white)', borderRadius: 14,

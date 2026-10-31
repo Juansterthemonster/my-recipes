@@ -2,10 +2,10 @@
 // small copies `<name>_640.webp` and `<name>_960.webp` next to them.
 // Anything else (older photos without copies, other hosts) just uses the
 // original URL, and <CardImg> falls back to it if a small copy is missing.
-const R2 = import.meta.env.VITE_R2_PUBLIC_URL
 
 export function hasThumbs(url) {
-  return !!(url && R2 && url.startsWith(R2) && /\.webp$/.test(url) && !/_(640|960)\.webp$/.test(url))
+  // Works for any host (the old r2.dev address or a custom image domain): our uploads all live under mi-sazon/.
+  return !!(url && url.includes('/mi-sazon/') && /\.webp$/.test(url) && !/_(640|960)\.webp$/.test(url))
 }
 
 export function thumbSrcSet(url) {

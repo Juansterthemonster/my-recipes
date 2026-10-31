@@ -194,7 +194,8 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 <span style={{
                   position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 52, height: 30, borderRadius: 15,
-                  background: on ? 'rgba(227,238,214,0.3)' : 'transparent', transition: 'background 150ms',
+                  background: on ? 'rgba(227,238,214,0.6)' : 'transparent', transition: 'background 150ms',
+                  color: on ? '#0C3D4E' : 'inherit',
                 }}>
                   {ICONS[tab.key]}
                   {dots[tab.key] && (

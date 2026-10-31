@@ -18,7 +18,7 @@ const ICONS = {
     <svg {...svgProps}><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 14.5z" /><path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a2.5 2.5 0 0 0 2.5-2.5z" /></svg>
   ),
   favourites: (    // same heart as the recipe cards (Browse.jsx HeartIcon), with the nav's thicker stroke
-    <svg {...svgProps}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+    <svg {...svgProps}><g transform="translate(12 13) scale(0.9) translate(-12 -13)"><path vectorEffect="non-scaling-stroke" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></g></svg>
   ),
   collections: (    // rounded folder
     <svg {...svgProps}><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.4c.5 0 1 .2 1.3.6L11.3 7h7.2A2.5 2.5 0 0 1 21 9.5v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z" /></svg>

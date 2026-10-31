@@ -395,8 +395,8 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         let thumbBlobs = null
         try {
           thumbBlobs = {
-            640: await compressImage(p.file, { maxDimension: 640, quality: 0.85 }),
-            960: await compressImage(p.file, { maxDimension: 960, quality: 0.85 }),
+            640: await compressImage(p.file, { maxDimension: 640, quality: 0.90 }),
+            960: await compressImage(p.file, { maxDimension: 960, quality: 0.90 }),
           }
         } catch (e) { console.warn('Thumbnail generation failed', e) }
         finalPhotos.push(await uploadToR2(compressed, recipeId, thumbBlobs))

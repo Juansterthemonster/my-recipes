@@ -29,6 +29,8 @@ export function renderPage({ title, description, image, url }) {
 <html lang="en"><head><meta charset="utf-8">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
+<link rel="icon" type="image/png" sizes="192x192" href="${SITE}/icons/icon-192.png">
+<link rel="apple-touch-icon" href="${SITE}/icons/icon-192.png">
 <meta property="og:site_name" content="Mi Sazón">
 <meta property="og:type" content="article">
 <meta property="og:title" content="${esc(title)}">

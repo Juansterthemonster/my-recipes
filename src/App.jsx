@@ -13,6 +13,7 @@ import ResetPassword from './components/ResetPassword'
 import Profile from './components/Profile'
 import { useI18n } from './i18n'
 import { patchCachedMyRecipe } from './utils/listCache'
+import { DetailSkeleton } from './components/Skeletons'
 import { MY_SORTS } from './utils/sortRecipes'
 
 export default function App() {
@@ -343,7 +344,7 @@ export default function App() {
   // ── Share link — read-only view for logged-out visitors ───────────────────
   if (shareRecipeId && !session) {
     // Recipe still loading
-    if (shareLoading) return null
+    if (shareLoading || (!shareRecipe && !shareError)) return <DetailSkeleton />
 
     // Recipe not found or not public
     if (shareError || !shareRecipe) {

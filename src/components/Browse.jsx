@@ -5,6 +5,7 @@ import { getListCache, setListCache, beginListFetch } from '../utils/listCache'
 import { sortRecipes, MY_SORTS, EXPLORE_SORTS, sortSession } from '../utils/sortRecipes'
 import { useI18n, tagLabel, translate } from '../i18n'
 import CardImg from './CardImg'
+import { RecipeGridSkeleton, CollectionGridSkeleton } from './Skeletons'
 import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './MobileNav'
 import { useIsPhone } from '../utils/useIsPhone'
 
@@ -1764,6 +1765,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     && (newestPublicAt > exploreSeenAt || publicRecipes.some(r => publicAt(r) > exploreSeenAt))
   const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
+  const hasData             = myRecipes.length > 0 || publicRecipes.length > 0 || collections.length > 0
 
   function pickMySort(mode) {
     if (mode === 'random') { sortSession.mySeed = Date.now(); setShuffleTick(n => n + 1) }   // picking Random again reshuffles
@@ -1832,13 +1834,9 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
       )}
 
       <div className="px-4 pt-6 pb-10 lg:px-10" style={isPhone ? { paddingTop: 16, paddingBottom: BOTTOM_NAV_CLEARANCE } : undefined}>
-        {loading ? (
-          <div style={{
-            background: 'var(--white)', borderRadius: 14,
-            border: '1px solid var(--border-soft)',
-            padding: '48px 20px', textAlign: 'center',
-            fontSize: '0.9rem', color: 'var(--text-secondary)',
-          }}>{t('browse.loading')}</div>
+        {loading && !hasData ? (
+          // First load: card-shaped placeholders. A reload while lists are already on screen keeps them visible.
+          activeTab === 'collections' ? <CollectionGridSkeleton /> : <RecipeGridSkeleton />
         ) : (
           <>
             {/* ── MY RECIPES TAB ── */}

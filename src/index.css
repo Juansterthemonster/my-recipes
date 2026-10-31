@@ -127,3 +127,18 @@ input[type=number] { -moz-appearance: textfield; }
   color: #6B7280;
   opacity: 1;
 }
+
+/* ─── Skeleton loaders (components/Skeletons.jsx) ──────────────────────────
+   A soft shimmer sweeps across grey-teal placeholders while lists load. */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 130% 0; }
+  100% { background-position: -30% 0; }
+}
+.skeleton {
+  background: linear-gradient(100deg, #E3E9EA 35%, #F1F5F5 50%, #E3E9EA 65%);
+  background-size: 250% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}

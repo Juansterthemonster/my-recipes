@@ -28,7 +28,7 @@ const ICONS = {
   ),
 }
 function PlusIcon() {
-  return <svg {...svgProps} width="26" height="26" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+  return <svg {...svgProps} strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 }
 
 /* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
@@ -160,10 +160,10 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         style={{
           position: 'fixed', right: 16, zIndex: 31,
           bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
-          width: 56, height: 56, borderRadius: '50%',
+          width: 56, height: 56, borderRadius: 16,   // Material 3 FAB: rounded square, not a circle
           background: '#0C3D4E', color: '#F9F6F0', border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 6px 18px rgba(12,61,78,0.35)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)',   // Material 3 elevation, kept small
         }}
       ><PlusIcon /></button>
 

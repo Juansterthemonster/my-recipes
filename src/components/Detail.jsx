@@ -754,7 +754,7 @@ export default function Detail({
   async function handleAddToMyRecipes() {
     if (isAdded || adding) return
     setAdding(true)
-    const { id, created_at, updated_at, author_username, is_liked: _liked, ...rest } = recipe
+    const { id, created_at, updated_at, last_opened_at: _opened, author_username, is_liked: _liked, ...rest } = recipe
     const { data, error } = await supabase.from('recipes').insert({
       ...rest,
       user_id: session.user.id,

@@ -10,7 +10,7 @@ function trackingFetch(input, init) {
     const url = String(typeof input === 'string' ? input : (input && input.url) || '')
     if (method !== 'GET' && method !== 'HEAD' && url.includes('/rest/v1/') && !url.includes('/rest/v1/rpc/')) {
       const body = typeof (init && init.body) === 'string' ? init.body : ''
-      if (!/explore_seen_at|"language"|"my_recipes_sort"|"last_opened_at"/.test(body)) markListDirty()
+      if (!/explore_seen_at|"language"|"my_recipes_sort"|"opened_at"/.test(body)) markListDirty()
     }
   } catch { /* never block a request */ }
   return fetch(input, init)

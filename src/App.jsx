@@ -229,7 +229,7 @@ export default function App() {
       .then(({ error }) => { if (error) console.warn('Could not save sort order:', error.message) })
   }
 
-  // Remember when I last opened one of my own recipes ("Recently opened"). At most once every
+  // Remember when I last opened one of my own recipes ("Recently opened", private table recipe_opens). At most once every
   // 5 minutes per recipe to keep database writes low.
   function recordOpen(recipe) {
     const uid = session?.user?.id
@@ -238,7 +238,7 @@ export default function App() {
     if (Date.now() - last < 5 * 60 * 1000) return
     const nowIso = new Date().toISOString()
     patchCachedMyRecipe(uid, recipe.id, { last_opened_at: nowIso })
-    supabase.from('recipes').update({ last_opened_at: nowIso }).eq('id', recipe.id).eq('user_id', uid)
+    supabase.from('recipe_opens').upsert({ user_id: uid, recipe_id: recipe.id, opened_at: nowIso }, { onConflict: 'user_id,recipe_id' })
       .then(({ error }) => { if (error) console.warn('Could not save last opened:', error.message) })
   }
 

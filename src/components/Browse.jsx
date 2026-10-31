@@ -1566,7 +1566,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     setLoading(true)
     beginListFetch()
     let finalMy = null, finalPub = null, finalCols = null
-    const [myRes, pubRes, likesRes, colRes] = await Promise.all([
+    const [myRes, pubRes, likesRes, colRes, opensRes] = await Promise.all([
       supabase.from('recipes').select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false }),
@@ -1579,8 +1579,15 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
       supabase.from('collections').select('id, name, description, cover_photo_url, created_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false }),
+      // When I last opened each of my recipes (private table; errors = migration not run yet)
+      supabase.from('recipe_opens').select('recipe_id, opened_at')
+        .eq('user_id', session.user.id),
     ])
-    if (!myRes.error) { finalMy = myRes.data || []; setMyRecipes(finalMy) }
+    if (!myRes.error) {
+      const openedAt = new Map((opensRes.data || []).map(o => [o.recipe_id, o.opened_at]))
+      finalMy = (myRes.data || []).map(r => ({ ...r, last_opened_at: openedAt.get(r.id) || null }))
+      setMyRecipes(finalMy)
+    }
 
     if (!pubRes.error) {
       const pubData  = pubRes.data || []

@@ -36,7 +36,7 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
 
   return (
     <div
-      style={{ background: '#F9F6F0', position: 'sticky', top: 0, zIndex: 10 }}
+      style={{ background: '#F9F6F0', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 4 : undefined }}
       className="
         px-5 py-[14px] flex items-center justify-between
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -286,10 +286,11 @@ function SortButton({ sort }) {
 
 function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFilters, sort = null }) {
   const { t } = useI18n()
+  const isPhone = useIsPhone()
   const filterActive = filtersOpen || hasActiveFilters
   return (
     <div
-      style={{ background: '#F9F6F0' }}
+      style={{ background: '#F9F6F0', ...(isPhone ? { paddingTop: 2, paddingBottom: 3 } : {}) }}
       className="
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
         lg:pl-[max(40px,calc((100vw-1400px)/2+40px))]
@@ -1830,7 +1831,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         </>
       )}
 
-      <div className="px-4 pt-6 pb-10 lg:px-10" style={isPhone ? { paddingBottom: BOTTOM_NAV_CLEARANCE } : undefined}>
+      <div className="px-4 pt-6 pb-10 lg:px-10" style={isPhone ? { paddingTop: 6, paddingBottom: BOTTOM_NAV_CLEARANCE } : undefined}>
         {loading ? (
           <div style={{
             background: 'var(--white)', borderRadius: 14,

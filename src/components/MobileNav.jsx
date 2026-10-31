@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../i18n'
 
@@ -38,6 +38,29 @@ export function BottomSheet({ open, onClose, label, children }) {
   const [mounted, setMounted] = useState(open)
   const [entered, setEntered] = useState(false)
   const shown = open && entered   // sliding in/out is driven by this
+  // Drag down to close: follow the finger while dragging, then close if pulled far/fast enough
+  const sheetRef = useRef(null)
+  const drag = useRef({ y: 0, t: 0, active: false })
+  const [dragY, setDragY] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  function onTouchStart(e) {
+    const atTop = (sheetRef.current?.scrollTop || 0) <= 0
+    drag.current = { y: e.touches[0].clientY, t: Date.now(), active: atTop }
+  }
+  function onTouchMove(e) {
+    if (!drag.current.active) return
+    const dy = e.touches[0].clientY - drag.current.y
+    if (dy > 0) { setDragging(true); setDragY(dy) } else if (dragY !== 0) { setDragY(0) }
+  }
+  function onTouchEnd() {
+    if (!drag.current.active) return
+    drag.current.active = false
+    const dy = dragY
+    const speed = dy / Math.max(1, Date.now() - drag.current.t)   // px per ms
+    setDragging(false)
+    setDragY(0)
+    if (dy > 90 || (dy > 30 && speed > 0.5)) onClose()
+  }
 
   useEffect(() => {
     if (open) {
@@ -73,15 +96,17 @@ export function BottomSheet({ open, onClose, label, children }) {
         }}
       />
       <div
+        ref={sheetRef}
         role="dialog" aria-modal="true" aria-label={label}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
         style={{
           position: 'absolute', left: 0, right: 0, bottom: 0,
           background: '#FFFFFF', borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 30px rgba(12,61,78,0.18)',
           padding: `10px 16px calc(16px + ${SAFE_BOTTOM})`,
-          transform: shown ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
-          maxHeight: '85vh', overflowY: 'auto',
+          transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
+          transition: dragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+          maxHeight: '85vh', overflowY: 'auto', overscrollBehavior: 'contain',
         }}
       >
         <button

@@ -17,8 +17,8 @@ const ICONS = {
   mine: (    // open book, soft corners
     <svg {...svgProps}><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 14.5z" /><path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a2.5 2.5 0 0 0 2.5-2.5z" /></svg>
   ),
-  favourites: (    // plump heart
-    <svg {...svgProps}><path d="M12 20.5s-8-4.9-8-10.6A4.7 4.7 0 0 1 8.7 5c1.4 0 2.7.7 3.3 1.9C12.6 5.7 13.9 5 15.3 5A4.7 4.7 0 0 1 20 9.9c0 5.7-8 10.6-8 10.6z" /></svg>
+  favourites: (    // slim heart
+    <svg {...svgProps}><path d="M12 20s-7-4.3-7-9.7A4.1 4.1 0 0 1 9.1 6.2c1.2 0 2.3.6 2.9 1.6.6-1 1.7-1.6 2.9-1.6A4.1 4.1 0 0 1 19 10.3C19 15.7 12 20 12 20z" /></svg>
   ),
   collections: (    // rounded folder
     <svg {...svgProps}><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.4c.5 0 1 .2 1.3.6L11.3 7h7.2A2.5 2.5 0 0 1 21 9.5v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z" /></svg>

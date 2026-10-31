@@ -28,7 +28,7 @@ const ICONS = {
   ),
 }
 function PlusIcon() {
-  return <svg {...svgProps} width="28" height="28" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+  return <svg {...svgProps} width="26" height="26" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 }
 
 /* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
@@ -160,7 +160,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         style={{
           position: 'fixed', right: 16, zIndex: 31,
           bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
-          width: 80, height: 80, borderRadius: 20,   // Material 3 Expressive medium FAB: 80px, 20px corners
+          width: 68, height: 68, borderRadius: 18,   // between the M3 baseline (56) and Expressive medium (80) sizes
           background: '#0C3D4E', color: '#F9F6F0', border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)',   // Material 3 elevation, kept small
@@ -217,4 +217,4 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
 }
 
 // Space to leave under the page content so the last cards aren't hidden by the bar + button.
-export const BOTTOM_NAV_CLEARANCE = `calc(${NAV_HEIGHT + 112}px + ${SAFE_BOTTOM})`
+export const BOTTOM_NAV_CLEARANCE = `calc(${NAV_HEIGHT + 100}px + ${SAFE_BOTTOM})`

@@ -898,7 +898,29 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 
 ---
 
-## How to work with Claude (Cowork)
+## Where things stand (2026-10-31) — read this first next session
+
+**Shipped and live (v4.17 → v4.28), newest entries are at the top of the v4.x notes above:** Explore as one masonry grid with the Newest tag · Disk IO reductions · Android Capacitor WebView shell (`../sazon-android`, com.misazon.app) with native Google sign-in, pull-to-refresh, native share sheet and teal status/nav bars · Admin Dashboard entry in the account menu · Recipe type (was "Meal type") + Sauce · card thumbnails 640/960 (+ backfill script, already run for all R2 photos) · sort for My Recipes (saved on the profile) and Explore · phone-only bottom navigation with floating Add and bottom sheets · short share links (`/recipe/name-xxxx`) + crawler-only link previews (`api/recipe-preview.js`) · skeleton loaders.
+
+**All SQL migrations are run** (including `supabase_migration_sort.sql` and `supabase_migration_short_codes.sql`). New columns/tables: `recipes.updated_at`, `recipes.short_code` (unique, trigger-assigned), `profiles.my_recipes_sort`, private table `recipe_opens`.
+
+**Android app:** latest build uploaded = versionCode 5 / versionName 1.2 (internal testing); closed-testing v4 was in Google review. Website changes reach the app on deploy with NO rebuild. A rebuild is only needed for native changes (plugins, icons/splash, manifest, permissions, version). The next upload needs versionCode ≥ 6. Package id com.misazon.app; Play App Signing + upload-key SHA-1s are in the v4.22 entry. `../sazon-android` is not a git repo yet (offered, not requested) and lives in iCloud-synced Documents, which creates " 2" duplicate files; if Gradle complains about "' ' is not a valid file-based resource name", move those duplicates out.
+
+**Working conventions with this user:** commit via Claude, the user pushes (`rm -f .git/HEAD.lock` first when a stale lock remains; Claude's sandbox can't delete in the repo so it moves locks aside as `.git/stale-*`); add a version entry here after each change; keep explanations plain and short; run `vite build` + eslint before committing (known pre-existing lint errors: setState-in-effect in App.jsx ×2, `fetchAll` used before declaration and unused `idx` in Browse.jsx, unused destructured vars in Detail.jsx); Vercel sometimes needs an empty commit to trigger a deploy.
+
+**Decisions already made (don't re-ask):** native Google sign-in done, no email one-time-code; Explore sort always starts on newest and keeps the Newest tag on the 4 newest whatever the sort; My Recipes sort is per-account; no sections/grouping (the filters cover it); collections have no sort; "Recently opened" lives in a private table; phone navigation only below 768px; FAB = light green container with teal icon, 68px, M3 shape; bottom bar = teal with 60%-opacity active pill; custom image domain NOT possible right now (misazon.app's DNS is not on Cloudflare; moving DNS was judged too risky) so photos stay on the r2.dev address — thumbnails fix most of the speed.
+
+**Backlog / ideas not done (rough priority):**
+1. Keep screen awake while a recipe is open (Wake Lock API) — small, high value.
+2. Open shared links inside the installed app (Android App Links / intent filter in the Capacitor shell + rebuild).
+3. Cooking mode (big step-by-step view, tick-off ingredients, timers).
+4. Shopping list from ingredients; offline access to opened/favourite recipes (offline.html is the only offline page today).
+5. Import a recipe from a URL / Android share target.
+6. Light haptics; dark theme for the page itself; tablet/landscape layout (≥768px gets the desktop layout).
+7. Error reporting (e.g. Sentry); Play Store account-deletion web page; Cloudflare R2 photo deletion when an account is deleted.
+8. iOS app later (roughly 2–4 weeks; needs Apple developer account); keep native bits in `../sazon-android`-style shell.
+9. Supabase Disk IO: re-check the dashboard about a week after the v4.19 changes; pagination of Explore only becomes worthwhile at ~1,000+ public recipes (search/filters are client-side today).
+10. Link-preview polish: recipes without a description show "A recipe on Mi Sazón."; iMessage previews untested.
 
 ---
 

@@ -142,3 +142,22 @@ input[type=number] { -moz-appearance: textfield; }
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
 }
+
+/* ─── Android app: page is drawn underneath the system navigation bar ─────────
+   The app shell (sazon-android MainActivity) sets --sazon-bottom-inset to the height of that bar.
+   Screens WITHOUT the phone bottom nav get a solid teal strip there so the system icons stay readable;
+   the bottom nav (html.bottom-nav-on) draws its own translucent teal behind it instead.
+   In normal browsers the variable is not set, so none of this has any effect. */
+:root { --toast-lift: 0px; }
+html.bottom-nav-on { --toast-lift: 78px; }   /* keep toasts above the bottom nav bar */
+#root { padding-bottom: var(--sazon-bottom-inset, 0px); }
+body::after {
+  content: '';
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: var(--sazon-bottom-inset, 0px);
+  background: #0C3D4E;
+  z-index: 20;
+  pointer-events: none;
+}
+html.bottom-nav-on body::after { display: none; }
+html.bottom-nav-on #root { padding-bottom: 0; }

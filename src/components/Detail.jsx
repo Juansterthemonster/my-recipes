@@ -344,7 +344,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
       */}
       <div style={{
         position: 'fixed',
-        bottom: 0,
+        bottom: 'var(--sazon-bottom-inset, 0px)',   // above the Android system navigation bar (app only)
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',

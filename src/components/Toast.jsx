@@ -35,7 +35,7 @@ export default function Toast({ message, visible, onHide }) {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 24,
+      bottom: 'calc(24px + var(--sazon-bottom-inset, 0px) + var(--toast-lift, 0px))',
       left: 20,
       transform: `translateY(${translateY}px)`,
       opacity,

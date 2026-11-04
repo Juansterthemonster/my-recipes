@@ -5,7 +5,9 @@ import { useI18n } from '../i18n'
 /* Phone-only navigation: bottom tab bar + floating Add button + bottom sheets.
    Rendered by Browse only on phone-sized screens (see useIsPhone). */
 
-const SAFE_BOTTOM = 'env(safe-area-inset-bottom, 0px)'
+// Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
+// is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
+const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
 const NAV_HEIGHT = 62
 
 /* ─── ICONS (24px, 2.2 stroke, round caps/joins, currentColor) ──────────────────────────── */
@@ -100,10 +102,10 @@ export function BottomSheet({ open, onClose, label, children }) {
         role="dialog" aria-modal="true" aria-label={label}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
         style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0,
+          position: 'absolute', left: 0, right: 0, bottom: 'var(--sazon-bottom-inset, 0px)',
           background: '#FFFFFF', borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 30px rgba(12,61,78,0.18)',
-          padding: `10px 16px calc(16px + ${SAFE_BOTTOM})`,
+          padding: '10px 16px calc(16px + env(safe-area-inset-bottom, 0px))',
           transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
           transition: dragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
           maxHeight: '85vh', overflowY: 'auto', overscrollBehavior: 'contain',
@@ -149,6 +151,13 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
     document.addEventListener('focusin', onIn)
     document.addEventListener('focusout', onOut)
     return () => { document.removeEventListener('focusin', onIn); document.removeEventListener('focusout', onOut) }
+  }, [])
+
+  // While this bar is on screen it draws behind the system navigation bar itself, so the solid
+  // fill used on other screens (index.css .bottom-nav-on) is switched off.
+  useEffect(() => {
+    document.documentElement.classList.add('bottom-nav-on')
+    return () => document.documentElement.classList.remove('bottom-nav-on')
   }, [])
 
   if (typing) return null

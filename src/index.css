@@ -149,7 +149,7 @@ input[type=number] { -moz-appearance: textfield; }
    the bottom nav (html.bottom-nav-on) draws its own translucent teal behind it instead.
    In normal browsers the variable is not set, so none of this has any effect. */
 :root { --toast-lift: 0px; }
-html.bottom-nav-on { --toast-lift: 78px; }   /* keep toasts above the bottom nav bar */
+html.bottom-nav-on { --toast-lift: 75px; }   /* keep toasts above the bottom nav bar */
 #root { padding-bottom: var(--sazon-bottom-inset, 0px); }
 body::after {
   content: '';

@@ -8,7 +8,7 @@ import { useI18n } from '../i18n'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-const NAV_HEIGHT = 62
+const NAV_HEIGHT = 59
 
 /* ─── ICONS (24px, 2.2 stroke, round caps/joins, currentColor) ──────────────────────────── */
 const svgProps = {
@@ -195,7 +195,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 onClick={() => onChange(tab.key)}
                 aria-current={on ? 'page' : undefined}
                 style={{
-                  flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer',
+                  flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', paddingTop: 3,   // nudges the icons 3px lower
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
                   color: on ? '#F9F6F0' : 'rgba(249,246,240,0.7)',
                   fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: on ? 700 : 500,

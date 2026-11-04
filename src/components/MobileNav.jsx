@@ -171,7 +171,9 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         aria-label="Main"
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
-          background: '#0C3D4E',   // brand teal, matches the app's top/bottom system bars
+          // Brand teal, see-through so cards show faintly behind it while scrolling; a light blur keeps the labels readable
+          background: 'rgba(12,61,78,0.82)',
+          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
           paddingBottom: SAFE_BOTTOM,
         }}
       >

@@ -171,9 +171,9 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         aria-label="Main"
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
-          // Brand teal, see-through so cards show faintly behind it while scrolling, with a very light blur (3px)
+          // Brand teal, see-through so cards show faintly behind it while scrolling, with a very light blur (1px)
           background: 'rgba(12,61,78,0.87)',
-          backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+          backdropFilter: 'blur(1px)', WebkitBackdropFilter: 'blur(1px)',
           paddingBottom: SAFE_BOTTOM,
         }}
       >

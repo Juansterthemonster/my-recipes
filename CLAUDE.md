@@ -938,3 +938,9 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 ### v4.30 — Teal strip under the system nav bar in mobile browsers
 - Bottom safe-area strip (`body::after`), `#root` padding and bottom sheets now use `var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))`: app uses the injected inset, browsers fall back to the browser's own inset.
 - Only has an effect where Chrome Android draws the page edge-to-edge (index.html declares `viewport-fit=cover`). Where Chrome keeps its own coloured bar, the website cannot change it.
+
+### v4.31 — Android App Links for shared recipe links (web side live, app side needs next build)
+- `public/.well-known/assetlinks.json` already lists `com.misazon.app` + cert fingerprints.
+- `sazon-android` AndroidManifest: new verified intent filter for `https://misazon.app/recipe/*` (takes effect in the next app build; no build was made for it yet).
+- `src/main.jsx`: if `window.Capacitor.Plugins.App` exists, `getLaunchUrl()` / `appUrlOpen` → `location.replace(path)` for `/recipe/...` links. No-op in browsers.
+- After install, Android may need a minute to verify; users can check Settings → Apps → Mi Sazón → Open by default.

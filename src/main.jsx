@@ -18,6 +18,24 @@ try {
   }
 } catch { /* ignore */ }
 
+// Android app: when a shared recipe link is opened with the app (Android App Links), the app starts
+// on the home page and hands us the link. Go to that recipe. Does nothing in a normal browser.
+try {
+  const capApp = window.Capacitor?.Plugins?.App
+  if (capApp) {
+    const openLink = (url) => {
+      try {
+        const u = new URL(url)
+        if (u.hostname !== window.location.hostname || !u.pathname.startsWith('/recipe/')) return
+        if (u.pathname === window.location.pathname) return
+        window.location.replace(u.pathname + u.search)
+      } catch { /* ignore */ }
+    }
+    capApp.getLaunchUrl?.().then((r) => { if (r?.url) openLink(r.url) }).catch(() => {})
+    capApp.addListener?.('appUrlOpen', (e) => openLink(e.url))
+  }
+} catch { /* ignore */ }
+
 // Public legal pages are served before the app (no sign-in needed).
 const legalPath = window.location.pathname.replace(/\/+$/, '')
 const legalKind = legalPath === '/privacy' ? 'privacy' : legalPath === '/terms' ? 'terms' : null

@@ -934,3 +934,7 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 4. **For UI changes** — paste the component name and describe what you want. Claude can read and edit the actual `.jsx` files directly
 5. **For DB changes** — Claude can write the Supabase SQL migration for you to run in the Supabase SQL editor
 6. **For design reference** — see `STYLEGUIDE_v2.md` for the complete visual system
+
+### v4.30 — Teal strip under the system nav bar in mobile browsers
+- Bottom safe-area strip (`body::after`), `#root` padding and bottom sheets now use `var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))`: app uses the injected inset, browsers fall back to the browser's own inset.
+- Only has an effect where Chrome Android draws the page edge-to-edge (index.html declares `viewport-fit=cover`). Where Chrome keeps its own coloured bar, the website cannot change it.

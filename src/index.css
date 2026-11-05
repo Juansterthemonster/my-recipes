@@ -147,14 +147,16 @@ input[type=number] { -moz-appearance: textfield; }
    The app shell (sazon-android MainActivity) sets --sazon-bottom-inset to the height of that bar.
    Screens WITHOUT the phone bottom nav get a solid teal strip there so the system icons stay readable;
    the bottom nav (html.bottom-nav-on) draws its own translucent teal behind it instead.
-   In normal browsers the variable is not set, so none of this has any effect. */
+   In browsers the variable is not set, so the browser's own safe-area inset is used instead: it is 0 on
+   desktop and in Chrome without edge-to-edge (nothing changes), and the real bar/home-indicator height
+   where the browser draws the page under the system bar (Chrome Android edge-to-edge, iPhone Safari). */
 :root { --toast-lift: 0px; }
 html.bottom-nav-on { --toast-lift: 75px; }   /* keep toasts above the bottom nav bar */
-#root { padding-bottom: var(--sazon-bottom-inset, 0px); }
+#root { padding-bottom: var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px)); }
 body::after {
   content: '';
   position: fixed; left: 0; right: 0; bottom: 0;
-  height: var(--sazon-bottom-inset, 0px);
+  height: var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px));
   background: #0C3D4E;
   z-index: 20;
   pointer-events: none;

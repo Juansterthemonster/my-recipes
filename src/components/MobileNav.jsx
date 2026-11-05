@@ -102,10 +102,10 @@ export function BottomSheet({ open, onClose, label, children }) {
         role="dialog" aria-modal="true" aria-label={label}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
         style={{
-          position: 'absolute', left: 0, right: 0, bottom: 'var(--sazon-bottom-inset, 0px)',
+          position: 'absolute', left: 0, right: 0, bottom: 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))',
           background: '#FFFFFF', borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 30px rgba(12,61,78,0.18)',
-          padding: '10px 16px calc(16px + env(safe-area-inset-bottom, 0px))',
+          padding: '10px 16px 16px',
           transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
           transition: dragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
           maxHeight: '85vh', overflowY: 'auto', overscrollBehavior: 'contain',

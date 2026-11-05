@@ -6,13 +6,7 @@
 -- Safe to re-run: nobody receives the same starter twice.
 -- =====================================================================
 
--- 0. PREVIEW – run this on its own first. It must return exactly 2 rows.
---    (If it returns more or fewer, stop and tell Claude.)
--- select r.id, r.name, r.user_id, r.photo_url
--- from public.recipes r
--- join auth.users u on u.id = r.user_id
--- where u.email = 'juansterthemonster@gmail.com'
---   and r.name in ('Chimichurri sauce (sample)', 'Broiled salmon with mayonnaise (sample)');
+-- (Applied 2026-11-04.)
 
 -- Marks a copy as a starter and stores who it is "by" (the app shows "by @name" and hides the
 -- "edited by you" / "added to my recipes" lines for these).
@@ -24,12 +18,10 @@ create table if not exists public.starter_recipes (
 );
 alter table public.starter_recipes enable row level security;
 
-insert into public.starter_recipes (recipe_id)
-select r.id
-from public.recipes r
-join auth.users u on u.id = r.user_id
-where u.email = 'juansterthemonster@gmail.com'
-  and r.name in ('Chimichurri sauce (sample)', 'Broiled salmon with mayonnaise (sample)')
+-- The two starters (ids of the originals in the owner's account)
+insert into public.starter_recipes (recipe_id) values
+  ('e4ca0f39-c3bd-40e7-9bb1-cafcb0d4968e'),   -- Broiled salmon with Mayonnaise (Sample)
+  ('c16802c8-742b-420a-899b-bc62a362d145')    -- Chimichurri Sauce (Sample)
 on conflict do nothing;
 
 -- 2. Give one user their copies

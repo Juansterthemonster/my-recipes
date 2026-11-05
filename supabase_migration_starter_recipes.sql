@@ -14,6 +14,10 @@
 -- where u.email = 'juansterthemonster@gmail.com'
 --   and r.name in ('Chimichurri sauce (sample)', 'Broiled salmon with mayonnaise (sample)');
 
+-- Marks a copy as a starter and stores who it is "by" (the app shows "by @name" and hides the
+-- "edited by you" / "added to my recipes" lines for these).
+alter table public.recipes add column if not exists starter_by text;
+
 -- 1. Which recipes are the starters (private: no policies, so the app can't read it)
 create table if not exists public.starter_recipes (
   recipe_id uuid primary key references public.recipes(id) on delete cascade
@@ -37,6 +41,7 @@ set search_path = public
 as $$
 declare
   r public.recipes;
+  author text;
 begin
   for r in
     select rec.* from public.recipes rec
@@ -44,17 +49,19 @@ begin
     where rec.user_id <> uid
       and not exists (select 1 from public.recipes c where c.user_id = uid and c.copied_from = rec.id)
   loop
+    select username into author from public.profiles where id = r.user_id;
     insert into public.recipes
     select * from jsonb_populate_record(
       null::public.recipes,
-      (to_jsonb(r) - 'short_code' - 'last_opened_at')
+      (to_jsonb(r) - 'short_code' - 'last_opened_at' - 'is_modified')
         || jsonb_build_object(
              'id', gen_random_uuid(),
              'user_id', uid,
              'is_public', false,
              'copied_from', r.id,
-             'created_at', now(),
-             'updated_at', now())
+             'starter_by', coalesce(author, 'juanster'),
+             'created_at', r.created_at,
+             'updated_at', r.created_at)
     );
   end loop;
 end;

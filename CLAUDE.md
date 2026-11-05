@@ -944,3 +944,7 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 - `sazon-android` AndroidManifest: new verified intent filter for `https://misazon.app/recipe/*` (takes effect in the next app build; no build was made for it yet).
 - `src/main.jsx`: if `window.Capacitor.Plugins.App` exists, `getLaunchUrl()` / `appUrlOpen` → `location.replace(path)` for `/recipe/...` links. No-op in browsers.
 - After install, Android may need a minute to verify; users can check Settings → Apps → Mi Sazón → Open by default.
+
+### v4.32 — Starter (sample) recipes
+- `supabase_migration_starter_recipes.sql`: private `starter_recipes` table lists the templates; `give_starter_recipes(uid)` copies them (private, `copied_from` set, `starter_by` = original author username, `created_at` = original's); trigger on `profiles` insert gives them to new accounts; one-time backfill for existing accounts.
+- `recipes.starter_by` (text): Detail shows "by @starter_by · Added on <date>" and hides the "edited by you" notice and the "Added to my recipes" line. Excluded when copying a recipe.

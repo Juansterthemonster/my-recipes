@@ -573,8 +573,10 @@ export default function Detail({
   // the original's date, plus a second line with when I saved it. If the original is no longer
   // visible (deleted / made private) the creator and date are simply omitted — never my own name.
   const fmtDate = formatDate
-  const isCopy = isOwner && !!recipe.copied_from
-  const authorName = isCopy ? originalAuthor : (isOwner ? username : recipe.author_username)
+  // Starter recipes (given to every account): "by @creator · Added on <date>", never "edited by you".
+  const isStarter = !!recipe.starter_by
+  const isCopy = isOwner && !!recipe.copied_from && !isStarter
+  const authorName = isStarter ? recipe.starter_by : isCopy ? originalAuthor : (isOwner ? username : recipe.author_username)
   const addedDate = fmtDate(isCopy ? originalDate : recipe.created_at)
   const savedToMineDate = isCopy ? fmtDate(recipe.created_at) : null
   // Gallery: falls back to the single legacy photo_url for older recipes that
@@ -754,7 +756,7 @@ export default function Detail({
   async function handleAddToMyRecipes() {
     if (isAdded || adding) return
     setAdding(true)
-    const { id, created_at, updated_at, last_opened_at: _opened, short_code: _code, author_username, is_liked: _liked, ...rest } = recipe
+    const { id, created_at, updated_at, last_opened_at: _opened, short_code: _code, starter_by: _starter, author_username, is_liked: _liked, ...rest } = recipe
     const { data, error } = await supabase.from('recipes').insert({
       ...rest,
       user_id: session.user.id,
@@ -1500,12 +1502,12 @@ export default function Detail({
             style={{
               fontFamily: 'var(--font-display)', fontWeight: 400,
               color: 'var(--text-primary)', lineHeight: 1.15,
-              marginBottom: authorName || addedDate || savedToMineDate || (recipe.copied_from && recipe.is_modified) ? 6 : 10,
+              marginBottom: authorName || addedDate || savedToMineDate || (recipe.copied_from && recipe.is_modified && !isStarter) ? 6 : 10,
               letterSpacing: '-0.01em',
             }}>{recipe.name}</h1>
 
         {/* Modification notice — directly under recipe name */}
-        {recipe.copied_from && recipe.is_modified && (
+        {recipe.copied_from && recipe.is_modified && !isStarter && (
           <p style={{
             fontSize: '0.78rem', fontFamily: 'var(--font-body)',
             color: 'var(--text-secondary)', marginBottom: 14,

@@ -1,0 +1,86 @@
+-- =====================================================================
+-- Mi Sazón – starter recipes
+-- Every account gets its own private copy of the recipes listed in
+-- `starter_recipes` (new accounts: automatically; existing accounts: once, below).
+-- The copies belong to the user, so they can edit or delete them freely.
+-- Safe to re-run: nobody receives the same starter twice.
+-- =====================================================================
+
+-- 0. PREVIEW – run this on its own first. It must return exactly 2 rows.
+--    (If it returns more or fewer, stop and tell Claude.)
+-- select r.id, r.name, r.user_id, r.photo_url
+-- from public.recipes r
+-- join auth.users u on u.id = r.user_id
+-- where u.email = 'juansterthemonster@gmail.com'
+--   and r.name in ('Chimichurri sauce (sample)', 'Broiled salmon with mayonnaise (sample)');
+
+-- 1. Which recipes are the starters (private: no policies, so the app can't read it)
+create table if not exists public.starter_recipes (
+  recipe_id uuid primary key references public.recipes(id) on delete cascade
+);
+alter table public.starter_recipes enable row level security;
+
+insert into public.starter_recipes (recipe_id)
+select r.id
+from public.recipes r
+join auth.users u on u.id = r.user_id
+where u.email = 'juansterthemonster@gmail.com'
+  and r.name in ('Chimichurri sauce (sample)', 'Broiled salmon with mayonnaise (sample)')
+on conflict do nothing;
+
+-- 2. Give one user their copies
+create or replace function public.give_starter_recipes(uid uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  r public.recipes;
+begin
+  for r in
+    select rec.* from public.recipes rec
+    join public.starter_recipes s on s.recipe_id = rec.id
+    where rec.user_id <> uid
+      and not exists (select 1 from public.recipes c where c.user_id = uid and c.copied_from = rec.id)
+  loop
+    insert into public.recipes
+    select * from jsonb_populate_record(
+      null::public.recipes,
+      (to_jsonb(r) - 'short_code' - 'last_opened_at')
+        || jsonb_build_object(
+             'id', gen_random_uuid(),
+             'user_id', uid,
+             'is_public', false,
+             'copied_from', r.id,
+             'created_at', now(),
+             'updated_at', now())
+    );
+  end loop;
+end;
+$$;
+
+-- 3. New accounts get them automatically
+create or replace function public.starter_recipes_on_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.give_starter_recipes(new.id);
+  return new;
+end;
+$$;
+
+drop trigger if exists give_starter_recipes_on_signup on public.profiles;
+create trigger give_starter_recipes_on_signup
+  after insert on public.profiles
+  for each row execute function public.starter_recipes_on_profile();
+
+-- 4. Existing accounts get them now (one time)
+select public.give_starter_recipes(id) from public.profiles;
+
+-- Check: how many accounts now have each starter
+-- select r.name, count(*) from public.recipes r
+-- where r.copied_from in (select recipe_id from public.starter_recipes) group by r.name;

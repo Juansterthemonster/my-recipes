@@ -898,15 +898,36 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 - Google may show "requires verification" in the Verification Center (brand/domain verification). Sign-in works for everyone with basic scopes (`openid email profile`) either way; verification only affects how the consent screen looks.
 - Play Store: embedded WebViews can't do Google sign-in (`disallowed_useragent`); a Trusted Web Activity (Chrome) works.
 
+### v4.30 — Teal strip under the system nav bar in mobile browsers
+- Bottom safe-area strip (`body::after`), `#root` padding and bottom sheets now use `var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))`: app uses the injected inset, browsers fall back to the browser's own inset.
+- Only has an effect where Chrome Android draws the page edge-to-edge (index.html declares `viewport-fit=cover`). Where Chrome keeps its own coloured bar, the website cannot change it.
+
+### v4.31 — Android App Links for shared recipe links (web side LIVE; app side needs the next app build)
+- `public/.well-known/assetlinks.json` already lists `com.misazon.app` + cert fingerprints.
+- `sazon-android` AndroidManifest: new verified intent filter for `https://misazon.app/recipe/*` (takes effect in the next app build; no build was made for it yet).
+- `src/main.jsx`: if `window.Capacitor.Plugins.App` exists, `getLaunchUrl()` / `appUrlOpen` → `location.replace(path)` for `/recipe/...` links. No-op in browsers.
+- After install, Android may need a minute to verify; users can check Settings → Apps → Mi Sazón → Open by default.
+
+### v4.32 — Starter (sample) recipes (shipped ✓, SQL run 2026-11-04)
+- `supabase_migration_starter_recipes.sql`: private `starter_recipes` table lists the templates; `give_starter_recipes(uid)` copies them (private, `copied_from` set, `starter_by` = original author username, `created_at` = original's); trigger on `profiles` insert gives them to new accounts; one-time backfill for existing accounts.
+- `recipes.starter_by` (text): Detail shows "by @starter_by · Added on <date>" and hides the "edited by you" notice and the "Added to my recipes" line. Excluded when copying a recipe.
+- Starters = Juan's own two recipes: "Broiled salmon with Mayonnaise (Sample)" `e4ca0f39-c3bd-40e7-9bb1-cafcb0d4968e` and "Chimichurri Sauce (Sample)" `c16802c8-742b-420a-899b-bc62a362d145` (account `2a07c2a9-…`). To add/remove a starter: insert/delete a row in `starter_recipes`, then run `select give_starter_recipes(id) from profiles` for existing users (nobody gets a duplicate; deleted copies are re-added if you re-run it).
+- Result of the run: 46 accounts got the salmon; 44 got the chimichurri; 2 accounts already had an older Explore copy named "Chimichurri" and were skipped (no duplicate, no `starter_by`).
+- Copies are private (`is_public false`), keep the original's `created_at` (so they sort below the user's own recipes), and share the original's R2 photo URL (the app never deletes R2 files on recipe delete, so this is safe).
+- Samples are English only.
+
+### Browser bottom bar decision (2026-11-04)
+The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be coloured by the website. Decided to leave it. Optional idea if revisited: PWA install with manifest `theme_color`.
+
 ---
 
-## Where things stand (2026-10-31) — read this first next session
+## Where things stand (2026-11-04) — read this first next session
 
-**Shipped and live (v4.17 → v4.28), newest entries are at the top of the v4.x notes above:** Explore as one masonry grid with the Newest tag · Disk IO reductions · Android Capacitor WebView shell (`../sazon-android`, com.misazon.app) with native Google sign-in, pull-to-refresh, native share sheet and teal status/nav bars · Admin Dashboard entry in the account menu · Recipe type (was "Meal type") + Sauce · card thumbnails 640/960 (+ backfill script, already run for all R2 photos) · sort for My Recipes (saved on the profile) and Explore · phone-only bottom navigation with floating Add and bottom sheets · short share links (`/recipe/name-xxxx`) + crawler-only link previews (`api/recipe-preview.js`) · skeleton loaders.
+**Shipped and live (v4.17 → v4.32), newest entries are at the top of the v4.x notes above:** Explore as one masonry grid with the Newest tag · Disk IO reductions · Android Capacitor WebView shell (`../sazon-android`, com.misazon.app) with native Google sign-in, pull-to-refresh, native share sheet and teal status/nav bars · Admin Dashboard entry in the account menu · Recipe type (was "Meal type") + Sauce · card thumbnails 640/960 (+ backfill script, already run for all R2 photos) · sort for My Recipes (saved on the profile) and Explore · phone-only bottom navigation with floating Add and bottom sheets · short share links (`/recipe/name-xxxx`) + crawler-only link previews (`api/recipe-preview.js`) · skeleton loaders · translucent teal bottom nav · Android edge-to-edge bottom (code done, needs app build) · starter/sample recipes in every account (v4.32) · App Links web side (v4.31).
 
-**All SQL migrations are run** (including `supabase_migration_sort.sql` and `supabase_migration_short_codes.sql`). New columns/tables: `recipes.updated_at`, `recipes.short_code` (unique, trigger-assigned), `profiles.my_recipes_sort`, private table `recipe_opens`.
+**All SQL migrations are run** (including sort, short codes and `supabase_migration_starter_recipes.sql`). New columns/tables: `recipes.updated_at`, `recipes.short_code` (unique, trigger-assigned), `profiles.my_recipes_sort`, private table `recipe_opens`, `recipes.starter_by`, private table `starter_recipes`.
 
-**Android app:** latest build uploaded = versionCode 5 / versionName 1.2 (internal testing); closed-testing v4 was in Google review. Website changes reach the app on deploy with NO rebuild. A rebuild is only needed for native changes (plugins, icons/splash, manifest, permissions, version). The next upload needs versionCode ≥ 6. Package id com.misazon.app; Play App Signing + upload-key SHA-1s are in the v4.22 entry. `../sazon-android` is not a git repo yet (offered, not requested) and lives in iCloud-synced Documents, which creates " 2" duplicate files; if Gradle complains about "' ' is not a valid file-based resource name", move those duplicates out.
+**Android app:** latest build uploaded = versionCode 5 / versionName 1.2 (internal testing); closed-testing v4 was in Google review. Website changes reach the app on deploy with NO rebuild. A rebuild is only needed for native changes (plugins, icons/splash, manifest, permissions, version). **Pending for the next app build (versionCode 6 / 1.3 already set in build.gradle):** edge-to-edge bottom (MainActivity + capacitor.config SystemBars) and the App Links intent filter in AndroidManifest (v4.31). Before building: commit the `sazon-android` changes, `npx cap sync android`, then test gesture + 3-button nav, status bar unchanged, sheets, keyboard, and opening a shared link from WhatsApp. The next upload needs versionCode ≥ 6. Package id com.misazon.app; Play App Signing + upload-key SHA-1s are in the v4.22 entry. `../sazon-android` is not a git repo yet (offered, not requested) and lives in iCloud-synced Documents, which creates " 2" duplicate files; if Gradle complains about "' ' is not a valid file-based resource name", move those duplicates out.
 
 **Working conventions with this user:** commit via Claude, the user pushes (`rm -f .git/HEAD.lock` first when a stale lock remains; Claude's sandbox can't delete in the repo so it moves locks aside as `.git/stale-*`); add a version entry here after each change; keep explanations plain and short; run `vite build` + eslint before committing (known pre-existing lint errors: setState-in-effect in App.jsx ×2, `fetchAll` used before declaration and unused `idx` in Browse.jsx, unused destructured vars in Detail.jsx); Vercel sometimes needs an empty commit to trigger a deploy.
 
@@ -914,7 +935,7 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 
 **Backlog / ideas not done (rough priority):**
 1. Keep screen awake while a recipe is open (Wake Lock API) — small, high value.
-2. Open shared links inside the installed app (Android App Links / intent filter in the Capacitor shell + rebuild).
+2. ~~Open shared links inside the installed app~~ — done in code (v4.31); takes effect with the next app build.
 3. Cooking mode (big step-by-step view, tick-off ingredients, timers).
 4. Shopping list from ingredients; offline access to opened/favourite recipes (offline.html is the only offline page today).
 5. Import a recipe from a URL / Android share target.
@@ -934,17 +955,3 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 4. **For UI changes** — paste the component name and describe what you want. Claude can read and edit the actual `.jsx` files directly
 5. **For DB changes** — Claude can write the Supabase SQL migration for you to run in the Supabase SQL editor
 6. **For design reference** — see `STYLEGUIDE_v2.md` for the complete visual system
-
-### v4.30 — Teal strip under the system nav bar in mobile browsers
-- Bottom safe-area strip (`body::after`), `#root` padding and bottom sheets now use `var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))`: app uses the injected inset, browsers fall back to the browser's own inset.
-- Only has an effect where Chrome Android draws the page edge-to-edge (index.html declares `viewport-fit=cover`). Where Chrome keeps its own coloured bar, the website cannot change it.
-
-### v4.31 — Android App Links for shared recipe links (web side live, app side needs next build)
-- `public/.well-known/assetlinks.json` already lists `com.misazon.app` + cert fingerprints.
-- `sazon-android` AndroidManifest: new verified intent filter for `https://misazon.app/recipe/*` (takes effect in the next app build; no build was made for it yet).
-- `src/main.jsx`: if `window.Capacitor.Plugins.App` exists, `getLaunchUrl()` / `appUrlOpen` → `location.replace(path)` for `/recipe/...` links. No-op in browsers.
-- After install, Android may need a minute to verify; users can check Settings → Apps → Mi Sazón → Open by default.
-
-### v4.32 — Starter (sample) recipes
-- `supabase_migration_starter_recipes.sql`: private `starter_recipes` table lists the templates; `give_starter_recipes(uid)` copies them (private, `copied_from` set, `starter_by` = original author username, `created_at` = original's); trigger on `profiles` insert gives them to new accounts; one-time backfill for existing accounts.
-- `recipes.starter_by` (text): Detail shows "by @starter_by · Added on <date>" and hides the "edited by you" notice and the "Added to my recipes" line. Excluded when copying a recipe.

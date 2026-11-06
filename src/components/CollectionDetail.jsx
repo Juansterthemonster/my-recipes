@@ -216,6 +216,14 @@ export default function CollectionDetail({ collection: collectionProp, session, 
           <BackArrow />
           {t('cd.back')}
         </button>
+
+        {/* Edit — same outlined pill as the recipe page */}
+        <button onClick={() => setEditing(true)} style={{
+          fontSize: '0.82rem', fontWeight: 500, padding: '7px 18px',
+          borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
+          background: 'transparent', color: '#0C3D4E',
+          cursor: 'pointer', fontFamily: 'var(--font-body)',
+        }}>{t('detail.edit')}</button>
       </div>
 
       {/* ── Content ── */}
@@ -223,29 +231,12 @@ export default function CollectionDetail({ collection: collectionProp, session, 
 
         {/* Collection name + recipe count */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
+          <div style={{ marginBottom: 6 }}>
             <h1 style={{
               fontFamily: 'var(--font-display)', fontSize: '1.9rem', fontWeight: 400,
-              color: 'var(--text-primary)', lineHeight: 1.2, margin: 0, flex: 1, minWidth: 0,
+              color: 'var(--text-primary)', lineHeight: 1.2, margin: 0,
               overflowWrap: 'anywhere',
             }}>{collection.name}</h1>
-            <button
-              onClick={() => setEditing(true)}
-              aria-label={t('col.editTitle')}
-              title={t('col.editTitle')}
-              style={{
-                flexShrink: 0, width: 40, height: 40, marginTop: 2, borderRadius: '50%',
-                background: 'var(--white)', border: '1px solid var(--border-soft)',
-                color: 'var(--text-primary)', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
-            </button>
           </div>
           {collection.description && (
             <p style={{

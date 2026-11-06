@@ -920,7 +920,7 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be coloured by the website. Decided to leave it. Optional idea if revisited: PWA install with manifest `theme_color`.
 
 ### v4.33 — Edit a collection from its own page
-- Pencil button next to the collection title on `CollectionDetail` opens the same edit dialog as the Collections tab (name, notes/description, cover photo). Changes show immediately and are saved to `collections`; `App.jsx` keeps `selectedCollection` in sync via `onUpdated`.
+- An "Edit" outlined pill (same style as the recipe page) in the top bar of `CollectionDetail`, right side, opens the same edit dialog as the Collections tab (name, notes/description, cover photo). Changes show immediately and are saved to `collections`; `App.jsx` keeps `selectedCollection` in sync via `onUpdated`.
 - `CollectionEditModal` moved out of `Browse.jsx` into `src/components/CollectionEditModal.jsx` (shared by both places). No SQL needed.
 
 ---

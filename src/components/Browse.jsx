@@ -1591,6 +1591,55 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
       ? { options: EXPLORE_SORTS, value: exploreSort, onChange: pickExploreSort }
       : null
 
+  /* Phones: like the iOS search bar, search / filter / sort start hidden above the first card.
+     Scroll up (or pull down) at the top to reveal them; a half-shown bar snaps open or shut when the
+     scroll settles. It stays open while searching or while a filter is on. */
+  const searchWrapRef = useRef(null)
+  const keepSearchOpen = !!search || filtersOpen || activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0
+  const keepOpenRef = useRef(keepSearchOpen)
+  keepOpenRef.current = keepSearchOpen
+
+  // Hide on arrival (first load, tab change, coming back from a recipe) — after App's scroll-to-top has run
+  useEffect(() => {
+    if (!isPhone) return
+    let r2
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => {
+      const el = searchWrapRef.current
+      if (!el || keepOpenRef.current) return
+      const h = el.offsetHeight
+      if (window.scrollY < h) window.scrollTo(0, h)
+    }) })
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2) }
+  }, [isPhone, activeTab, hasData])
+
+  // Snap a half-visible bar when scrolling stops
+  useEffect(() => {
+    if (!isPhone) return
+    let timer = null
+    let touching = false
+    const settle = () => {
+      const el = searchWrapRef.current
+      if (!el || touching || keepOpenRef.current) return
+      const h = el.offsetHeight
+      const y = window.scrollY
+      if (y > 1 && y < h - 1) window.scrollTo({ top: y > h / 2 ? h : 0, behavior: 'smooth' })
+    }
+    const queue = () => { clearTimeout(timer); timer = setTimeout(settle, 140) }
+    const onStart = () => { touching = true }
+    const onEnd = () => { touching = false; queue() }
+    window.addEventListener('scroll', queue, { passive: true })
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchend', onEnd, { passive: true })
+    window.addEventListener('touchcancel', onEnd, { passive: true })
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('scroll', queue)
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchend', onEnd)
+      window.removeEventListener('touchcancel', onEnd)
+    }
+  }, [isPhone])
+
   /* Masonry grid — columns defined in index.css .masonry-grid */
 
   return (
@@ -1613,13 +1662,15 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
           onClose={() => { setModalMode(null); setRenameTarget(null) }}
         />
       )}
-      <SearchBar
-        search={search} onSearch={setSearch}
-        filtersOpen={filtersOpen}
-        onToggleFilters={() => setFiltersOpen(o => !o)}
-        hasActiveFilters={activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0}
-        sort={sortProps}
-      />
+      <div ref={searchWrapRef}>
+        <SearchBar
+          search={search} onSearch={setSearch}
+          filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen(o => !o)}
+          hasActiveFilters={activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0}
+          sort={sortProps}
+        />
+      </div>
       {filtersOpen && (
         <FilterBar
           activeDietary={activeDietary}   onToggleDietary={makeToggle(setActiveDietary)}

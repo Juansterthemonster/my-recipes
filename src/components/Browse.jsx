@@ -1606,6 +1606,20 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
      Scroll up (or pull down) at the top to reveal them; a half-shown bar snaps open or shut when the
      scroll settles. It stays open while searching or while a filter is on. */
   const searchWrapRef = useRef(null)
+  const pageRef = useRef(null)
+  // Make the page always tall enough to scroll the bar out of view — otherwise a short list (few
+  // collections, an empty tab) can't scroll that far and the bar stays half visible.
+  useEffect(() => {
+    if (!isPhone) return
+    const el = searchWrapRef.current
+    const page = pageRef.current
+    if (!el || !page) return
+    const apply = () => { page.style.minHeight = `calc(100vh + ${el.offsetHeight}px)` }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => { ro.disconnect(); page.style.minHeight = '' }
+  }, [isPhone])
   const keepSearchOpen = !!search || filtersOpen || activeDietary.length > 0 || activeMealTypes.length > 0 || activeTime.length > 0
   const keepOpenRef = useRef(keepSearchOpen)
   keepOpenRef.current = keepSearchOpen
@@ -1654,7 +1668,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
   /* Masonry grid — columns defined in index.css .masonry-grid */
 
   return (
-    <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
+    <div ref={pageRef} className="min-h-screen" style={{ background: '#F9F6F0' }}>
       <Nav
         onAdd={onAdd}
         onAddCollection={() => setModalMode('create')}

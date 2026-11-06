@@ -929,7 +929,8 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 
 ### v4.35 — Phones: search / filter / sort start hidden (iOS-style)
 - `Browse.jsx` (phones only, web + Android app): on arrival (first load, tab change, back from a recipe) the page scrolls down by the search block's height so it starts hidden under the sticky logo bar; scroll up or pull down at the top to reveal it. A half-visible bar snaps open/shut when scrolling settles (140ms after the last scroll/touch event). It stays open while there is search text or any filter/panel is on.
-- Needs a real-phone check: tab switching, back from a recipe, short lists (can't scroll, so the bar just stays visible), and the Android pull-to-refresh (it only triggers once the bar is fully revealed and you're at scroll 0).
+- The page (phones) gets `min-height: 100vh + search-block height` so even short lists (few collections, empty tabs) can scroll far enough to hide the bar fully (fix after the Collections tab showed it half-hidden).
+- Needs a real-phone check: tab switching, back from a recipe, and the Android pull-to-refresh (it only triggers once the bar is fully revealed and you're at scroll 0).
 
 ### v4.36 — Search works in the Collections tab
 - `Browse.jsx`: the collections query now also loads each member recipe's name + ingredient names into `collection.search_text` (lowercased, cached with the list). Typing in the search bar shows collections whose name, notes, or any recipe inside (name or ingredient) matches; "No matches" card when none do. Dietary / type / time filters still don't apply to collections (not requested).

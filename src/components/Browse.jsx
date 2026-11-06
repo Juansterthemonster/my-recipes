@@ -1468,15 +1468,20 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
 
       const { data: crData } = await supabase
         .from('collection_recipes')
-        .select('collection_id, recipes(id, photo_url)')
+        .select('collection_id, recipes(id, photo_url, name, ingredients)')
         .in('collection_id', collectionIds)
 
       // Group photos + counts by collection_id
       const grouped = {}
       for (const row of crData || []) {
         const cid = row.collection_id
-        if (!grouped[cid]) grouped[cid] = { count: 0, photos: [] }
+        if (!grouped[cid]) grouped[cid] = { count: 0, photos: [], text: [] }
         grouped[cid].count++
+        // Text of every recipe in the collection (name + ingredient names) so search can look inside
+        if (row.recipes?.name) grouped[cid].text.push(row.recipes.name)
+        if (Array.isArray(row.recipes?.ingredients)) {
+          for (const ing of row.recipes.ingredients) if (ing?.name) grouped[cid].text.push(ing.name)
+        }
         if (row.recipes?.photo_url && grouped[cid].photos.length < 4) {
           grouped[cid].photos.push(row.recipes.photo_url)
         }
@@ -1486,6 +1491,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
         ...c,
         recipe_count: grouped[c.id]?.count  || 0,
         photos:       grouped[c.id]?.photos || [],
+        search_text:  (grouped[c.id]?.text || []).join('\n').toLowerCase(),
       }))
       setCollections(finalCols)
     } else if (!colRes.error) {
@@ -1574,6 +1580,11 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
     && (newestPublicAt > exploreSeenAt || publicRecipes.some(r => publicAt(r) > exploreSeenAt))
   const likedPublicFiltered = publicRecipes.filter(r => r.is_liked && matchesSearch(r, q) && matchesFilters(r))
   const allLiked            = [...myFavs, ...likedPublicFiltered]
+  // Collections: match the collection's own name / notes, or any recipe inside it (name or ingredient)
+  const colFiltered         = !q ? collections : collections.filter(c =>
+    (c.name || '').toLowerCase().includes(q) ||
+    (c.description || '').toLowerCase().includes(q) ||
+    (c.search_text || '').includes(q))
   const hasData             = myRecipes.length > 0 || publicRecipes.length > 0 || collections.length > 0
 
   function pickMySort(mode) {
@@ -1752,8 +1763,11 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
             {activeTab === 'collections' && (
               <>
                 {/* Masonry grid — matches recipe card layout and breakpoints exactly */}
+                {collections.length > 0 && colFiltered.length === 0 ? (
+                  <EmptyState title={t('empty.noMatches')} sub={t('empty.tryDifferent')} />
+                ) : (
                 <MasonryGrid
-                  items={collections.length > 0 ? collections : [{ id: '__new__', isNewCard: true }]}
+                  items={collections.length > 0 ? colFiltered : [{ id: '__new__', isNewCard: true }]}
                   getKey={col => col.id}
                   estimateHeight={(col, w) => col.isNewCard
                     ? w / 2
@@ -1770,6 +1784,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
                     />
                   )}
                 />
+                )}
               </>
             )}
 

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { GLASS } from '../utils/glass'
 import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
@@ -896,9 +897,9 @@ export default function Detail({
           <button
             onClick={onSignIn}
             style={{
-              fontSize: '0.82rem', fontWeight: 500, padding: '7px 18px',
-              borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
-              background: 'transparent', color: '#0C3D4E',
+              ...GLASS,
+              fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
+              borderRadius: 'var(--r-full)', color: '#0C3D4E',
               cursor: 'pointer', fontFamily: 'var(--font-body)',
             }}
           >{t('detail.signInToSave')}</button>
@@ -934,9 +935,9 @@ export default function Detail({
             {isOwner && (
               <>
                 <button onClick={() => onEdit(recipe)} style={{
-                  fontSize: '0.82rem', fontWeight: 500, padding: '7px 18px',
-                  borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
-                  background: 'transparent', color: '#0C3D4E',
+                  ...GLASS,
+                  fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
+                  borderRadius: 'var(--r-full)', color: '#0C3D4E',
                   cursor: 'pointer', fontFamily: 'var(--font-body)',
                 }}>{t('detail.edit')}</button>
 
@@ -1054,9 +1055,9 @@ export default function Detail({
                     onClick={handleAddToMyRecipes}
                     disabled={adding}
                     style={{
-                      fontSize: '0.82rem', fontWeight: 500, padding: '7px 18px',
-                      borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
-                      background: 'transparent', color: '#0C3D4E',
+                      ...GLASS,
+                      fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
+                      borderRadius: 'var(--r-full)', color: '#0C3D4E',
                       cursor: adding ? 'default' : 'pointer', fontFamily: 'var(--font-body)',
                       opacity: adding ? 0.6 : 1, transition: 'opacity 150ms',
                     }}

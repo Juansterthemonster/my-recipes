@@ -9,15 +9,7 @@ import CollectionEditModal from './CollectionEditModal'
 import { RecipeGridSkeleton, CollectionGridSkeleton } from './Skeletons'
 import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './MobileNav'
 import { useIsPhone } from '../utils/useIsPhone'
-
-/* Glass look shared by the round buttons (profile, admin, filter, sort) */
-const GLASS = {
-  background: 'linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.4))',
-  backdropFilter: 'blur(10px) saturate(1.5)',
-  WebkitBackdropFilter: 'blur(10px) saturate(1.5)',
-  border: '1px solid rgba(255,255,255,0.9)',
-  boxShadow: '0 0 0 1px rgba(12,61,78,0.07), 0 3px 10px rgba(12,61,78,0.10), inset 0 1px 0 rgba(255,255,255,0.95)',
-}
+import { GLASS } from '../utils/glass'
 
 /* ─── NAV ICONS ─────────────────────────────────────────────────────────────── */
 // Profile: head + shoulders (sits inside a round button like search / filter)
@@ -94,8 +86,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
             aria-haspopup="menu"
             aria-expanded={addOpen}
             style={{
-              background: 'transparent', color: '#0C3D4E',
-              border: '1.5px solid #0C3D4E', borderRadius: 'var(--r-full)',
+              ...GLASS, color: '#0C3D4E', borderRadius: 'var(--r-full)',
               fontFamily: 'var(--font-body)', fontSize: '0.82rem',
               fontWeight: 500, letterSpacing: '0.05em',
               padding: '9px 22px', cursor: 'pointer',

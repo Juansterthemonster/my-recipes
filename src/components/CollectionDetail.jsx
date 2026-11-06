@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import MasonryGrid from './MasonryGrid'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
+import { GLASS } from '../utils/glass'
 import { MyRecipeCard, PublicRecipeCard } from './RecipeCards'
 import CollectionEditModal from './CollectionEditModal'
 
@@ -219,9 +220,9 @@ export default function CollectionDetail({ collection: collectionProp, session, 
 
         {/* Edit — same outlined pill as the recipe page */}
         <button onClick={() => setEditing(true)} style={{
-          fontSize: '0.82rem', fontWeight: 500, padding: '7px 18px',
-          borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
-          background: 'transparent', color: '#0C3D4E',
+          ...GLASS,
+          fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
+          borderRadius: 'var(--r-full)', color: '#0C3D4E',
           cursor: 'pointer', fontFamily: 'var(--font-body)',
         }}>{t('detail.edit')}</button>
       </div>

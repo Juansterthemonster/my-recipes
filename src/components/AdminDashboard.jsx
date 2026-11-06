@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabase'
 import { getLastSeen, markSeen } from '../utils/adminSeen'
+import AdminReports from './AdminReports'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    AdminDashboard — owner-only overview of every account.
@@ -149,6 +150,9 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                 </div>
               ))}
             </div>
+
+            {/* ── Reports ── */}
+            <AdminReports onOpenRecipe={onOpenRecipe} />
 
             {/* ── New recipes feed ── */}
             <div style={{ ...card, marginBottom: 16 }}>

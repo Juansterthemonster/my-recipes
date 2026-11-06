@@ -3,10 +3,28 @@
     {
       "source": "/recipe/:path*",
       "has": [
-        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterestbot|Applebot|SkypeUriPreview|Embedly|redditbot|bingbot|Googlebot|vkShare).*" }
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterestbot|Applebot|SkypeUriPreview|Embedly|redditbot|bingbot|Googlebot|vkShare).*"
+        }
       ],
       "destination": "/api/recipe-preview?p=:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    }
   ]
 }

@@ -7,7 +7,7 @@ import { useEffect } from 'react'
    ───────────────────────────────────────────────────────────────────────────── */
 
 const CONTACT_EMAIL = 'juansterthemonster@gmail.com'
-const UPDATED = 'October 22, 2026'
+const UPDATED = 'November 5, 2026'
 
 const h2 = { fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.25rem', color: 'var(--text-primary)', margin: '28px 0 8px' }
 const p  = { margin: '0 0 12px', lineHeight: 1.65 }
@@ -23,6 +23,7 @@ function Privacy() {
         <li><strong>Account information:</strong> your email address, the username you choose, and your password. Passwords are handled by our authentication provider and stored in hashed form; we never see or store your actual password. If you sign in with Google, we receive your email address and basic profile information from Google.</li>
         <li><strong>Content you add:</strong> recipes (names, ingredients, steps, notes and other details), photos you upload, collections you create, and the recipes you like.</li>
         <li><strong>Preferences and activity:</strong> your chosen language, and the last time you opened the Explore page (used to show a “new recipes” dot).</li>
+        <li><strong>Reports and blocks:</strong> if you report a recipe, we keep the report (the reason, your optional note, the recipe and who reported it) so we can review it. If you block a user, we store that choice so their recipes stay hidden from you. Other users are never told who reported or blocked them.</li>
         <li><strong>Technical data:</strong> like most websites, our hosting and service providers may log your IP address, browser type and device information when you use the App. Your browser stores a sign-in session and some settings on your device.</li>
       </ul>
 
@@ -88,13 +89,14 @@ function Terms() {
       <h2 style={h2}>3. Acceptable use</h2>
       <p style={p}>Do not use the App to:</p>
       <ul style={ul}>
-        <li>post content that is unlawful, infringing, harassing, hateful, sexually explicit or otherwise harmful;</li>
+        <li>post content that is unlawful, infringing, harassing, abusive, hateful, threatening, sexually explicit, violent or otherwise objectionable or harmful;</li>
         <li>impersonate others or misuse other people’s usernames or information;</li>
         <li>attempt to access other users’ private data, disrupt or overload the App, or bypass its security;</li>
         <li>copy or scrape the App or its users’ content in bulk, or use it to send spam.</li>
       </ul>
 
-      <h2 style={h2}>4. Moderation and removal</h2>
+      <h2 style={h2}>4. Moderation, reporting and blocking</h2>
+      <p style={p}>There is no tolerance for objectionable content or abusive behaviour in the App. You can report any public recipe from its menu in the App, and you can block a user so you no longer see their recipes. We review reports and aim to act on them within 24 hours, which may include removing the content and suspending or closing the account of the person who posted it. You can also report a problem by email at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
       <p style={p}>We may remove content, or suspend or close accounts, that break these Terms or that we reasonably believe are harmful. You may stop using the App and ask for your account to be deleted at any time (see the Privacy Policy).</p>
 
       <h2 style={h2}>5. Recipes are not professional advice</h2>

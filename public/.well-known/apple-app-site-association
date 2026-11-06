@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["K5646LW9RH.com.juandavila.MiSazon"],
+        "components": [
+          { "/": "/recipe/*", "comment": "Recipe share links open in the Mi Sazón iPhone app" }
+        ]
+      }
+    ]
+  }
+}

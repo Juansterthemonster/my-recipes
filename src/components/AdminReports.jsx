@@ -16,7 +16,7 @@ const REASONS = {
 }
 
 const TABS = [
-  { key: 'open',      label: 'Open' },
+  { key: 'open',      label: 'Unactioned' },
   { key: 'actioned',  label: 'Actioned' },
   { key: 'dismissed', label: 'Dismissed' },
   { key: 'all',       label: 'All' },
@@ -25,6 +25,25 @@ const TABS = [
 const fmtDateTime = iso => iso
   ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
   : '—'
+
+// What happened to a report: status badge colours + a plain-language line
+const STATUS_LABEL = { open: 'Unactioned', actioned: 'Actioned', dismissed: 'Dismissed' }
+const STATUS_STYLE = {
+  open:      { background: '#FFF4E0', color: '#8A5A00' },
+  actioned:  { background: '#E3EED6', color: '#2F5D1F' },
+  dismissed: { background: '#EEF1F2', color: '#5A6B70' },
+}
+const RESOLUTION_TEXT = {
+  made_private: 'Recipe made private',
+  deleted:      'Recipe deleted',
+  dismissed:    'Dismissed — no action taken',
+}
+function outcomeText(r) {
+  if (r.status === 'open') return 'Nothing done yet'
+  const what = RESOLUTION_TEXT[r.resolution]
+    || (r.status === 'dismissed' ? RESOLUTION_TEXT.dismissed : 'Actioned (what was done was not recorded)')
+  return r.resolved_at ? `${what} · ${fmtDateTime(r.resolved_at)}` : what
+}
 
 const card = {
   background: 'var(--white)', borderRadius: 'var(--r-lg)',
@@ -93,7 +112,7 @@ export default function AdminReports({ onOpenRecipe, onCountChange }) {
   return (
     <div style={{ ...card, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-        <div style={labelStyle}>Reports{rows && tab === 'open' ? ` · ${rows.length} open` : ''}</div>
+        <div style={labelStyle}>Reports{rows && tab === 'open' ? ` · ${rows.length} unactioned` : ''}</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => pickTab(t.key)} style={{
@@ -116,7 +135,7 @@ export default function AdminReports({ onOpenRecipe, onCountChange }) {
       {!rows && <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem' }}>Loading…</div>}
       {rows && rows.length === 0 && !error && (
         <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem' }}>
-          {tab === 'open' ? 'No open reports. 🎉' : 'Nothing here.'}
+          {tab === 'open' ? 'No unactioned reports. 🎉' : 'Nothing here.'}
         </div>
       )}
 
@@ -149,6 +168,15 @@ export default function AdminReports({ onOpenRecipe, onCountChange }) {
                     </span>
                   </div>
                   <div style={{ color: 'var(--text-tertiary)', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{fmtDateTime(r.created_at)}</div>
+                </div>
+
+                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{
+                    ...(STATUS_STYLE[r.status] || STATUS_STYLE.open),
+                    fontSize: '0.64rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                    padding: '2px 8px', borderRadius: 999,
+                  }}>{STATUS_LABEL[r.status] || r.status}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{outcomeText(r)}</span>
                 </div>
 
                 <div style={{ color: 'var(--text-secondary)', marginTop: 4, overflowWrap: 'anywhere' }}>

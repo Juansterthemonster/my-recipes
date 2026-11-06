@@ -1221,7 +1221,7 @@ function EmptyCollectionCard({ onCreate }) {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, activeTab, onTabChange, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange }) {
+export default function Browse({ onSelect, onAdd, session, activeTab, onTabChange, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange, refreshKey = 0 }) {
   const { t, lang } = useI18n()
   // Explore's sort lives for the session only (resets to newest on reload); My Recipes' is saved on the profile.
   const [exploreSort, setExploreSortState] = useState(sortSession.explore)
@@ -1299,6 +1299,10 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   }
 
   useEffect(() => { if (!cached) fetchAll() }, [])
+
+  // A brand-new account's starter recipes are added right after its profile is created, which can be
+  // after the first load — reload the lists once when App says so.
+  useEffect(() => { if (refreshKey > 0) fetchAll() }, [refreshKey])
 
   // Load the Explore "last seen" time (profiles.explore_seen_at, so it follows the user across
   // devices). First time ever → start counting from now. If the profile column can't be read or

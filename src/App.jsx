@@ -23,6 +23,9 @@ export default function App() {
   const [isAdmin, setIsAdmin]  = useState(false)
   // true once we know this account has no username yet (first Google sign-in) → ChooseUsername screen
   const [needsUsername, setNeedsUsername] = useState(false)
+  // Bumped when a brand-new account's profile row is created: that is when the database copies the
+  // starter recipes in, after the lists were already loaded empty. Browse reloads when it changes.
+  const [listRefreshKey, setListRefreshKey] = useState(0)
   const [mySort, setMySort] = useState('newest')   // My Recipes sort, saved on the profile
   const [adminNewCount, setAdminNewCount] = useState(0)   // recipes added since the admin last opened the dashboard
   const [selectedRecipe, setSelectedRecipe] = useState(null)
@@ -127,8 +130,9 @@ export default function App() {
         .from('profiles').select('id, username').eq('id', userId).maybeSingle()
       if (!existing) {
         if (metaUsername) {
-          await supabase.from('profiles').insert({ id: userId, username: metaUsername })
+          const { error: insErr } = await supabase.from('profiles').insert({ id: userId, username: metaUsername })
           setUsername(metaUsername)
+          if (!insErr) setListRefreshKey(k => k + 1)
         } else {
           setNeedsUsername(true)   // e.g. first "Continue with Google": must pick a username
         }
@@ -436,6 +440,7 @@ export default function App() {
             onSelectCollection={openCollection}
             isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={openAdmin}
             mySort={mySort} onMySortChange={changeMySort}
+            refreshKey={listRefreshKey}
           />
         )}
         {view === 'collection' && selectedCollection && (

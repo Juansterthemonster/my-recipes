@@ -10,6 +10,15 @@ import { RecipeGridSkeleton, CollectionGridSkeleton } from './Skeletons'
 import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './MobileNav'
 import { useIsPhone } from '../utils/useIsPhone'
 
+/* Glass look shared by the round buttons (profile, admin, filter, sort) */
+const GLASS = {
+  background: 'linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.4))',
+  backdropFilter: 'blur(10px) saturate(1.5)',
+  WebkitBackdropFilter: 'blur(10px) saturate(1.5)',
+  border: '1px solid rgba(255,255,255,0.9)',
+  boxShadow: '0 0 0 1px rgba(12,61,78,0.07), 0 3px 10px rgba(12,61,78,0.10), inset 0 1px 0 rgba(255,255,255,0.95)',
+}
+
 /* ─── NAV ICONS ─────────────────────────────────────────────────────────────── */
 // Profile: head + shoulders (sits inside a round button like search / filter)
 function ProfileIcon() {
@@ -51,7 +60,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
   const navIconBtn = {
     // Same round button as search filter / sort
     width: 42, height: 42, padding: 0, flexShrink: 0,
-    background: '#FFFFFF', border: '1.5px solid var(--border-soft)',
+    ...GLASS,
     borderRadius: 'var(--r-full)', color: '#0C3D4E', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   }
@@ -201,8 +210,7 @@ function SortButton({ sort }) {
         aria-label={t('sort.label')} aria-haspopup="menu" aria-expanded={open}
         style={{
           width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: active ? '#0C3D4E' : '#FFFFFF',
-          border: `1.5px solid ${active ? '#0C3D4E' : 'var(--border-soft)'}`,
+          ...(active ? { background: '#0C3D4E', border: '1px solid #0C3D4E' } : GLASS),
           borderRadius: 'var(--r-full)', color: active ? '#F9F6F0' : 'var(--text-secondary)',
           cursor: 'pointer', transition: 'background 150ms, border-color 150ms, color 150ms',
         }}
@@ -277,8 +285,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
             flexShrink: 0,
             width: 42, height: 42,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: filterActive ? '#0C3D4E' : '#FFFFFF',
-            border: `1.5px solid ${filterActive ? '#0C3D4E' : 'var(--border-soft)'}`,
+            ...(filterActive ? { background: '#0C3D4E', border: '1px solid #0C3D4E' } : GLASS),
             borderRadius: 'var(--r-full)',
             color: filterActive ? '#F9F6F0' : 'var(--text-secondary)',
             cursor: 'pointer',

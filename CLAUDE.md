@@ -936,7 +936,7 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 - `Browse.jsx`: the collections query now also loads each member recipe's name + ingredient names into `collection.search_text` (lowercased, cached with the list). Typing in the search bar shows collections whose name, notes, or any recipe inside (name or ingredient) matches; "No matches" card when none do. Dietary / type / time filters still don't apply to collections (not requested).
 
 ### v4.37 — Profile icon replaces the three-dot account menu
-- `Browse.jsx` Nav (all viewports, all four tabs): the kebab + account menu/bottom sheet is gone. A round head-and-shoulders profile icon opens Profile & settings directly (sign out lives there). Admin accounts only get a shield-with-tick icon beside it that opens the Admin Dashboard, with a small count badge when there are new items. `Browse`/`Nav` no longer take `onSignOut`/`username` (App still passes them; ignored).
+- `Browse.jsx` Nav (all viewports, all four tabs): the kebab + account menu/bottom sheet is gone. A small head-and-shoulders icon inside a 42px white round button (same as search filter / sort) opens Profile & settings directly (sign out lives there). Admin accounts only get a shield-with-tick icon beside it that opens the Admin Dashboard, with a small count badge when there are new items. `Browse`/`Nav` no longer take `onSignOut`/`username` (App still passes them; ignored).
 
 ---
 

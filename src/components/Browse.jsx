@@ -11,16 +11,12 @@ import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './Mobile
 import { useIsPhone } from '../utils/useIsPhone'
 
 /* ─── NAV ICONS ─────────────────────────────────────────────────────────────── */
-// Profile: head + shoulders inside a ring (iOS-style account icon)
+// Profile: head + shoulders (sits inside a round button like search / filter)
 function ProfileIcon() {
   return (
-    <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
-      <defs><clipPath id="sazon-profile-clip"><circle cx="12" cy="12" r="10" /></clipPath></defs>
-      <circle cx="12" cy="12" r="10.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <g clipPath="url(#sazon-profile-clip)" fill="currentColor">
-        <circle cx="12" cy="9.4" r="3.7" />
-        <path d="M3.5 22c0-4.9 3.8-7.6 8.5-7.6s8.5 2.7 8.5 7.6z" />
-      </g>
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <circle cx="12" cy="8" r="4.2" />
+      <path d="M3.8 21c0-4.6 3.6-7.2 8.2-7.2s8.2 2.6 8.2 7.2z" />
     </svg>
   )
 }
@@ -28,8 +24,8 @@ function ProfileIcon() {
 // Admin dashboard: shield with a tick
 function AdminIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 2.8 19.4 5.6v6c0 4.6-3.1 8.3-7.4 9.8-4.3-1.5-7.4-5.2-7.4-9.8v-6z" />
       <path d="m8.6 12.2 2.4 2.4 4.4-4.6" />
     </svg>
@@ -53,10 +49,11 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
   }, [])
 
   const navIconBtn = {
-    width: isPhone ? 44 : 38, height: isPhone ? 44 : 38,
-    background: 'none', border: 'none', color: '#0C3D4E', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-    borderRadius: '50%', padding: 0,
+    // Same round button as search filter / sort
+    width: 42, height: 42, padding: 0, flexShrink: 0,
+    background: '#FFFFFF', border: '1.5px solid var(--border-soft)',
+    borderRadius: 'var(--r-full)', color: '#0C3D4E', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   }
 
   const addItemStyle = {
@@ -133,7 +130,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
             <AdminIcon />
             {adminNewCount > 0 && (
               <span aria-hidden="true" style={{
-                position: 'absolute', top: isPhone ? 5 : 1, right: isPhone ? 5 : 1,
+                position: 'absolute', top: -4, right: -4,
                 minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
                 background: '#0C3D4E', color: '#F9F6F0', border: '1.5px solid #F9F6F0',
                 fontSize: '0.62rem', fontWeight: 700, lineHeight: '13px', textAlign: 'center',

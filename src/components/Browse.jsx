@@ -10,24 +10,54 @@ import { RecipeGridSkeleton, CollectionGridSkeleton } from './Skeletons'
 import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './MobileNav'
 import { useIsPhone } from '../utils/useIsPhone'
 
+/* ─── NAV ICONS ─────────────────────────────────────────────────────────────── */
+// Profile: head + shoulders inside a ring (iOS-style account icon)
+function ProfileIcon() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+      <defs><clipPath id="sazon-profile-clip"><circle cx="12" cy="12" r="10" /></clipPath></defs>
+      <circle cx="12" cy="12" r="10.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <g clipPath="url(#sazon-profile-clip)" fill="currentColor">
+        <circle cx="12" cy="9.4" r="3.7" />
+        <path d="M3.5 22c0-4.9 3.8-7.6 8.5-7.6s8.5 2.7 8.5 7.6z" />
+      </g>
+    </svg>
+  )
+}
+
+// Admin dashboard: shield with a tick
+function AdminIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2.8 19.4 5.6v6c0 4.6-3.1 8.3-7.4 9.8-4.3-1.5-7.4-5.2-7.4-9.8v-6z" />
+      <path d="m8.6 12.2 2.4 2.4 4.4-4.6" />
+    </svg>
+  )
+}
+
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
-function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, isAdmin = false, adminNewCount = 0, onAdmin }) {
+function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount = 0, onAdmin }) {
   const { t } = useI18n()
   const isPhone = useIsPhone()   // phones: account menu is a bottom sheet, Add is the floating button
-  const [menuOpen, setMenuOpen] = useState(false)
   const [addOpen,  setAddOpen]  = useState(false)
-  const menuRef = useRef(null)
   const addRef  = useRef(null)
 
   useEffect(() => {
     function handleClick(e) {
       if (e.target.closest?.('[role="dialog"]')) return   // taps inside a bottom sheet
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
       if (addRef.current  && !addRef.current.contains(e.target))  setAddOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  const navIconBtn = {
+    width: isPhone ? 44 : 38, height: isPhone ? 44 : 38,
+    background: 'none', border: 'none', color: '#0C3D4E', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    borderRadius: '50%', padding: 0,
+  }
 
   const addItemStyle = {
     display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left',
@@ -92,104 +122,34 @@ function Nav({ onAdd, onAddCollection, session, onSignOut, username, onProfile, 
           )}
         </div>
 
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        {/* Admin only: shortcut to the admin dashboard, beside the profile icon */}
+        {isAdmin && onAdmin && (
           <button
-            onClick={() => setMenuOpen(o => !o)}
-            aria-label={t('nav.accountMenu')}
-            style={{
-              width: isPhone ? 44 : 34, height: isPhone ? 44 : 34,
-              background: 'none', border: 'none',
-              color: '#0C3D4E', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              borderRadius: 6, transition: 'background 150ms',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-          ><KebabIcon /></button>
-
-          {menuOpen && !isPhone && (
-            <div style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-              background: 'var(--white)', border: '1px solid var(--border-soft)',
-              borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
-              minWidth: 160, zIndex: 100, overflow: 'hidden',
-            }}>
-              <div style={{
-                padding: '10px 16px 8px', fontSize: '0.75rem', color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-body)', borderBottom: '1px solid var(--border-soft)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200,
-              }}>
-                {username ? `@${username}` : session?.user?.email}
-              </div>
-              <button
-                onClick={() => { setMenuOpen(false); onProfile() }}
-                style={{
-                  display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left',
-                  fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
-                  border: 'none', borderBottom: '1px solid var(--border-soft)',
-                  cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >{t('nav.profile')}</button>
-              {isAdmin && onAdmin && (
-                <button
-                  onClick={() => { setMenuOpen(false); onAdmin() }}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-                    width: '100%', padding: '12px 16px', textAlign: 'left',
-                    fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
-                    border: 'none', borderBottom: '1px solid var(--border-soft)',
-                    cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                >
-                  <span>{t('nav.admin')}</span>
-                  {adminNewCount > 0 && (
-                    <span style={{
-                      background: '#0C3D4E', color: '#F9F6F0', borderRadius: 999,
-                      fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', whiteSpace: 'nowrap',
-                      border: '1px solid #F9F6F0',
-                    }}>{adminNewCount} new</span>
-                  )}
-                </button>
-              )}
-              <button
-                onClick={() => { setMenuOpen(false); onSignOut() }}
-                style={{
-                  display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left',
-                  fontSize: '0.9rem', color: 'var(--text-primary)', background: 'none',
-                  border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              >{t('nav.signOut')}</button>
-            </div>
-          )}
-
-          {/* Phones: same items as a bottom sheet */}
-          <BottomSheet open={menuOpen && isPhone} onClose={() => setMenuOpen(false)} label={t('nav.accountMenu')}>
-            <div style={{
-              padding: '2px 8px 10px', fontSize: '0.82rem', color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-body)', borderBottom: '1px solid var(--border-soft)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>{username ? `@${username}` : session?.user?.email}</div>
-            <SheetRow onClick={() => { setMenuOpen(false); onProfile() }}>{t('nav.profile')}</SheetRow>
-            {isAdmin && onAdmin && (
-              <SheetRow
-                onClick={() => { setMenuOpen(false); onAdmin() }}
-                trailing={adminNewCount > 0 && (
-                  <span style={{
-                    background: '#0C3D4E', color: '#F9F6F0', borderRadius: 999,
-                    fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', whiteSpace: 'nowrap',
-                  }}>{adminNewCount} new</span>
-                )}
-              >{t('nav.admin')}</SheetRow>
+            onClick={onAdmin}
+            aria-label={t('nav.admin')}
+            title={t('nav.admin')}
+            style={{ ...navIconBtn, position: 'relative' }}
+          >
+            <AdminIcon />
+            {adminNewCount > 0 && (
+              <span aria-hidden="true" style={{
+                position: 'absolute', top: isPhone ? 5 : 1, right: isPhone ? 5 : 1,
+                minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                background: '#0C3D4E', color: '#F9F6F0', border: '1.5px solid #F9F6F0',
+                fontSize: '0.62rem', fontWeight: 700, lineHeight: '13px', textAlign: 'center',
+                boxSizing: 'border-box',
+              }}>{adminNewCount > 9 ? '9+' : adminNewCount}</span>
             )}
-            <SheetRow last onClick={() => { setMenuOpen(false); onSignOut() }}>{t('nav.signOut')}</SheetRow>
-          </BottomSheet>
-        </div>
+          </button>
+        )}
+
+        {/* Profile & settings (sign out lives in there) */}
+        <button
+          onClick={onProfile}
+          aria-label={t('nav.profile')}
+          title={t('nav.profile')}
+          style={navIconBtn}
+        ><ProfileIcon /></button>
       </div>
     </div>
   )
@@ -1266,7 +1226,7 @@ function EmptyCollectionCard({ onCreate }) {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab, onTabChange, username, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange }) {
+export default function Browse({ onSelect, onAdd, session, activeTab, onTabChange, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange }) {
   const { t, lang } = useI18n()
   // Explore's sort lives for the session only (resets to newest on reload); My Recipes' is saved on the profile.
   const [exploreSort, setExploreSortState] = useState(sortSession.explore)
@@ -1672,7 +1632,7 @@ export default function Browse({ onSelect, onAdd, session, onSignOut, activeTab,
       <Nav
         onAdd={onAdd}
         onAddCollection={() => setModalMode('create')}
-        session={session} onSignOut={onSignOut} username={username} onProfile={onProfile}
+        onProfile={onProfile}
         isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={onAdmin}
       />
 

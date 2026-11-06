@@ -944,6 +944,12 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 ### v4.39 — Starter recipes appear on a new account's first load
 - Cause: the profile row (which triggers the starter-recipe copy) is created by `App.jsx` right after sign-in, but Browse had already loaded its lists empty. Fix: `App.jsx` bumps `listRefreshKey` after a successful profile insert and passes it to Browse as `refreshKey`; Browse reloads once when it changes. (Google sign-in doesn't need it: Browse isn't mounted until the username is chosen.)
 
+### Email setup (2026-11-06, done in dashboards, no code)
+- **Sending** (Supabase auth emails): Resend free plan (3,000/month, 100/day), domain `misazon.app` verified via Vercel DNS auto-configure (records on `send`, `rsend`, `resend._domainkey`, plus `_dmarc` TXT `v=DMARC1; p=none;`). Supabase → Authentication → Emails → SMTP: sender `noreply@misazon.app` / "Mi Sazón", host `smtp.resend.com`, port 465, user `resend`, password = Resend API key (never in the repo). Email confirmation is ON again.
+- **Templates** (Supabase → Authentication → Emails → Templates): Confirm sign up, Reset password, Change email — trilingual EN/FR/ES, branded, with a "check your spam folder" note. Links still point to the Supabase domain (option for later: link to misazon.app and verify the token in-app).
+- **Receiving**: ImprovMX free plan, alias `support@misazon.app` → Gmail (root MX `mx1/mx2.improvmx.com` + SPF TXT in Vercel DNS). Forward-only; to reply as support@, set up Gmail "Send mail as" with Resend SMTP and a second API key.
+- Don't enable "Receiving" in Resend (it would add root MX records that clash with ImprovMX). Only one SPF TXT record may exist on the root.
+
 ---
 
 ## Where things stand (2026-11-04) — read this first next session

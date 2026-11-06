@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
+import CardImg from './CardImg'
 
 /* ─── COLLECTION EDIT MODAL ─────────────────────────────────────────────────
    Centred overlay used for both "New collection" and "Edit collection".

@@ -921,7 +921,7 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 
 ### v4.33 — Edit a collection from its own page
 - An "Edit" outlined pill (same style as the recipe page) in the top bar of `CollectionDetail`, right side, opens the same edit dialog as the Collections tab (name, notes/description, cover photo). Changes show immediately and are saved to `collections`; `App.jsx` keeps `selectedCollection` in sync via `onUpdated`.
-- `CollectionEditModal` moved out of `Browse.jsx` into `src/components/CollectionEditModal.jsx` (shared by both places). No SQL needed.
+- `CollectionEditModal` moved out of `Browse.jsx` into `src/components/CollectionEditModal.jsx` (shared by both places). No SQL needed. (Fix 2026-11-06: the move had dropped the `CardImg` import, which crashed the dialog as soon as the cover picker rendered. After moving code between files, run eslint with `no-undef` to catch missing imports — `vite build` does not.)
 
 ### v4.34 — Reports show what was done about them
 - `supabase_migration_report_resolution.sql` (run once): `reports.resolution` ('made_private' | 'deleted' | 'dismissed' | null); `admin_reports()` now also returns `resolution` + `resolved_at`; take-down and dismiss/reopen record it; old rows are backfilled.

@@ -444,6 +444,7 @@ export default function App() {
             session={session}
             onBack={goBack}
             onSelect={recipe => openDetail(recipe, { fromCollection: true })}
+            onUpdated={patch => setSelectedCollection(c => (c ? { ...c, ...patch } : c))}
           />
         )}
         {view === 'detail' && (

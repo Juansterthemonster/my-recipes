@@ -3,6 +3,7 @@ import MasonryGrid from './MasonryGrid'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
 import { MyRecipeCard, PublicRecipeCard } from './RecipeCards'
+import CollectionEditModal from './CollectionEditModal'
 
 /* ─── REMOVE CONFIRMATION MODAL ─────────────────────────────────────────────── */
 function RemoveConfirmModal({ onConfirm, onCancel }) {
@@ -83,8 +84,12 @@ function BackArrow() {
     onBack      – navigate back to the My Collections tab
     onSelect    – open a recipe in Detail view
 */
-export default function CollectionDetail({ collection, session, onBack, onSelect }) {
+export default function CollectionDetail({ collection: collectionProp, session, onBack, onSelect, onUpdated }) {
   const { t } = useI18n()
+  // Local copy so name / notes / cover changes show immediately after editing here
+  const [edits, setEdits] = useState({})
+  const collection = { ...collectionProp, ...edits }
+  const [editing, setEditing] = useState(false)
   const [recipes,      setRecipes]      = useState([])
   const [loading,      setLoading]      = useState(true)
   const [removeTarget, setRemoveTarget] = useState(null)   // recipe to confirm-remove
@@ -174,6 +179,16 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
       .eq('recipe_id', id)
   }
 
+  async function handleSaveEdit({ name, description, cover }) {
+    const patch = { name, description: description || null, cover_photo_url: cover || null }
+    const { error } = await supabase.from('collections').update(patch).eq('id', collection.id)
+    if (!error) {
+      setEdits(prev => ({ ...prev, ...patch }))
+      onUpdated?.(patch)
+    }
+    setEditing(false)
+  }
+
   const count = recipes.length
 
   return (
@@ -208,10 +223,30 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
 
         {/* Collection name + recipe count */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{
-            fontFamily: 'var(--font-display)', fontSize: '1.9rem', fontWeight: 400,
-            color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: 6,
-          }}>{collection.name}</h1>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
+            <h1 style={{
+              fontFamily: 'var(--font-display)', fontSize: '1.9rem', fontWeight: 400,
+              color: 'var(--text-primary)', lineHeight: 1.2, margin: 0, flex: 1, minWidth: 0,
+              overflowWrap: 'anywhere',
+            }}>{collection.name}</h1>
+            <button
+              onClick={() => setEditing(true)}
+              aria-label={t('col.editTitle')}
+              title={t('col.editTitle')}
+              style={{
+                flexShrink: 0, width: 40, height: 40, marginTop: 2, borderRadius: '50%',
+                background: 'var(--white)', border: '1px solid var(--border-soft)',
+                color: 'var(--text-primary)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </button>
+          </div>
           {collection.description && (
             <p style={{
               fontFamily: 'var(--font-body)', fontSize: '0.92rem', lineHeight: 1.5,
@@ -283,6 +318,16 @@ export default function CollectionDetail({ collection, session, onBack, onSelect
           />
         )}
       </div>
+
+      {editing && (
+        <CollectionEditModal
+          title={t('col.editTitle')}
+          collectionId={collection.id}
+          initial={collection}
+          onSave={handleSaveEdit}
+          onClose={() => setEditing(false)}
+        />
+      )}
 
       {/* Remove confirmation modal — position:fixed, lives outside layout tree */}
       {removeTarget && (

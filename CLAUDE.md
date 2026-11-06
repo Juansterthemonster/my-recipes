@@ -919,11 +919,15 @@ Without it the selector shows "couldn't save" and rolls back; everything else st
 ### Browser bottom bar decision (2026-11-04)
 The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be coloured by the website. Decided to leave it. Optional idea if revisited: PWA install with manifest `theme_color`.
 
+### v4.33 — Edit a collection from its own page
+- Pencil button next to the collection title on `CollectionDetail` opens the same edit dialog as the Collections tab (name, notes/description, cover photo). Changes show immediately and are saved to `collections`; `App.jsx` keeps `selectedCollection` in sync via `onUpdated`.
+- `CollectionEditModal` moved out of `Browse.jsx` into `src/components/CollectionEditModal.jsx` (shared by both places). No SQL needed.
+
 ---
 
 ## Where things stand (2026-11-04) — read this first next session
 
-**Shipped and live (v4.17 → v4.32), newest entries are at the top of the v4.x notes above:** Explore as one masonry grid with the Newest tag · Disk IO reductions · Android Capacitor WebView shell (`../sazon-android`, com.misazon.app) with native Google sign-in, pull-to-refresh, native share sheet and teal status/nav bars · Admin Dashboard entry in the account menu · Recipe type (was "Meal type") + Sauce · card thumbnails 640/960 (+ backfill script, already run for all R2 photos) · sort for My Recipes (saved on the profile) and Explore · phone-only bottom navigation with floating Add and bottom sheets · short share links (`/recipe/name-xxxx`) + crawler-only link previews (`api/recipe-preview.js`) · skeleton loaders · translucent teal bottom nav · Android edge-to-edge bottom (code done, needs app build) · starter/sample recipes in every account (v4.32) · App Links web side (v4.31).
+**Shipped and live (v4.17 → v4.33), newest entries are at the top of the v4.x notes above:** Explore as one masonry grid with the Newest tag · Disk IO reductions · Android Capacitor WebView shell (`../sazon-android`, com.misazon.app) with native Google sign-in, pull-to-refresh, native share sheet and teal status/nav bars · Admin Dashboard entry in the account menu · Recipe type (was "Meal type") + Sauce · card thumbnails 640/960 (+ backfill script, already run for all R2 photos) · sort for My Recipes (saved on the profile) and Explore · phone-only bottom navigation with floating Add and bottom sheets · short share links (`/recipe/name-xxxx`) + crawler-only link previews (`api/recipe-preview.js`) · skeleton loaders · translucent teal bottom nav · Android edge-to-edge bottom (code done, needs app build) · starter/sample recipes in every account (v4.32) · App Links web side (v4.31).
 
 **All SQL migrations are run** (including sort, short codes and `supabase_migration_starter_recipes.sql`). New columns/tables: `recipes.updated_at`, `recipes.short_code` (unique, trigger-assigned), `profiles.my_recipes_sort`, private table `recipe_opens`, `recipes.starter_by`, private table `starter_recipes`.
 

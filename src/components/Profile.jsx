@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { GLASS } from '../utils/glass'
 import { supabase } from '../supabase'
 import { useI18n, LANGUAGES, translate } from '../i18n'
 
@@ -590,6 +591,23 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             )
           })}
         </div>
+      </div>
+
+      {/* ── Help & support ── */}
+      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+        <div style={sectionLabel}>{t('profile.support')}</div>
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
+          margin: '0 0 14px', lineHeight: 1.5,
+        }}>{t('profile.supportHint')}</p>
+        <a
+          href="mailto:support@misazon.app"
+          style={{
+            ...GLASS, display: 'inline-block', textDecoration: 'none',
+            borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
+            fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px', color: '#0C3D4E',
+          }}
+        >{t('profile.contactSupport')} · support@misazon.app</a>
       </div>
 
       {/* ── Owner-only: app dashboard (shown only when the database says this account is an admin) ── */}

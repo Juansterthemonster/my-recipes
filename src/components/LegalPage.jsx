@@ -6,7 +6,7 @@ import { useEffect } from 'react'
    English only. To change the contact address, edit CONTACT_EMAIL below.
    ───────────────────────────────────────────────────────────────────────────── */
 
-const CONTACT_EMAIL = 'juansterthemonster@gmail.com'
+const CONTACT_EMAIL = 'support@misazon.app'
 const UPDATED = 'November 5, 2026'
 
 const h2 = { fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.25rem', color: 'var(--text-primary)', margin: '28px 0 8px' }

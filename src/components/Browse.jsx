@@ -120,7 +120,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
         </div>
 
         {/* Admin only: shortcut to the admin dashboard, beside the profile icon */}
-        {isAdmin && onAdmin && (
+        {false && isAdmin && onAdmin && ( /* TEMP: hidden for store screenshots, remove "false &&" to restore */
           <button
             onClick={onAdmin}
             aria-label={t('nav.admin')}

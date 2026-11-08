@@ -66,7 +66,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
 
   return (
     <div
-      style={{ background: '#F9F6F0', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 4 : undefined }}
+      style={{ background: 'rgba(249,246,240,0.9)', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 7 : undefined }}
       className="
         px-5 py-[14px] flex items-center justify-between
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -263,7 +263,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
           className="search-input"
           style={{
             flex: 1, minWidth: 0,
-            background: '#FFFFFF', border: '1.5px solid var(--border-soft)',
+            ...GLASS,
             borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
             fontSize: '0.95rem', color: '#6B7280',
             padding: '10px 18px', outline: 'none',
@@ -387,12 +387,13 @@ const TABS = [
 
 function TabBar({ active, onChange, dots = {} }) {
   const { t } = useI18n()
+  const isPhone = useIsPhone()
   return (
     <div
       style={{
         background: '#F9F6F0',
         position: 'sticky',
-        top: 62,
+        top: isPhone ? 65 : 62,
         zIndex: 9,
         borderBottom: '5px solid #F9F6F0',
       }}

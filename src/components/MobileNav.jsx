@@ -16,14 +16,24 @@ const svgProps = {
   strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
 }
 const ICONS = {
-  mine: (    // open book, soft corners
-    <svg {...svgProps}><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 14.5z" /><path d="M21 6.5A2.5 2.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a2.5 2.5 0 0 0 2.5-2.5z" /></svg>
+  mine: (    // open book, iOS style: arched tops, bottoms curving down to the spine
+    <svg {...svgProps} strokeWidth={1.9}>
+      <g transform="translate(12 11.5) scale(1.15) translate(-12 -11.5)">
+      <path d="M12 7.4C11 5.6 9.4 5 7.4 5 5.4 5 3.5 5.6 3.5 7.6V17.4C5 16.2 6.8 15.8 8.8 15.9 10.2 16 11.3 16.6 12 18Z" />
+      <path d="M12 7.4C13 5.6 14.6 5 16.6 5 18.6 5 20.5 5.6 20.5 7.6V17.4C19 16.2 17.2 15.8 15.2 15.9 13.8 16 12.7 16.6 12 18Z" />
+      </g>
+    </svg>
   ),
   favourites: (    // same heart as the recipe cards (Browse.jsx HeartIcon), with the nav's thicker stroke
     <svg {...svgProps}><g transform="translate(12 13) scale(0.9) translate(-12 -13)"><path vectorEffect="non-scaling-stroke" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></g></svg>
   ),
-  collections: (    // rounded folder
-    <svg {...svgProps}><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.4c.5 0 1 .2 1.3.6L11.3 7h7.2A2.5 2.5 0 0 1 21 9.5v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z" /></svg>
+  collections: (    // 2 x 2 grid of rounded squares (iOS style)
+    <svg {...svgProps}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="2" />
+    </svg>
   ),
   public: (    // compass with a rounded needle
     <svg {...svgProps}><circle cx="12" cy="12" r="9.5" /><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z" /></svg>
@@ -205,7 +215,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 <span style={{
                   position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 52, height: 30, borderRadius: 15,
-                  background: on ? 'rgba(227,238,214,0.6)' : 'transparent', transition: 'background 150ms',
+                  background: on ? 'rgba(227,238,214,0.4)' : 'transparent', transition: 'background 150ms',
                   color: on ? '#0C3D4E' : 'inherit',
                 }}>
                   {ICONS[tab.key]}

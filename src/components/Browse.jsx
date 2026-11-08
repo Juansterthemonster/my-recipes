@@ -66,7 +66,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
 
   return (
     <div
-      style={{ background: 'rgba(249,246,240,0.9)', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 7 : undefined }}
+      style={{ background: isPhone ? 'rgba(249,246,240,0.9)' : '#F9F6F0', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 7 : undefined }}
       className="
         px-5 py-[14px] flex items-center justify-between
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]

@@ -422,7 +422,7 @@ function TabBar({ active, onChange, dots = {} }) {
             onMouseEnter={e => { if (active !== tab.key) e.currentTarget.style.color = 'var(--text-primary)' }}
             onMouseLeave={e => { if (active !== tab.key) e.currentTarget.style.color = 'var(--text-secondary)' }}
           >
-            <span style={{ paddingBottom: 10, position: 'relative' }}>
+            <span style={{ paddingBottom: 5, position: 'relative' }}>
               {t(tab.tkey)}
               {dots[tab.key] && (
                 <span

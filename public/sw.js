@@ -6,7 +6,7 @@
 // caching only kicks in offline. Static JS/CSS/images are fingerprinted
 // per build by Vite, so those ARE safe to cache aggressively.
 
-const CACHE_NAME = 'sazon-shell-v1';
+const CACHE_NAME = 'sazon-shell-v2';
 const APP_SHELL = ['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -48,7 +48,11 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
-        if (response.ok && new URL(request.url).origin === location.origin) {
+        // Never cache an HTML response for a script/style/image request: during a deploy the
+        // SPA rewrite can answer a missing hashed file with index.html (status 200), and
+        // caching that would leave the app blank until the cache is cleared.
+        const type = response.headers.get('content-type') || ''
+        if (response.ok && !type.includes('text/html') && new URL(request.url).origin === location.origin) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }

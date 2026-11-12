@@ -104,38 +104,54 @@ const IS_IOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navig
 const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
 
 const AUTH_CSS = `
-.auth-wrap{min-height:100vh;display:flex;flex-direction:column;background:#F9F6F0}
-.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;min-height:250px;
-  display:flex;flex-direction:column;justify-content:flex-end;padding:26px 22px 54px}
+.auth-wrap{height:100vh;height:100dvh;display:flex;flex-direction:column;background:#F9F6F0}
+.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 0 auto;
+  height:max(116px,min(30dvh,calc(100dvh - 650px)));display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 40px}
 .auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
   transform:rotate(-8deg);opacity:.72}
 .auth-col{display:flex;flex-direction:column;gap:10px}
 .auth-col:nth-child(even){transform:translateY(-34px)}
 .auth-tile{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4}
 .auth-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.auth-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,61,78,.15) 0%,rgba(12,61,78,.78) 100%)}
-.auth-mark{position:absolute;top:22px;left:22px;font-weight:800;font-size:1.15rem;letter-spacing:.06em;
-  text-transform:uppercase;line-height:1;z-index:2}
+.auth-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,61,78,.2) 0%,rgba(12,61,78,.83) 100%)}
+.auth-brand{display:block;height:22px;width:auto;margin:0 auto 8px}
 .auth-copy{position:relative;z-index:2}
-.auth-title{font-family:var(--font-display);font-weight:400;font-size:1.9rem;line-height:1.1;letter-spacing:-.01em;margin:0 0 6px}
-.auth-sub{font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.88;margin:0;max-width:30ch}
+.auth-title{font-family:var(--font-display);font-weight:400;font-size:1.55rem;line-height:1.1;letter-spacing:-.01em;margin:0}
+.auth-sub{display:none;font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.9;margin:0;max-width:30ch}
 .auth-panel{flex:1;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:28px 28px 0 0;
-  padding:26px 20px 40px}
+  padding:14px 20px 12px;overflow-y:auto;min-height:0}
 .auth-inner{max-width:420px;margin:0 auto}
+.auth-head{margin-bottom:10px!important}
+.auth-head h1{font-size:1.45rem!important;margin-bottom:0!important}
+.auth-head p{display:none}
+.auth-card{padding:14px 16px!important}
+.auth-card form{gap:10px!important}
+.auth-card input{padding:8px 12px!important}
+.auth-card label{margin-bottom:4px!important}
+.auth-foot{margin-top:10px!important}
 .play-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;
   background:#0C3D4E;color:#F9F6F0;border-radius:14px;padding:11px 18px;text-decoration:none;
   font-family:var(--font-body);transition:background 180ms}
 .play-btn:hover{background:#1A5E75}
 @media (min-width:1024px){
-  .auth-wrap{flex-direction:row}
-  .auth-hero{flex:1.15;min-height:100vh;padding:64px;justify-content:flex-end}
+  .auth-wrap{flex-direction:row;height:auto;min-height:100vh}
+  .auth-hero{flex:1.15;height:auto;min-height:100vh;padding:64px;justify-content:flex-end}
+  .auth-sub{display:block}
   .auth-collage{inset:-10% -6%;gap:14px;grid-template-columns:repeat(3,1fr)}
   .auth-col{gap:14px}
-  .auth-mark{top:44px;left:64px;font-size:1.3rem}
+  .auth-brand{height:44px;margin-bottom:20px}
   .auth-title{font-size:3rem;margin-bottom:10px}
   .auth-sub{font-size:1.1rem}
-  .auth-panel{flex:1;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px}
+  .auth-panel{flex:1;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px;overflow:visible}
   .auth-inner{width:100%}
+  .auth-head{margin-bottom:24px!important}
+  .auth-head h1{font-size:1.8rem!important;margin-bottom:6px!important}
+  .auth-head p{display:block}
+  .auth-card{padding:24px!important}
+  .auth-card form{gap:16px!important}
+  .auth-card input{padding:10px 14px!important}
+  .auth-card label{margin-bottom:6px!important}
+  .auth-foot{margin-top:20px!important}
 }
 @media (prefers-reduced-motion:no-preference){
   .auth-col:nth-child(odd){animation:authdrift 28s ease-in-out infinite alternate}
@@ -164,7 +180,7 @@ function PlayBadge() {
   const file = lang === 'es' ? 'badge-es-419' : lang === 'fr' ? 'badge-fr-ca' : 'badge-en'
   return (
     <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Play"
-      style={missing ? undefined : { display: 'block', marginTop: 22, textAlign: 'center' }}
+      style={missing ? undefined : { display: 'block', marginTop: 10, textAlign: 'center' }}
       className={missing ? 'play-btn' : undefined}>
       {missing ? (
         <>
@@ -175,7 +191,7 @@ function PlayBadge() {
           </span>
         </>
       ) : (
-        <img src={`/auth/${file}.png`} alt="Google Play" style={{ height: 56, width: 'auto' }}
+        <img src={`/auth/${file}.png`} alt="Google Play" style={{ height: 48, width: 'auto' }}
           onError={() => setMissing(true)} />
       )}
     </a>
@@ -209,7 +225,6 @@ function AuthShell({ children }) {
       <header className="auth-hero">
         <AuthCollage />
         <div className="auth-shade" />
-        <span className="auth-mark">MI SAZÓN</span>
         <div className="auth-copy">
           <h2 className="auth-title">{t('auth.heroTitle')}</h2>
           <p className="auth-sub">{t('auth.heroSub')}</p>
@@ -217,9 +232,10 @@ function AuthShell({ children }) {
       </header>
       <main className="auth-panel">
         <div className="auth-inner">
+          <img className="auth-brand" src="/auth/mi-sazon-wordmark-teal.svg" alt="Mi Sazón" />
           {children}
           {SHOW_PLAY_BUTTON && <PlayBadge />}
-          <p style={{ textAlign: 'center', marginTop: 24, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+          <p style={{ textAlign: 'center', marginTop: 10, marginBottom: 0, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
             <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
             {' · '}
             <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
@@ -462,7 +478,7 @@ export default function AuthScreen() {
   /* ── Sign in / Sign up ── */
   return (
     <AuthShell>
-      <div style={{ marginBottom: 24, textAlign: 'center' }}>
+      <div className="auth-head" style={{ marginBottom: 24, textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1.15, letterSpacing: '-0.01em', marginBottom: 6 }}>
           {isSignUp ? t('auth.createTitle') : t('auth.welcomeBack')}
         </h1>
@@ -483,7 +499,7 @@ export default function AuthScreen() {
         </div>
       )}
 
-      <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
+      <div className="auth-card" style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
         {(!IN_APP_WEBVIEW || !!getNativeSocialLogin()) && (<>
         <button
           type="button" onClick={handleGoogle} disabled={loading}
@@ -590,7 +606,7 @@ export default function AuthScreen() {
         </form>
       </div>
 
-      <p style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+      <p className="auth-foot" style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
         {isSignUp ? t('auth.haveAccount') : t('auth.noAccount')}
         <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} style={linkBtn}>
           {isSignUp ? t('auth.signIn') : t('auth.signUp')}

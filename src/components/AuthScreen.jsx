@@ -144,7 +144,7 @@ const AUTH_CSS = `
   .auth-collage{inset:-10% -6%;gap:12px;grid-template-columns:repeat(4,1fr)}
   .auth-col:nth-child(5){display:none}
   .auth-col{gap:12px}
-  .auth-mark{top:44px;left:64px;transform:none;height:32px}
+  .auth-mark{top:44px;left:64px;transform:none;height:38px}
   .auth-title{font-size:3rem;margin-bottom:10px}
   .auth-sub{font-size:1.1rem}
   .auth-panel{flex:1;max-height:none;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px;overflow:visible}

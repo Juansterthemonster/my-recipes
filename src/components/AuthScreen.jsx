@@ -93,7 +93,7 @@ function PasswordField({ label, value, onChange, autoComplete, visible, onToggle
 /* ─── SHARED CHROME ──────────────────────────────────────────────────────────── */
 // Food photos for the collage live in /public/auth/ (1.jpg … 8.jpg). A missing file just leaves
 // its soft-coloured tile empty, so the page still looks intentional without them.
-const AUTH_PHOTOS = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `/auth/${n}.jpg`)
+const AUTH_PHOTOS = Array.from({ length: 23 }, (_, i) => i + 1).map(n => `/auth/${n}.jpg`)
 const TILE_TINTS = ['#1A5E75', '#3E92BF', '#E3EED6', '#F5EFC0', '#D4EBF6', '#2B7690']
 
 // The Play Store button is only for the website. Flip PLAY_STORE_LIVE to true once the app is
@@ -106,24 +106,24 @@ const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
 const AUTH_CSS = `
 .auth-wrap{height:100vh;height:100dvh;display:flex;flex-direction:column;background:#F9F6F0}
 .auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 0 auto;
-  height:max(116px,min(30dvh,calc(100dvh - 650px)));display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 40px}
-.auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  height:max(140px,min(30dvh,calc(100dvh - 590px)));display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 54px}
+.auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
   transform:rotate(-8deg);opacity:.72}
-.auth-col{display:flex;flex-direction:column;gap:10px}
+.auth-col{display:flex;flex-direction:column;gap:8px}
 .auth-col:nth-child(even){transform:translateY(-34px)}
-.auth-tile{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4}
+.auth-tile{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:3/4}
 .auth-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .auth-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,61,78,.2) 0%,rgba(12,61,78,.83) 100%)}
-.auth-brand{display:block;height:22px;width:auto;margin:0 auto 8px}
-.auth-copy{position:relative;z-index:2}
+.auth-mark{position:absolute;top:14px;left:50%;transform:translateX(-50%);height:36px;width:auto;z-index:2}
+.auth-copy{position:relative;z-index:2;text-align:center}
 .auth-title{font-family:var(--font-display);font-weight:400;font-size:1.55rem;line-height:1.1;letter-spacing:-.01em;margin:0}
 .auth-sub{display:none;font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.9;margin:0;max-width:30ch}
-.auth-panel{flex:1;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:28px 28px 0 0;
+.auth-panel{flex:1;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
   padding:14px 20px 12px;overflow-y:auto;min-height:0}
 .auth-inner{max-width:420px;margin:0 auto}
-.auth-head{margin-bottom:10px!important}
+.auth-head{margin-bottom:12px!important}
 .auth-head h1{font-size:1.45rem!important;margin-bottom:0!important}
-.auth-head p{display:none}
+.auth-head p{display:block;font-size:.85rem!important;margin:4px 0 0!important}
 .auth-card{padding:14px 16px!important}
 .auth-card form{gap:10px!important}
 .auth-card input{padding:8px 12px!important}
@@ -136,10 +136,12 @@ const AUTH_CSS = `
 @media (min-width:1024px){
   .auth-wrap{flex-direction:row;height:auto;min-height:100vh}
   .auth-hero{flex:1.15;height:auto;min-height:100vh;padding:64px;justify-content:flex-end}
+  .auth-copy{text-align:left}
   .auth-sub{display:block}
-  .auth-collage{inset:-10% -6%;gap:14px;grid-template-columns:repeat(3,1fr)}
-  .auth-col{gap:14px}
-  .auth-brand{height:44px;margin-bottom:20px}
+  .auth-collage{inset:-10% -6%;gap:12px;grid-template-columns:repeat(4,1fr)}
+  .auth-col:nth-child(5){display:none}
+  .auth-col{gap:12px}
+  .auth-mark{top:44px;left:64px;transform:none;height:32px}
   .auth-title{font-size:3rem;margin-bottom:10px}
   .auth-sub{font-size:1.1rem}
   .auth-panel{flex:1;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px;overflow:visible}
@@ -180,7 +182,7 @@ function PlayBadge() {
   const file = lang === 'es' ? 'badge-es-419' : lang === 'fr' ? 'badge-fr-ca' : 'badge-en'
   return (
     <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Play"
-      style={missing ? undefined : { display: 'block', marginTop: 10, textAlign: 'center' }}
+      style={missing ? undefined : { display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', marginTop: 18 }}
       className={missing ? 'play-btn' : undefined}>
       {missing ? (
         <>
@@ -191,7 +193,7 @@ function PlayBadge() {
           </span>
         </>
       ) : (
-        <img src={`/auth/${file}.png`} alt="Google Play" style={{ height: 48, width: 'auto' }}
+        <img src={`/auth/${file}.png`} alt="Google Play" style={{ display: 'block', height: 48, width: 'auto', margin: '0 auto' }}
           onError={() => setMissing(true)} />
       )}
     </a>
@@ -200,14 +202,18 @@ function PlayBadge() {
 
 function AuthCollage() {
   // Distribute the photos across the columns so each column mixes photo and plain tiles
-  const cols = [[0, 4, 8], [1, 5, 2], [2, 6, 0], [3, 7, 1]]
+  // 23 photos, each used exactly once. 23 is prime, so a stride of 7 scatters similar dishes apart.
+  const order = Array.from({ length: 23 }, (_, i) => (i * 7) % 23)
+  const sizes = [5, 5, 5, 4, 4]
+  let at = 0
+  const cols = sizes.map(n => { const c = order.slice(at, at + n); at += n; return c })
   return (
     <div className="auth-collage" aria-hidden="true">
       {cols.map((col, ci) => (
         <div className="auth-col" key={ci}>
           {col.map((idx, ti) => (
             <div className="auth-tile" key={ti} style={{ background: TILE_TINTS[(ci * 2 + ti) % TILE_TINTS.length] }}>
-              <img src={AUTH_PHOTOS[idx % AUTH_PHOTOS.length]} alt="" loading="lazy" decoding="async"
+              <img src={AUTH_PHOTOS[idx]} alt="" loading="lazy" decoding="async"
                 onError={e => { e.currentTarget.style.display = 'none' }} />
             </div>
           ))}
@@ -225,6 +231,7 @@ function AuthShell({ children }) {
       <header className="auth-hero">
         <AuthCollage />
         <div className="auth-shade" />
+        <img className="auth-mark" src="/auth/mi-sazon-wordmark-white.svg" alt="Mi Sazón" />
         <div className="auth-copy">
           <h2 className="auth-title">{t('auth.heroTitle')}</h2>
           <p className="auth-sub">{t('auth.heroSub')}</p>
@@ -232,13 +239,12 @@ function AuthShell({ children }) {
       </header>
       <main className="auth-panel">
         <div className="auth-inner">
-          <img className="auth-brand" src="/auth/mi-sazon-wordmark-teal.svg" alt="Mi Sazón" />
           {children}
           {SHOW_PLAY_BUTTON && <PlayBadge />}
           <p style={{ textAlign: 'center', marginTop: 10, marginBottom: 0, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 3 }}>{t('legal.privacy')}</a>
             {' · '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 3 }}>{t('legal.terms')}</a>
           </p>
         </div>
       </main>
@@ -604,14 +610,19 @@ export default function AuthScreen() {
           </button>
 
         </form>
-      </div>
 
-      <p className="auth-foot" style={{ textAlign: 'center', marginTop: 20, fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-        {isSignUp ? t('auth.haveAccount') : t('auth.noAccount')}
-        <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} style={linkBtn}>
-          {isSignUp ? t('auth.signIn') : t('auth.signUp')}
-        </button>
-      </p>
+        <div style={{ height: 1, background: 'var(--border-soft)', margin: '14px 0 12px' }} />
+        <div style={{ textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+          <div style={{ marginBottom: 8 }}>{isSignUp ? t('auth.haveAccount') : t('auth.noAccount')}</div>
+          <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} style={{
+            width: '100%', boxSizing: 'border-box', padding: '11px 16px', borderRadius: 999, cursor: 'pointer',
+            background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',
+            fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
+          }}>
+            {isSignUp ? t('auth.signIn') : t('auth.signUp')}
+          </button>
+        </div>
+      </div>
     </AuthShell>
   )
 }

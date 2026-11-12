@@ -941,6 +941,9 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 ### v4.38 — Glass pills for the other outlined buttons
 - `GLASS` moved to `src/utils/glass.js`. Used by the nav round buttons (profile, admin, filter, sort) and now also the outlined pills: Edit (recipe page + collection page), Add (desktop nav), "Add to my recipes" and "Sign in to save" (recipe page). Form Cancel/Save in `RecipeForm` were left as they are.
 
+### v4.42 — Sample collection for every account (SQL to run)
+- `supabase_migration_starter_collection.sql` (run once in the Supabase SQL editor, after the starter-recipes migration): adds `collections.is_starter`; `give_starter_collection(uid)` creates a private "Sample collection" containing the user's own copies of the starter recipes (skipped if they have none, never duplicated); `starter_recipes_on_profile()` now calls it right after `give_starter_recipes`, so new accounts get it automatically; one-time backfill for existing accounts at the bottom. No app code change needed.
+
 ### v4.39 — Starter recipes appear on a new account's first load
 - Cause: the profile row (which triggers the starter-recipe copy) is created by `App.jsx` right after sign-in, but Browse had already loaded its lists empty. Fix: `App.jsx` bumps `listRefreshKey` after a successful profile insert and passes it to Browse as `refreshKey`; Browse reloads once when it changes. (Google sign-in doesn't need it: Browse isn't mounted until the username is chosen.)
 

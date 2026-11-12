@@ -104,9 +104,9 @@ const IS_IOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navig
 const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
 
 const AUTH_CSS = `
-.auth-wrap{height:100vh;height:100dvh;display:flex;flex-direction:column;background:#F9F6F0}
-.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 0 auto;
-  height:max(140px,min(30dvh,calc(100dvh - 590px)));display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 54px}
+.auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}
+.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:1 1 0;
+  min-height:66px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 54px}
 .auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
   transform:rotate(-8deg);opacity:.72}
 .auth-col{display:flex;flex-direction:column;gap:8px}
@@ -115,10 +115,10 @@ const AUTH_CSS = `
 .auth-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .auth-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,61,78,.2) 0%,rgba(12,61,78,.83) 100%)}
 .auth-mark{position:absolute;top:14px;left:50%;transform:translateX(-50%);height:36px;width:auto;z-index:2}
-.auth-copy{position:relative;z-index:2;text-align:center}
+.auth-copy{position:relative;z-index:2;text-align:center;display:none}
 .auth-title{font-family:var(--font-display);font-weight:400;font-size:1.55rem;line-height:1.1;letter-spacing:-.01em;margin:0}
 .auth-sub{display:none;font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.9;margin:0;max-width:30ch}
-.auth-panel{flex:1;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
+.auth-panel{flex:0 1 auto;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
   padding:14px 20px 12px;overflow-y:auto;min-height:0}
 .auth-inner{max-width:420px;margin:0 auto}
 .auth-head{margin-bottom:12px!important}
@@ -129,12 +129,17 @@ const AUTH_CSS = `
 .auth-card input{padding:8px 12px!important}
 .auth-card label{margin-bottom:4px!important}
 .auth-foot{margin-top:10px!important}
+.auth-noacct{margin-bottom:8px}
+@media (min-height:800px){.auth-copy{display:block}}
+@media (max-height:740px){.auth-head p{display:none}.auth-noacct{display:none}}
 .play-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;
   background:#0C3D4E;color:#F9F6F0;border-radius:14px;padding:11px 18px;text-decoration:none;
   font-family:var(--font-body);transition:background 180ms}
 .play-btn:hover{background:#1A5E75}
 @media (min-width:1024px){
-  .auth-wrap{flex-direction:row;height:auto;min-height:100vh}
+  .auth-wrap{position:static;overflow:visible;flex-direction:row;height:auto;min-height:100vh}
+  .auth-copy{display:block}
+  .auth-noacct{display:block!important}
   .auth-hero{flex:1.15;height:auto;min-height:100vh;padding:64px;justify-content:flex-end}
   .auth-copy{text-align:left}
   .auth-sub{display:block}
@@ -148,7 +153,7 @@ const AUTH_CSS = `
   .auth-inner{width:100%}
   .auth-head{margin-bottom:24px!important}
   .auth-head h1{font-size:1.8rem!important;margin-bottom:6px!important}
-  .auth-head p{display:block}
+  .auth-head p{display:block!important}
   .auth-card{padding:24px!important}
   .auth-card form{gap:16px!important}
   .auth-card input{padding:10px 14px!important}
@@ -613,7 +618,7 @@ export default function AuthScreen() {
 
         <div style={{ height: 1, background: 'var(--border-soft)', margin: '14px 0 12px' }} />
         <div style={{ textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          <div style={{ marginBottom: 8 }}>{isSignUp ? t('auth.haveAccount') : t('auth.noAccount')}</div>
+          <div className="auth-noacct">{isSignUp ? t('auth.haveAccount') : t('auth.noAccount')}</div>
           <button onClick={() => switchMode(isSignUp ? 'signin' : 'signup')} style={{
             width: '100%', boxSizing: 'border-box', padding: '11px 16px', borderRadius: 999, cursor: 'pointer',
             background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',

@@ -91,32 +91,141 @@ function PasswordField({ label, value, onChange, autoComplete, visible, onToggle
 }
 
 /* ─── SHARED CHROME ──────────────────────────────────────────────────────────── */
+// Food photos for the collage live in /public/auth/ (1.jpg … 8.jpg). A missing file just leaves
+// its soft-coloured tile empty, so the page still looks intentional without them.
+const AUTH_PHOTOS = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `/auth/${n}.jpg`)
+const TILE_TINTS = ['#1A5E75', '#3E92BF', '#E3EED6', '#F5EFC0', '#D4EBF6', '#2B7690']
+
+// The Play Store button is only for the website. Flip PLAY_STORE_LIVE to true once the app is
+// approved and live (it is, as of Nov 2026); it never shows inside the app itself or on iPhones (no iOS app yet).
+const PLAY_STORE_URL  = 'https://play.google.com/store/apps/details?id=com.misazon.app'
+const PLAY_STORE_LIVE = true
+const IS_IOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
+const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
+
+const AUTH_CSS = `
+.auth-wrap{min-height:100vh;display:flex;flex-direction:column;background:#F9F6F0}
+.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;min-height:250px;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:26px 22px 54px}
+.auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  transform:rotate(-8deg);opacity:.72}
+.auth-col{display:flex;flex-direction:column;gap:10px}
+.auth-col:nth-child(even){transform:translateY(-34px)}
+.auth-tile{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4}
+.auth-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.auth-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,61,78,.15) 0%,rgba(12,61,78,.78) 100%)}
+.auth-mark{position:absolute;top:22px;left:22px;font-weight:800;font-size:1.15rem;letter-spacing:.06em;
+  text-transform:uppercase;line-height:1;z-index:2}
+.auth-copy{position:relative;z-index:2}
+.auth-title{font-family:var(--font-display);font-weight:400;font-size:1.9rem;line-height:1.1;letter-spacing:-.01em;margin:0 0 6px}
+.auth-sub{font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.88;margin:0;max-width:30ch}
+.auth-panel{flex:1;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:28px 28px 0 0;
+  padding:26px 20px 40px}
+.auth-inner{max-width:420px;margin:0 auto}
+.play-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;
+  background:#0C3D4E;color:#F9F6F0;border-radius:14px;padding:11px 18px;text-decoration:none;
+  font-family:var(--font-body);transition:background 180ms}
+.play-btn:hover{background:#1A5E75}
+@media (min-width:1024px){
+  .auth-wrap{flex-direction:row}
+  .auth-hero{flex:1.15;min-height:100vh;padding:64px;justify-content:flex-end}
+  .auth-collage{inset:-10% -6%;gap:14px;grid-template-columns:repeat(3,1fr)}
+  .auth-col{gap:14px}
+  .auth-mark{top:44px;left:64px;font-size:1.3rem}
+  .auth-title{font-size:3rem;margin-bottom:10px}
+  .auth-sub{font-size:1.1rem}
+  .auth-panel{flex:1;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px}
+  .auth-inner{width:100%}
+}
+@media (prefers-reduced-motion:no-preference){
+  .auth-col:nth-child(odd){animation:authdrift 28s ease-in-out infinite alternate}
+  .auth-col:nth-child(even){animation:authdrift2 32s ease-in-out infinite alternate}
+}
+@keyframes authdrift{from{transform:translateY(0)}to{transform:translateY(-28px)}}
+@keyframes authdrift2{from{transform:translateY(-34px)}to{transform:translateY(-6px)}}
+`
+
+function PlayIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#34A853" d="M3.6 2.4c-.3.3-.5.8-.5 1.4v16.4c0 .6.2 1.1.5 1.4l9-9.6z"/>
+      <path fill="#FBBC05" d="M16.5 15.4l-3.9-3.4 3.9-3.4 4.3 2.4c1.2.7 1.2 1.8 0 2.5z"/>
+      <path fill="#EA4335" d="M12.6 12l-9-9.6c.4-.4 1-.4 1.7-.1l11.2 6.3z"/>
+      <path fill="#4285F4" d="M12.6 12l3.9 3.4L5.3 21.7c-.7.4-1.3.3-1.7-.1z"/>
+    </svg>
+  )
+}
+
+// Official "Get it on Google Play" badge (download from play.google.com/intl/en_us/badges and save as
+// /public/auth/badge-en.png, badge-es-419.png, badge-fr-ca.png). Until a file exists the plain button shows.
+function PlayBadge() {
+  const { t, lang } = useI18n()
+  const [missing, setMissing] = useState(false)
+  const file = lang === 'es' ? 'badge-es-419' : lang === 'fr' ? 'badge-fr-ca' : 'badge-en'
+  return (
+    <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Play"
+      style={missing ? undefined : { display: 'block', marginTop: 22, textAlign: 'center' }}
+      className={missing ? 'play-btn' : undefined}>
+      {missing ? (
+        <>
+          <PlayIcon />
+          <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, textAlign: 'left' }}>
+            <span style={{ fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.8 }}>{t('auth.getItOn')}</span>
+            <span style={{ fontSize: '1.05rem', fontWeight: 600 }}>Google Play</span>
+          </span>
+        </>
+      ) : (
+        <img src={`/auth/${file}.png`} alt="Google Play" style={{ height: 56, width: 'auto' }}
+          onError={() => setMissing(true)} />
+      )}
+    </a>
+  )
+}
+
+function AuthCollage() {
+  // Distribute the photos across the columns so each column mixes photo and plain tiles
+  const cols = [[0, 4, 8], [1, 5, 2], [2, 6, 0], [3, 7, 1]]
+  return (
+    <div className="auth-collage" aria-hidden="true">
+      {cols.map((col, ci) => (
+        <div className="auth-col" key={ci}>
+          {col.map((idx, ti) => (
+            <div className="auth-tile" key={ti} style={{ background: TILE_TINTS[(ci * 2 + ti) % TILE_TINTS.length] }}>
+              <img src={AUTH_PHOTOS[idx % AUTH_PHOTOS.length]} alt="" loading="lazy" decoding="async"
+                onError={e => { e.currentTarget.style.display = 'none' }} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function AuthShell({ children }) {
   const { t } = useI18n()
   return (
-    <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
-      <div
-        style={{ background: '#F9F6F0', position: 'sticky', top: 0, zIndex: 10 }}
-        className="
-          px-5 py-[14px] flex items-center justify-between
-          lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
-          lg:pl-[max(40px,calc((100vw-1400px)/2+40px))]
-          lg:pr-[max(40px,calc((100vw-1400px)/2+40px))]
-        "
-      >
-        <span style={{
-          fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontWeight: 800,
-          color: '#0C3D4E', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
-        }}>MI SAZÓN</span>
-      </div>
-      <div style={{ maxWidth: 420, margin: '20px auto 0', padding: '0 20px 40px' }}>
-        {children}
-        <p style={{ textAlign: 'center', marginTop: 24, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-          <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
-          {' · '}
-          <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
-        </p>
-      </div>
+    <div className="auth-wrap">
+      <style>{AUTH_CSS}</style>
+      <header className="auth-hero">
+        <AuthCollage />
+        <div className="auth-shade" />
+        <span className="auth-mark">MI SAZÓN</span>
+        <div className="auth-copy">
+          <h2 className="auth-title">{t('auth.heroTitle')}</h2>
+          <p className="auth-sub">{t('auth.heroSub')}</p>
+        </div>
+      </header>
+      <main className="auth-panel">
+        <div className="auth-inner">
+          {children}
+          {SHOW_PLAY_BUTTON && <PlayBadge />}
+          <p style={{ textAlign: 'center', marginTop: 24, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
+            {' · '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
+          </p>
+        </div>
+      </main>
     </div>
   )
 }

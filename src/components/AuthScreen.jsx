@@ -105,8 +105,8 @@ const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
 
 const AUTH_CSS = `
 .auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}
-.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:1 1 0;
-  min-height:96px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 44px}
+.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 1 clamp(104px,17dvh,136px);
+  min-height:90px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 44px}
 .auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
   transform:rotate(-8deg);opacity:.72}
 .auth-col{display:flex;flex-direction:column;gap:8px}
@@ -118,7 +118,7 @@ const AUTH_CSS = `
 .auth-copy{position:relative;z-index:2;text-align:center;display:none}
 .auth-title{font-family:var(--font-display);font-weight:400;font-size:1.55rem;line-height:1.1;letter-spacing:-.01em;margin:0}
 .auth-sub{display:none;font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.9;margin:0;max-width:30ch}
-.auth-panel{flex:0 1 auto;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
+.auth-panel{flex:1 0 auto;max-height:calc(100% - 62px);position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
   padding:14px 20px 12px;overflow-y:auto;min-height:0}
 .auth-inner{max-width:420px;margin:0 auto}
 .auth-head{margin-bottom:12px!important}
@@ -147,7 +147,7 @@ const AUTH_CSS = `
   .auth-mark{top:44px;left:64px;transform:none;height:32px}
   .auth-title{font-size:3rem;margin-bottom:10px}
   .auth-sub{font-size:1.1rem}
-  .auth-panel{flex:1;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px;overflow:visible}
+  .auth-panel{flex:1;max-height:none;margin-top:0;border-radius:0;display:flex;align-items:center;justify-content:center;padding:40px;overflow:visible}
   .auth-inner{width:100%}
   .auth-head{margin-bottom:24px!important}
   .auth-head h1{font-size:1.8rem!important;margin-bottom:6px!important}

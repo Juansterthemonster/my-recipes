@@ -106,7 +106,7 @@ const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
 const AUTH_CSS = `
 .auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}
 .auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:1 1 0;
-  min-height:128px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 44px}
+  min-height:96px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 44px}
 .auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
   transform:rotate(-8deg);opacity:.72}
 .auth-col{display:flex;flex-direction:column;gap:8px}
@@ -115,7 +115,7 @@ const AUTH_CSS = `
 .auth-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .auth-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,61,78,.2) 0%,rgba(12,61,78,.83) 100%)}
 .auth-mark{position:absolute;top:14px;left:50%;transform:translateX(-50%);height:43px;width:auto;z-index:2}
-.auth-copy{position:relative;z-index:2;text-align:center}
+.auth-copy{position:relative;z-index:2;text-align:center;display:none}
 .auth-title{font-family:var(--font-display);font-weight:400;font-size:1.55rem;line-height:1.1;letter-spacing:-.01em;margin:0}
 .auth-sub{display:none;font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.9;margin:0;max-width:30ch}
 .auth-panel{flex:0 1 auto;position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
@@ -139,7 +139,7 @@ const AUTH_CSS = `
   .auth-wrap{position:static;overflow:visible;flex-direction:row;height:auto;min-height:100vh}
   .auth-noacct{display:block!important}
   .auth-hero{flex:1.15;height:auto;min-height:100vh;padding:64px;justify-content:flex-end}
-  .auth-copy{text-align:left}
+  .auth-copy{display:block;text-align:left}
   .auth-sub{display:block}
   .auth-collage{inset:-10% -6%;gap:12px;grid-template-columns:repeat(4,1fr)}
   .auth-col:nth-child(5){display:none}

@@ -6,7 +6,7 @@
 // caching only kicks in offline. Static JS/CSS/images are fingerprinted
 // per build by Vite, so those ARE safe to cache aggressively.
 
-const CACHE_NAME = 'sazon-shell-v2';
+const CACHE_NAME = 'sazon-shell-v3';
 const APP_SHELL = ['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

@@ -55,9 +55,12 @@
    scrollbar) and long pages (scrollbar) line up exactly - no sideways jump. */
 html {
   scrollbar-gutter: stable;
+  background: #F9F6F0;   /* the reserved scrollbar strip: soft cream, not the page's ivory */
 }
 
 body {
+  min-height: 100vh;
+  min-height: 100dvh;   /* the ivory page background still covers the whole page; only the strip is cream */
   font-family: var(--font-body);
   background: var(--cream);
   color: var(--text-primary);

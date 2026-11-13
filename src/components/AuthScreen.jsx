@@ -269,7 +269,7 @@ function AuthShell({ children }) {
         <div className="auth-inner">
           {children}
           {(SHOW_PLAY_BUTTON || SHOW_APPSTORE_BUTTON) && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, flexWrap: 'wrap', marginTop: 18 }}>
               {SHOW_APPSTORE_BUTTON && <AppStoreBadge />}
               {SHOW_PLAY_BUTTON && <PlayBadge />}
             </div>

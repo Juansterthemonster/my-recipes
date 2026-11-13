@@ -6,6 +6,11 @@ export const IN_APP_WEBVIEW = typeof window !== 'undefined' && (
   || /;\s*wv\)/.test(navigator.userAgent)
 )
 
+// True only inside OUR Capacitor app (not other apps' embedded browsers such as Instagram's, which
+// are also WebViews). Used to hide the store badges: people in an Instagram link should still see them.
+export const IN_NATIVE_APP = typeof window !== 'undefined'
+  && !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+
 // Public identifier of the Google "Web application" OAuth client (not a secret). The Android app's
 // native Google sign-in uses it as the token audience; Supabase's Google provider uses the same one.
 export const GOOGLE_WEB_CLIENT_ID = '458456195039-htan7t8e1ci65qvilbgeevvqjopvod6i.apps.googleusercontent.com'

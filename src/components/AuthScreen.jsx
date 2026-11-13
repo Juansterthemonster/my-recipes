@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
-import { IN_APP_WEBVIEW, GOOGLE_WEB_CLIENT_ID, getNativeSocialLogin } from '../utils/inApp'
+import { IN_APP_WEBVIEW, IN_NATIVE_APP, GOOGLE_WEB_CLIENT_ID, getNativeSocialLogin } from '../utils/inApp'
 
 /* ─── SHARED STYLES ──────────────────────────────────────────────────────────── */
 const inp = {
@@ -101,12 +101,12 @@ const TILE_TINTS = ['#1A5E75', '#3E92BF', '#E3EED6', '#F5EFC0', '#D4EBF6', '#2B7
 const PLAY_STORE_URL  = 'https://play.google.com/store/apps/details?id=com.misazon.app'
 const PLAY_STORE_LIVE = true
 const IS_IOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
-const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
+const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_NATIVE_APP && !IS_IOS
 
 // App Store badge: iPhones/iPads and desktop browsers (not Android phones, not inside either app).
 const APP_STORE_URL = 'https://apps.apple.com/app/id6831440109'
 const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
-const SHOW_APPSTORE_BUTTON = !IN_APP_WEBVIEW && !IS_ANDROID
+const SHOW_APPSTORE_BUTTON = !IN_NATIVE_APP && !IS_ANDROID
 
 const AUTH_CSS = `
 .auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}

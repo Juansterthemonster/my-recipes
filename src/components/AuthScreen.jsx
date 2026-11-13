@@ -109,8 +109,6 @@ const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator
 const SHOW_APPSTORE_BUTTON = !IN_NATIVE_APP && !IS_ANDROID
 
 const AUTH_CSS = `
-/* the reserved scrollbar strip on the right takes the sign-in panel's cream instead of the page's lighter ivory */
-html{background:#F9F6F0}
 .auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}
 .auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 1 clamp(104px,17dvh,136px);
   min-height:90px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 44px}

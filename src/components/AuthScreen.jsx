@@ -103,6 +103,11 @@ const PLAY_STORE_LIVE = true
 const IS_IOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
 const SHOW_PLAY_BUTTON = PLAY_STORE_LIVE && !IN_APP_WEBVIEW && !IS_IOS
 
+// App Store badge: iPhones/iPads and desktop browsers (not Android phones, not inside either app).
+const APP_STORE_URL = 'https://apps.apple.com/app/id6831440109'
+const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
+const SHOW_APPSTORE_BUTTON = !IN_APP_WEBVIEW && !IS_ANDROID
+
 const AUTH_CSS = `
 .auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}
 .auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 1 clamp(104px,17dvh,136px);
@@ -177,6 +182,26 @@ function PlayIcon() {
   )
 }
 
+// Official "Download on the App Store" badge (from Apple's marketing resources; save as
+// /public/auth/appstore-en.svg, appstore-es.svg, appstore-fr.svg). Until a file exists a plain button shows.
+function AppStoreBadge() {
+  const { lang } = useI18n()
+  const [missing, setMissing] = useState(false)
+  const file = lang === 'es' ? 'appstore-es' : lang === 'fr' ? 'appstore-fr' : 'appstore-en'
+  return (
+    <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="App Store"
+      style={missing ? undefined : { display: 'flex', alignItems: 'center' }}
+      className={missing ? 'play-btn' : undefined}>
+      {missing ? (
+        <span style={{ fontSize: '1.05rem', fontWeight: 600 }}>App Store</span>
+      ) : (
+        <img src={`/auth/${file}.svg`} alt="App Store" style={{ display: 'block', height: 48, width: 'auto' }}
+          onError={() => setMissing(true)} />
+      )}
+    </a>
+  )
+}
+
 // Official "Get it on Google Play" badge (download from play.google.com/intl/en_us/badges and save as
 // /public/auth/badge-en.png, badge-es-419.png, badge-fr-ca.png). Until a file exists the plain button shows.
 function PlayBadge() {
@@ -185,7 +210,7 @@ function PlayBadge() {
   const file = lang === 'es' ? 'badge-es-419' : lang === 'fr' ? 'badge-fr-ca' : 'badge-en'
   return (
     <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Play"
-      style={missing ? undefined : { display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', marginTop: 18 }}
+      style={missing ? undefined : { display: 'flex', justifyContent: 'center', alignItems: 'center' }}
       className={missing ? 'play-btn' : undefined}>
       {missing ? (
         <>
@@ -243,7 +268,12 @@ function AuthShell({ children }) {
       <main className="auth-panel">
         <div className="auth-inner">
           {children}
-          {SHOW_PLAY_BUTTON && <PlayBadge />}
+          {(SHOW_PLAY_BUTTON || SHOW_APPSTORE_BUTTON) && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
+              {SHOW_APPSTORE_BUTTON && <AppStoreBadge />}
+              {SHOW_PLAY_BUTTON && <PlayBadge />}
+            </div>
+          )}
           <p style={{ textAlign: 'center', marginTop: 10, marginBottom: 0, fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
             <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 3 }}>{t('legal.privacy')}</a>
             {' · '}

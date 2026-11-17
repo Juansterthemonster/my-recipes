@@ -4,7 +4,7 @@ import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
 import { scaleIngredient } from '../utils/scaleIngredient'
 import { useI18n, tagLabel } from '../i18n'
-import { compressImage } from '../utils/compressImage'
+import { compressImage, snapshotFile } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
 import { slugify } from '../utils/slugify'
 import { getNativeShare } from '../utils/inApp'
@@ -706,11 +706,13 @@ export default function Detail({
   const triggerAddPhotos = () => { if (!uploading) photoInputRef.current?.click() }
 
   async function handlePhotoUpload(e) {
-    const files = Array.from(e.target.files || [])
-    if (!files.length) return
+    const picked = Array.from(e.target.files || [])
+    if (!picked.length) return
     const room = MAX_PHOTOS - photos.length
     if (room <= 0) { e.target.value = ''; return }
     setUploading(true)
+    // Copy into memory now — picker handles on Android can expire mid-upload
+    const files = await Promise.all(picked.slice(0, room).map(snapshotFile))
     const uploaded = []
     let failed = 0
     let lastReason = ''

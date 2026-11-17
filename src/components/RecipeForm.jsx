@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { toMins, fromMins } from './TimePicker'
-import { compressImage } from '../utils/compressImage'
+import { compressImage, snapshotFile } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
 import { useI18n, tagLabel } from '../i18n'
 import PasteIngredientsModal from './PasteIngredientsModal'
@@ -298,9 +298,11 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
   })
   const fileInputRef = useRef(null)
 
-  function handlePhotosAdded(e) {
-    const files = Array.from(e.target.files || [])
-    if (!files.length) return
+  async function handlePhotosAdded(e) {
+    const picked = Array.from(e.target.files || [])
+    if (!picked.length) return
+    // Copy into memory now — picker handles on Android can expire before Save
+    const files = await Promise.all(picked.map(snapshotFile))
     setPhotos(p => {
       const room = MAX_PHOTOS - p.length
       if (room <= 0) return p

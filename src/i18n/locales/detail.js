@@ -12,7 +12,7 @@ export default {
     'detail.confirmDelete': 'Delete "{name}"?',
     'detail.photoFailedOne': "A photo couldn't be uploaded", 'detail.photoFailedMany': "{count} photos couldn't be uploaded",
     'detail.tryAgain': '{base}{reason}. Please try again.',
-    'detail.signInToSave': 'Sign in to save', 'detail.back': 'Recipes', 'detail.edit': 'Edit',
+    'detail.signInToSave': 'Log in to save', 'detail.back': 'Recipes', 'detail.edit': 'Edit',
     'detail.moreOptions': 'More options', 'detail.makePrivate': 'Make recipe private', 'detail.makePublic': 'Make recipe public',
     'detail.deleteRecipe': 'Delete recipe', 'detail.savedToMine': 'Saved to my recipes',
     'detail.adding': 'Adding…', 'detail.addToMine': 'Add to my recipes',

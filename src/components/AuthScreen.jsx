@@ -630,11 +630,15 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
             {isSignUp ? t('auth.signIn') : t('auth.signUp')}
           </button>
           {onExplore && (
-            <button onClick={onExplore} style={{
-              marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
-              color: 'var(--green-primary)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600,
-              textDecoration: 'underline', textUnderlineOffset: 3,
-            }}>{t('auth.explore')} →</button>
+            <button onClick={onExplore}
+              style={{
+                width: '100%', boxSizing: 'border-box', marginTop: 10, padding: '11px 16px', borderRadius: 999, cursor: 'pointer',
+                background: 'var(--green-light)', color: 'var(--green-primary)', border: '1.5px solid transparent',
+                fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600, transition: 'background 150ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#D5E5C3' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-light)' }}
+            >{t('auth.explore')}</button>
           )}
         </div>
       </div>

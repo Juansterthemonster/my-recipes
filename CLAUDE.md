@@ -941,6 +941,14 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 ### v4.38 — Glass pills for the other outlined buttons
 - `GLASS` moved to `src/utils/glass.js`. Used by the nav round buttons (profile, admin, filter, sort) and now also the outlined pills: Edit (recipe page + collection page), Add (desktop nav), "Add to my recipes" and "Sign in to save" (recipe page). Form Cancel/Save in `RecipeForm` were left as they are.
 
+### v4.43 — "What's new" announcements (SQL to run)
+- **Run `supabase_migration_announcements.sql` once** (table `announcement_views`: user_id, announcement_id, views, dismissed, first_shown_at, last_shown_at; RLS own rows). Until it is run, nothing is shown (the component fails silently).
+- Announcements are a list in `src/announcements.js` (id, releasedAt, audience `existing`|`all`, icon). Text lives in `src/i18n/locales/announcements.js` as `ann.<id>.title` / `.body` (en/fr/es). To announce a feature: add both, deploy.
+- Rules (`components/WhatsNew.jsx`): shown at most `MAX_VIEWS` (2) times, once per visit (a visit = app open, or back after 30 min away; enforced with `last_shown_at`, so it holds across devices and refreshes); "Got it" ends it for good; closing otherwise just closes. `existing` = account created before `releasedAt`. Only announcements from the last `RECENT_DAYS` (60). Several eligible → one sheet.
+- Phone = bottom sheet (`BottomSheet`), larger screens = centred dialog. Mounted in `App.jsx` only on the recipe list once the username is known.
+- First announcement: `explore-without-account` (friends can browse without an account). Planned next: spotlight tour (tap the recipe photo to see all of it); first-time-user tips.
+- iOS is native SwiftUI (not covered by this web code): it would need its own version, optionally using the same table.
+
 ### v4.42 — Sample collection for every account (SQL to run)
 - `supabase_migration_starter_collection.sql` (run once in the Supabase SQL editor, after the starter-recipes migration): adds `collections.is_starter`; `give_starter_collection(uid)` creates a private "Sample collection" containing the user's own copies of the starter recipes (skipped if they have none, never duplicated); `starter_recipes_on_profile()` now calls it right after `give_starter_recipes`, so new accounts get it automatically; one-time backfill for existing accounts at the bottom. No app code change needed.
 

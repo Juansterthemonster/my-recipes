@@ -8,6 +8,7 @@ import Detail from './components/Detail'
 import CollectionDetail from './components/CollectionDetail'
 import RecipeForm from './components/RecipeForm'
 import Toast from './components/Toast'
+import WhatsNew from './components/WhatsNew'
 import AuthScreen from './components/AuthScreen'
 import ResetPassword from './components/ResetPassword'
 import Profile from './components/Profile'
@@ -444,6 +445,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F9F6F0]">
       <Toast visible={toast.visible} message={toast.message} onHide={hideToast} />
+      {/* "What's new" sheet — only on the recipe list, once the username is known (see src/announcements.js) */}
+      <WhatsNew session={session} enabled={view === 'browse' && !!username} />
       <div className="mx-auto max-w-2xl lg:max-w-[1400px]">
         {view === 'profile' && session && (
           <Profile

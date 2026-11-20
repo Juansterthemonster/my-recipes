@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
 import CardImg from './CardImg'
+import { loadCollectionPhotos } from '../utils/collectionPhotos'
 
 /* ─── COLLECTION EDIT MODAL ─────────────────────────────────────────────────
    Centred overlay used for both "New collection" and "Edit collection".
@@ -25,22 +25,7 @@ export default function CollectionEditModal({ title, collectionId = null, initia
   useEffect(() => {
     if (!collectionId) return
     let cancelled = false
-    async function loadPhotos() {
-      const { data } = await supabase
-        .from('collection_recipes')
-        .select('recipes(photo_url, photos)')
-        .eq('collection_id', collectionId)
-      if (cancelled) return
-      const urls = []
-      for (const row of data || []) {
-        const r = row.recipes
-        if (!r) continue
-        const list = r.photos?.length ? r.photos : (r.photo_url ? [r.photo_url] : [])
-        for (const u of list) if (u && !urls.includes(u)) urls.push(u)
-      }
-      setCoverOptions(urls)
-    }
-    loadPhotos()
+    loadCollectionPhotos(collectionId).then(urls => { if (!cancelled) setCoverOptions(urls) })
     return () => { cancelled = true }
   }, [collectionId])
 

@@ -6,6 +6,7 @@ import { sortRecipes, MY_SORTS, EXPLORE_SORTS, sortSession } from '../utils/sort
 import { useI18n, tagLabel, translate } from '../i18n'
 import CardImg from './CardImg'
 import CollectionEditModal from './CollectionEditModal'
+import CollectionCoverPicker from './CollectionCoverPicker'
 import { RecipeGridSkeleton, CollectionGridSkeleton } from './Skeletons'
 import { BottomNav, BottomSheet, SheetRow, BOTTOM_NAV_CLEARANCE } from './MobileNav'
 import { useIsPhone } from '../utils/useIsPhone'
@@ -1069,7 +1070,7 @@ function CollectionPhotoGrid({ photos = [], cover = null }) {
    Mirrors the recipe photo card: 2:3, photo/collage behind a dark gradient,
    white text on the image. Count pill top-left, kebab top-right, then
    title + description at the bottom.                                          */
-function CollectionCard({ collection, onClick, onRename, onDelete }) {
+function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete }) {
   const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -1117,6 +1118,20 @@ function CollectionCard({ collection, onClick, onRename, onDelete }) {
                 onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
               >{t('col.edit')}</button>
+              {/* Only when a recipe in the collection has a photo to choose from */}
+              {collection.photos?.length > 0 && (
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(false); onSelectCover() }}
+                  style={{
+                    display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left', whiteSpace: 'nowrap',
+                    fontSize: '0.88rem', color: 'var(--text-primary)', background: 'none',
+                    border: 'none', borderBottom: '1px solid var(--border-soft)',
+                    cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                >{t('col.selectCover')}</button>
+              )}
               <button
                 onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
                 style={{
@@ -1298,6 +1313,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   // modalMode: null | 'create' | 'rename'
   const [modalMode,    setModalMode]    = useState(null)
   const [renameTarget, setRenameTarget] = useState(null)
+  const [coverTarget,  setCoverTarget]  = useState(null)   // collection whose cover is being picked
 
   // Generic pill toggle — adds the tag if absent, removes it if present
   function makeToggle(setter) {
@@ -1562,6 +1578,18 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
     setRenameTarget(null)
   }
 
+  async function handleSetCollectionCover(cover) {
+    if (!coverTarget) return
+    const { error } = await supabase
+      .from('collections')
+      .update({ cover_photo_url: cover || null })
+      .eq('id', coverTarget.id)
+    if (!error) {
+      setCollections(prev => prev.map(c => c.id === coverTarget.id ? { ...c, cover_photo_url: cover || null } : c))
+    }
+    setCoverTarget(null)
+  }
+
   async function handleDeleteCollection(collection) {
     if (!window.confirm(t('col.confirmDelete', { name: collection.name }))) return
     const { error } = await supabase
@@ -1698,6 +1726,14 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
           onClose={() => { setModalMode(null); setRenameTarget(null) }}
         />
       )}
+      {coverTarget && (
+        <CollectionCoverPicker
+          collectionId={coverTarget.id}
+          current={coverTarget.cover_photo_url || null}
+          onSave={handleSetCollectionCover}
+          onClose={() => setCoverTarget(null)}
+        />
+      )}
       <div ref={searchWrapRef}>
         <SearchBar
           search={search} onSearch={setSearch}
@@ -1814,6 +1850,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
                       collection={col}
                       onClick={() => onSelectCollection && onSelectCollection(col)}
                       onRename={() => { setRenameTarget(col); setModalMode('rename') }}
+                      onSelectCover={() => setCoverTarget(col)}
                       onDelete={() => handleDeleteCollection(col)}
                     />
                   )}

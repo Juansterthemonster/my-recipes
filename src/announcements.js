@@ -11,7 +11,7 @@
    • Only announcements released in the last RECENT_DAYS are considered, so someone
      coming back after months is not buried in old news.
    • releasedAt = when the feature went live (ISO, UTC).
-   • icon: 'compass' | 'share'                                                     */
+   • icon: 'compass' | 'share' | 'photos'                                                   */
 
 export const MAX_VIEWS = 2
 export const RECENT_DAYS = 60
@@ -22,5 +22,11 @@ export const ANNOUNCEMENTS = [
     releasedAt: '2026-11-20T18:00:00Z',
     audience: 'existing',
     icon: 'compass',
+  },
+  {
+    id: 'six-photos',
+    releasedAt: '2026-11-20T20:00:00Z',
+    audience: 'existing',
+    icon: 'photos',
   },
 ]

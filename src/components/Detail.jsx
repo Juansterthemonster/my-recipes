@@ -790,6 +790,23 @@ export default function Detail({
     setUploading(false)
   }
 
+  // Make the photo being viewed the cover (first photo) without opening the editor.
+  const [settingCover, setSettingCover] = useState(false)
+  const canSetCover = isOwner && !readOnly && photoOpen && !isDesktopPhotoView && photos.length > 1 && activePhoto > 0
+  async function handleSetCover() {
+    if (!canSetCover || settingCover) return
+    const picked = photos[activePhoto]
+    const newPhotos = [picked, ...photos.filter((_, i) => i !== activePhoto)]
+    setSettingCover(true)
+    const { error } = await supabase.from('recipes').update({ photos: newPhotos, photo_url: newPhotos[0] }).eq('id', recipe.id)
+    setSettingCover(false)
+    if (error) { onToast?.(t('detail.coverFailed'), 'error'); return }
+    setRecipe(r => ({ ...r, photos: newPhotos, photo_url: newPhotos[0] }))
+    setActivePhoto(0)
+    photoScrollRef.current?.scrollTo({ left: 0 })
+    onToast?.(t('detail.coverSet'))
+  }
+
   async function handleTogglePublic() {
     const newVal = !recipe.is_public
     await supabase.from('recipes').update({ is_public: newVal }).eq('id', recipe.id)
@@ -1323,14 +1340,16 @@ export default function Detail({
               </button>
             )}
 
-            {isOwner && !readOnly && photos.length < MAX_PHOTOS && (
+            {isOwner && !readOnly && (photos.length < MAX_PHOTOS || canSetCover) && (
+              <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 8 }}>
+              {photos.length < MAX_PHOTOS && (
               <button
                 type="button"
                 onClick={triggerAddPhotos}
                 disabled={uploading}
                 aria-label={t('detail.addMorePhotosLabel')}
                 style={{
-                  ...blurBtn, position: 'absolute', top: 12, left: 12, gap: 6,
+                  ...blurBtn, gap: 6,
                   padding: '9px 14px', color: '#fff', borderRadius: 'var(--r-full)',
                   fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 500,
                   cursor: uploading ? 'default' : 'pointer',
@@ -1348,6 +1367,24 @@ export default function Detail({
                   </>
                 )}
               </button>
+              )}
+              {canSetCover && (
+                <button
+                  type="button"
+                  onClick={handleSetCover}
+                  disabled={settingCover}
+                  style={{
+                    ...blurBtn, gap: 6, padding: '9px 14px', color: '#fff', borderRadius: 'var(--r-full)',
+                    fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 500,
+                    cursor: settingCover ? 'default' : 'pointer', opacity: settingCover ? 0.7 : 1,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+                >
+                  {t('detail.useAsCover')}
+                </button>
+              )}
+              </div>
             )}
 
             {!readOnly && (

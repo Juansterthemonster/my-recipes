@@ -630,15 +630,17 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
             {isSignUp ? t('auth.signIn') : t('auth.signUp')}
           </button>
           {onExplore && (
-            <button onClick={onExplore}
-              style={{
-                width: '100%', boxSizing: 'border-box', marginTop: 10, padding: '11px 16px', borderRadius: 999, cursor: 'pointer',
-                background: 'var(--green-light)', color: 'var(--green-primary)', border: '1.5px solid transparent',
-                fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600, transition: 'background 150ms',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#D5E5C3' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-light)' }}
-            >{t('auth.explore')}</button>
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />{t('auth.or')}<span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
+              </div>
+              {/* Same secondary button as Sign up / Sign in above */}
+              <button onClick={onExplore} style={{
+                width: '100%', boxSizing: 'border-box', padding: '11px 16px', borderRadius: 999, cursor: 'pointer',
+                background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',
+                fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
+              }}>{t('auth.explore')}</button>
+            </>
           )}
         </div>
       </div>

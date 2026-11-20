@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { getLastSeen, markSeen } from '../utils/adminSeen'
 import AdminReports from './AdminReports'
 import AdminAnnouncements from './AdminAnnouncements'
+import AdminTours from './AdminTours'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    AdminDashboard — owner-only overview of every account.
@@ -157,6 +158,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
 
             {/* ── What's new announcements (try them by hand) ── */}
             <AdminAnnouncements />
+            <AdminTours />
 
             {/* ── New recipes feed ── */}
             <div style={{ ...card, marginBottom: 16 }}>

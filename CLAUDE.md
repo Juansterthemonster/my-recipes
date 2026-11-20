@@ -941,6 +941,13 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 ### v4.38 — Glass pills for the other outlined buttons
 - `GLASS` moved to `src/utils/glass.js`. Used by the nav round buttons (profile, admin, filter, sort) and now also the outlined pills: Edit (recipe page + collection page), Add (desktop nav), "Add to my recipes" and "Sign in to save" (recipe page). Form Cancel/Save in `RecipeForm` were left as they are.
 
+### v4.44 — Spotlight tours (no SQL)
+- One-time guided highlights. First one: `photo-expand` — on a recipe page (phones/tablets, photo actually cropped) the photo is lit, the rest dimmed, with "Tap the photo to see all of it" + Got it.
+- Shown once per device, ever: closing it any way (Got it, tap outside, Esc, or tapping the photo) counts as seen. State is localStorage `sazon:tour:<id>` (+ in-memory fallback) in `src/utils/tours.js` — works for signed-out visitors too.
+- Files: `src/components/Spotlight.jsx` (reusable: hole you can tap through + card), `src/utils/tours.js` (TOURS list, tourSeen/markTourSeen/resetTour), `src/i18n/locales/tours.js` (en/fr/es), wired in `Detail.jsx`; admin tester `AdminTours.jsx` (Admin Dashboard → "Spotlight tours" → Reset on this device).
+- Add a tour: add to TOURS, add `tour.<id>.title/body` strings, render `<Spotlight>` where the target lives.
+- iOS (native, separate repo) not done.
+
 ### v4.43 — "What's new" announcements (SQL to run)
 - **Run `supabase_migration_announcements.sql` once** (table `announcement_views`: user_id, announcement_id, views, dismissed, first_shown_at, last_shown_at; RLS own rows). Until it is run, nothing is shown (the component fails silently).
 - Announcements are a list in `src/announcements.js` (id, releasedAt, audience `existing`|`all`, icon). Text lives in `src/i18n/locales/announcements.js` as `ann.<id>.title` / `.body` (en/fr/es). To announce a feature: add both, deploy.

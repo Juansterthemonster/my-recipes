@@ -8,6 +8,8 @@ import { compressImage, snapshotFile } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
 import { slugify } from '../utils/slugify'
 import { getNativeShare } from '../utils/inApp'
+import Spotlight from './Spotlight'
+import { tourSeen, markTourSeen } from '../utils/tours'
 
 // Must match the MAX_PHOTOS check in RecipeForm.jsx — same cap, enforced on
 // both places a photo can be added to a recipe.
@@ -618,13 +620,36 @@ export default function Detail({
     window.addEventListener('resize', measurePhoto)
     return () => window.removeEventListener('resize', measurePhoto)
   }, [photoOpen, activePhoto])
+  // One-time spotlight tour: "tap the photo to see all of it". Phones/tablets only, only when the
+  // photo really is cropped, only until it has been seen once (see src/utils/tours.js).
+  const [photoTour, setPhotoTour] = useState(false)
+  const getPhotoBox = () => (photos.length > 1 ? photoScrollRef.current : singlePhotoRef.current)
+  function endPhotoTour() {
+    if (!photoTour) return
+    markTourSeen('photo-expand')
+    setPhotoTour(false)
+  }
+  useEffect(() => {
+    if (isDesktopPhotoView || photos.length === 0 || tourSeen('photo-expand')) return
+    let tries = 0
+    let timer = setTimeout(function check() {
+      const box = getPhotoBox()
+      const img = box?.querySelector('img')
+      if (!box || !img) return
+      if (!img.naturalWidth) { if (++tries < 4) timer = setTimeout(check, 1000); return }   // still loading
+      const fullHeight = box.clientWidth * img.naturalHeight / img.naturalWidth
+      if (fullHeight > box.clientHeight + 24) setPhotoTour(true)   // only when there is more to see
+    }, 900)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipe.id, isDesktopPhotoView])
   const photoBoxStyle = {
     height: photoOpen ? photoOpenH : 260, transition: 'height 260ms ease', cursor: 'pointer',
   }
   const photoToggleProps = {
     role: 'button', tabIndex: 0, 'aria-expanded': photoOpen,
-    onClick: () => setPhotoOpen(o => !o),
-    onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPhotoOpen(o => !o) } },
+    onClick: () => { setPhotoOpen(o => !o); endPhotoTour() },
+    onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPhotoOpen(o => !o); endPhotoTour() } },
   }
   function handlePhotoScroll(e) {
     const el = e.currentTarget
@@ -1723,6 +1748,15 @@ export default function Detail({
       )}
 
       <div style={{ height: 40 }} />
+
+      <Spotlight
+        open={photoTour}
+        getTarget={getPhotoBox}
+        title={t('tour.photo-expand.title')}
+        body={t('tour.photo-expand.body')}
+        buttonLabel={t('tour.gotIt')}
+        onClose={endPhotoTour}
+      />
 
       {/* ── Collection bottom sheet ── */}
       {sheetOpen && (

@@ -63,7 +63,7 @@ function Content({ items, onGotIt }) {
 
       <button onClick={onGotIt} style={{
         width: '100%', boxSizing: 'border-box', marginTop: 6, padding: '13px 16px', borderRadius: 999,
-        background: 'var(--green-primary)', color: '#F9F6F0', border: 'none', cursor: 'pointer',
+        background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)', cursor: 'pointer',
         fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
       }}>{t('ann.gotIt')}</button>
     </div>

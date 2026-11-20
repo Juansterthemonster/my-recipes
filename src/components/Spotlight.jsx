@@ -5,15 +5,25 @@ import { createPortal } from 'react-dom'
    Spotlight — dims the screen, leaves one element lit, and points a small card at it.
    The lit area is a real hole: taps on it reach the element underneath (so "tap the
    photo" works right inside the tour). Taps anywhere else, Esc, or the button close it.
+   The card is frosted glass (iOS-style) with a little triangle pointing at the lit element.
    Props: open, getTarget() → element, title, body, buttonLabel, onClose.
    ───────────────────────────────────────────────────────────────────────────── */
 
 const PAD = 4          // breathing room around the lit element
-const DIM = 'rgba(6,30,39,0.64)'
+const DIM = 'rgba(6,30,39,0.34)'   // light, like an iOS dimmed backdrop
+const CARD_MAX = 340
+const ARROW_W = 24, ARROW_H = 12
+
+// Same frosted-glass fill for the card and its triangle so they read as one piece.
+const GLASS_FILL = {
+  background: 'linear-gradient(160deg, rgba(255,255,255,0.78), rgba(255,255,255,0.58))',
+  backdropFilter: 'blur(28px) saturate(1.9)',
+  WebkitBackdropFilter: 'blur(28px) saturate(1.9)',
+}
 
 export default function Spotlight({ open, getTarget, title, body, buttonLabel, onClose }) {
   const [rect, setRect] = useState(null)
-  const [vh, setVh] = useState(() => window.innerHeight)
+  const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
 
   useEffect(() => {
     if (!open) return
@@ -25,7 +35,7 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
         if (!el) { setRect(null); return }
         const r = el.getBoundingClientRect()
         setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
-        setVh(window.innerHeight)
+        setVp({ w: window.innerWidth, h: window.innerHeight })
       })
     }
     measure()
@@ -48,13 +58,19 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
     width: rect.width + PAD * 2, height: rect.height + PAD * 2,
   }
   const bottom = hole.top + hole.height
-  const below = vh - bottom > 190
-  const cardStyle = below
-    ? { top: bottom + 16 }
-    : { top: Math.max(12, hole.top - 16), transform: 'translateY(-100%)' }
+  const below = vp.h - bottom > 200
+
+  const cardW = Math.min(CARD_MAX, vp.w - 32)
+  const cardLeft = (vp.w - cardW) / 2
+  const holeCenter = hole.left + hole.width / 2
+  const arrowX = Math.max(26, Math.min(cardW - 26, holeCenter - cardLeft))   // keep it off the rounded corners
+  const gap = 8 + ARROW_H
+  const cardPos = below
+    ? { top: bottom + gap }
+    : { top: Math.max(12, hole.top - gap), transform: 'translateY(-100%)' }
 
   // Four invisible panels catch taps outside the hole; the hole itself stays clear.
-  const catcher = s => <div onClick={onClose} style={{ position: 'fixed', pointerEvents: 'auto', ...s }} />
+  const catcher = st => <div onClick={onClose} style={{ position: 'fixed', pointerEvents: 'auto', ...st }} />
 
   return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 240, pointerEvents: 'none' }} role="dialog" aria-modal="true" aria-label={title}>
@@ -70,15 +86,25 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
       {catcher({ top: hole.top, left: hole.left + hole.width, right: 0, height: hole.height })}
 
       <div style={{
-        position: 'fixed', left: 16, right: 16, maxWidth: 360, margin: '0 auto', pointerEvents: 'auto', ...cardStyle,
-        background: '#FFFFFF', borderRadius: 18, padding: '18px 20px 16px',
-        boxShadow: '0 12px 40px rgba(6,30,39,0.35)',
+        position: 'fixed', left: cardLeft, width: cardW, pointerEvents: 'auto', ...cardPos,
+        ...GLASS_FILL, borderRadius: 24, padding: '20px 20px 16px',
+        border: '1px solid rgba(255,255,255,0.75)',
+        boxShadow: '0 18px 50px rgba(6,30,39,0.28), 0 2px 8px rgba(6,30,39,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+        display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
       }}>
+        {/* triangle pointing at the lit element */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', left: arrowX - ARROW_W / 2, width: ARROW_W, height: ARROW_H,
+          ...(below ? { top: -ARROW_H + 1, clipPath: 'polygon(50% 0, 0 100%, 100% 100%)' }
+                    : { bottom: -ARROW_H + 1, clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }),
+          ...GLASS_FILL,
+        }} />
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{title}</div>
         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 6 }}>{body}</div>
         <button onClick={onClose} style={{
-          marginTop: 14, width: '100%', background: 'var(--green-primary)', color: '#F9F6F0', border: 'none',
-          borderRadius: 999, padding: '12px 16px', cursor: 'pointer',
+          alignSelf: 'flex-end', marginTop: 14,
+          background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',
+          borderRadius: 999, padding: '8px 20px', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600,
         }}>{buttonLabel}</button>
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Spotlight — dims the screen, leaves one element lit, and points a small card at it.
@@ -10,16 +11,13 @@ import { createPortal } from 'react-dom'
    ───────────────────────────────────────────────────────────────────────────── */
 
 const PAD = 4          // breathing room around the lit element
-const DIM = 'rgba(6,30,39,0.34)'   // light, like an iOS dimmed backdrop
+const DIM = FROST_DIM   // light, like an iOS dimmed backdrop
 const CARD_MAX = 340
 const ARROW_W = 24, ARROW_H = 12
+const CARD_EDGE = FROST_EDGE
+const ARROW_EDGE = CARD_EDGE
 
-// Same frosted-glass fill for the card and its triangle so they read as one piece.
-const GLASS_FILL = {
-  background: 'linear-gradient(160deg, rgba(255,255,255,0.78), rgba(255,255,255,0.58))',
-  backdropFilter: 'blur(28px) saturate(1.9)',
-  WebkitBackdropFilter: 'blur(28px) saturate(1.9)',
-}
+const GLASS_FILL = FROST_FILL   // same frosted glass as the card and its triangle
 
 export default function Spotlight({ open, getTarget, title, body, buttonLabel, onClose }) {
   const [rect, setRect] = useState(null)
@@ -69,6 +67,13 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
     ? { top: bottom + gap }
     : { top: Math.max(12, hole.top - gap), transform: 'translateY(-100%)' }
 
+  // Triangle shape, and the card outline with a notch where the triangle's base sits.
+  const tri = below ? 'polygon(50% 0, 0 100%, 100% 100%)' : 'polygon(0 0, 100% 0, 50% 100%)'
+  const x1 = arrowX - ARROW_W / 2 + 1.5, x2 = arrowX + ARROW_W / 2 - 1.5
+  const ringClip = below
+    ? `polygon(0 0, ${x1}px 0, ${x1}px 4px, ${x2}px 4px, ${x2}px 0, 100% 0, 100% 100%, 0 100%)`
+    : `polygon(0 0, 100% 0, 100% 100%, ${x2}px 100%, ${x2}px calc(100% - 4px), ${x1}px calc(100% - 4px), ${x1}px 100%, 0 100%)`
+
   // Four invisible panels catch taps outside the hole; the hole itself stays clear.
   const catcher = st => <div onClick={onClose} style={{ position: 'fixed', pointerEvents: 'auto', ...st }} />
 
@@ -88,17 +93,28 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
       <div style={{
         position: 'fixed', left: cardLeft, width: cardW, pointerEvents: 'auto', ...cardPos,
         ...GLASS_FILL, borderRadius: 24, padding: '20px 20px 16px',
-        border: '1px solid rgba(255,255,255,0.75)',
-        boxShadow: '0 18px 50px rgba(6,30,39,0.28), 0 2px 8px rgba(6,30,39,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+        boxShadow: '0 18px 50px rgba(6,30,39,0.28), 0 2px 8px rgba(6,30,39,0.10)',
         display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
       }}>
-        {/* triangle pointing at the lit element */}
+        {/* Card outline: a separate ring with a gap where the triangle joins, so the edge
+            flows around the triangle instead of running across its base. */}
         <div aria-hidden="true" style={{
-          position: 'absolute', left: arrowX - ARROW_W / 2, width: ARROW_W, height: ARROW_H,
-          ...(below ? { top: -ARROW_H + 1, clipPath: 'polygon(50% 0, 0 100%, 100% 100%)' }
-                    : { bottom: -ARROW_H + 1, clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }),
-          ...GLASS_FILL,
+          position: 'absolute', inset: 0, borderRadius: 24, pointerEvents: 'none',
+          border: `1px solid ${CARD_EDGE}`, boxSizing: 'border-box', clipPath: ringClip,
         }} />
+        {/* Triangle pointing at the lit element: edge-coloured triangle with a slightly smaller
+            glass one on top, so it has the same outline as the card. */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', left: arrowX - ARROW_W / 2, width: ARROW_W, height: ARROW_H + 1,
+          ...(below ? { top: -ARROW_H } : { bottom: -ARROW_H }),
+          clipPath: tri, background: ARROW_EDGE,
+        }}>
+          <div style={{
+            position: 'absolute', left: 1.5, right: 1.5,
+            ...(below ? { top: 1.5, bottom: 0 } : { top: 0, bottom: 1.5 }),
+            clipPath: tri, ...GLASS_FILL,
+          }} />
+        </div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{title}</div>
         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 6 }}>{body}</div>
         <button onClick={onClose} style={{

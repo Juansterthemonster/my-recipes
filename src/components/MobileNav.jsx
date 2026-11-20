@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../i18n'
+import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 
 /* Phone-only navigation: bottom tab bar + floating Add button + bottom sheets.
    Rendered by Browse only on phone-sized screens (see useIsPhone). */
@@ -46,7 +47,7 @@ function PlusIcon() {
 /* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
 // Slides up from the bottom; closes on backdrop tap, Escape, or the handle. Rendered in a portal
 // so it sits above everything regardless of where it's used.
-export function BottomSheet({ open, onClose, label, children }) {
+export function BottomSheet({ open, onClose, label, children, glass = false }) {
   const [mounted, setMounted] = useState(open)
   const [entered, setEntered] = useState(false)
   const shown = open && entered   // sliding in/out is driven by this
@@ -103,7 +104,7 @@ export function BottomSheet({ open, onClose, label, children }) {
       <div
         onClick={onClose}
         style={{
-          position: 'absolute', inset: 0, background: 'rgba(6,30,39,0.45)',
+          position: 'absolute', inset: 0, background: glass ? FROST_DIM : 'rgba(6,30,39,0.45)',
           opacity: shown ? 1 : 0, transition: 'opacity 200ms ease',
         }}
       />
@@ -113,8 +114,10 @@ export function BottomSheet({ open, onClose, label, children }) {
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
         style={{
           position: 'absolute', left: 0, right: 0, bottom: 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))',
-          background: '#FFFFFF', borderRadius: '20px 20px 0 0',
-          boxShadow: '0 -8px 30px rgba(12,61,78,0.18)',
+          ...(glass
+            ? { ...FROST_FILL, border: `1px solid ${FROST_EDGE}`, borderBottom: 'none', boxShadow: '0 -8px 40px rgba(6,30,39,0.22)' }
+            : { background: '#FFFFFF', boxShadow: '0 -8px 30px rgba(12,61,78,0.18)' }),
+          borderRadius: '20px 20px 0 0',
           padding: '10px 16px 16px',
           transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
           transition: dragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',

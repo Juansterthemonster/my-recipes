@@ -3,9 +3,8 @@ import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   ChooseUsername — shown once, right after someone's first "Continue with Google".
-   (Email sign-ups pick a username on the sign-up form; Google accounts arrive
-   without one.) Same rules as sign-up: 3–20 chars, letters/numbers/_/-, unique,
+   ChooseUsername — shown once, right after any new account is created (email,
+   Google or Apple): the sign-up form no longer asks for it. Rules: 3–20 chars, letters/numbers/_/-, unique,
    stored lowercase in profiles.username. The app is blocked until it's saved.
    ───────────────────────────────────────────────────────────────────────────── */
 

@@ -31,7 +31,6 @@ const linkBtn = {
 function focus(e) { e.target.style.borderColor = '#999' }
 function blur(e)  { e.target.style.borderColor = 'var(--border)' }
 
-const USERNAME_RE = /^[a-zA-Z0-9_-]+$/
 
 /* ─── EYE ICON ───────────────────────────────────────────────────────────────── */
 function EyeIcon({ visible }) {
@@ -293,7 +292,6 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
   const [email, setEmail]                 = useState('')
   const [password, setPassword]           = useState('')
   const [confirm, setConfirm]             = useState('')
-  const [username, setUsername]           = useState('')
   const [showPassword, setShowPassword]   = useState(false)
   const [showConfirm, setShowConfirm]     = useState(false)
   const [loading, setLoading]             = useState(false)
@@ -330,22 +328,12 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
     setError('')
 
     if (isSignUp) {
-      const trimmed = username.trim()
-      if (!trimmed) { setError(t('auth.err.chooseUsername')); return }
-      if (trimmed.length < 3 || trimmed.length > 20) { setError(t('auth.err.usernameLength')); return }
-      if (!USERNAME_RE.test(trimmed)) { setError(t('auth.err.usernameChars')); return }
       if (password !== confirm) { setError(t('auth.err.mismatch')); return }
       if (password.length < 6) { setError(t('auth.err.shortPassword')); return }
 
+      // The username is chosen on its own screen right after the account exists (ChooseUsername)
       setLoading(true)
-      const { data: existing } = await supabase
-        .from('profiles').select('id').eq('username', trimmed.toLowerCase()).maybeSingle()
-      if (existing) { setError(t('auth.err.taken')); setLoading(false); return }
-
-      const { error: err } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { username: trimmed.toLowerCase() } },
-      })
+      const { error: err } = await supabase.auth.signUp({ email, password })
       setLoading(false)
       if (err) { setError(err.message); return }
       setMode('verify')
@@ -615,19 +603,6 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
                 visible={showConfirm}
                 onToggle={() => setShowConfirm(v => !v)}
               />
-              <div>
-                <label style={lbl}>{t('auth.chooseUsername')}</label>
-                <input
-                  type="text" required autoComplete="username"
-                  value={username} onChange={e => setUsername(e.target.value)}
-                  placeholder={t('auth.usernamePlaceholder')}
-                  maxLength={20}
-                  style={inp} onFocus={focus} onBlur={blur}
-                />
-                <p style={{ marginTop: 6, fontSize: '0.78rem', lineHeight: 1.4, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                  {t('auth.usernameNote')}
-                </p>
-              </div>
             </>
           )}
 

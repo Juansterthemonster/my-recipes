@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import { useIsPhone } from '../utils/useIsPhone'
 import { BottomSheet } from './MobileNav'
 import { ANNOUNCEMENTS, MAX_VIEWS, RECENT_DAYS } from '../announcements'
+import { whatsNewState } from '../utils/whatsNewState'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    WhatsNew — the "what's new" sheet (see src/announcements.js for the rules).
@@ -18,8 +19,6 @@ import { ANNOUNCEMENTS, MAX_VIEWS, RECENT_DAYS } from '../announcements'
 
 const VISIT_GAP = 30 * 60 * 1000   // 30 minutes
 const SHOW_DELAY = 1200            // let the recipes appear first
-
-let lastCheckAt = 0                // module-level: not re-checked every time Browse remounts
 
 function Icon({ name }) {
   const common = { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
@@ -70,6 +69,18 @@ function Content({ items, onGotIt }) {
   )
 }
 
+// The sheet itself (also used by the admin dashboard's announcement tester):
+// a bottom sheet on phones, a centred card on larger screens.
+export function AnnouncementSheet({ items, open, onClose, onGotIt }) {
+  const { t } = useI18n()
+  const isPhone = useIsPhone()
+  const label = t('ann.eyebrow')
+  const body = <Content items={items} onGotIt={onGotIt} />
+  return isPhone
+    ? <BottomSheet open={open} onClose={onClose} label={label}>{body}</BottomSheet>
+    : <CenteredDialog open={open} onClose={onClose} label={label}>{body}</CenteredDialog>
+}
+
 // Desktop / tablet: a centred card instead of a bottom sheet
 function CenteredDialog({ open, onClose, label, children }) {
   useEffect(() => {
@@ -93,8 +104,6 @@ function CenteredDialog({ open, onClose, label, children }) {
 }
 
 export default function WhatsNew({ session, enabled }) {
-  const { t } = useI18n()
-  const isPhone = useIsPhone()
   const uid = session?.user?.id
   const createdAt = session?.user?.created_at
   const [items, setItems] = useState([])
@@ -111,8 +120,8 @@ export default function WhatsNew({ session, enabled }) {
 
     async function check(force = false) {
       if (openRef.current) return
-      if (!force && Date.now() - lastCheckAt < VISIT_GAP) return
-      lastCheckAt = Date.now()
+      if (!force && Date.now() - whatsNewState.lastCheckAt < VISIT_GAP) return   // not re-checked every time Browse remounts
+      whatsNewState.lastCheckAt = Date.now()
       const now = Date.now()
       const accountAt = createdAt ? new Date(createdAt).getTime() : 0
       const candidates = ANNOUNCEMENTS.filter(a => {
@@ -182,9 +191,5 @@ export default function WhatsNew({ session, enabled }) {
   const close = () => setOpen(false)
 
   if (items.length === 0) return null
-  const label = t('ann.eyebrow')
-  const body = <Content items={items} onGotIt={gotIt} />
-  return isPhone
-    ? <BottomSheet open={open} onClose={close} label={label}>{body}</BottomSheet>
-    : <CenteredDialog open={open} onClose={close} label={label}>{body}</CenteredDialog>
+  return <AnnouncementSheet items={items} open={open} onClose={close} onGotIt={gotIt} />
 }

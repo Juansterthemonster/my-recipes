@@ -25,6 +25,8 @@ alter table public.announcement_views enable row level security;
 drop policy if exists "announcement_views select own" on public.announcement_views;
 drop policy if exists "announcement_views insert own" on public.announcement_views;
 drop policy if exists "announcement_views update own" on public.announcement_views;
+drop policy if exists "announcement_views delete own" on public.announcement_views;
 create policy "announcement_views select own" on public.announcement_views for select using (auth.uid() = user_id);
 create policy "announcement_views insert own" on public.announcement_views for insert with check (auth.uid() = user_id);
 create policy "announcement_views update own" on public.announcement_views for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "announcement_views delete own" on public.announcement_views for delete using (auth.uid() = user_id);   -- lets the admin tester reset your own history

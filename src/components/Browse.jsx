@@ -34,7 +34,7 @@ function AdminIcon() {
 }
 
 /* ─── NAV ──────────────────────────────────────────────────────────────────── */
-function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount = 0, onAdmin }) {
+function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount = 0, onAdmin, signedIn = true, onSignIn }) {
   const { t } = useI18n()
   const isPhone = useIsPhone()   // phones: account menu is a bottom sheet, Add is the floating button
   const [addOpen,  setAddOpen]  = useState(false)
@@ -79,6 +79,18 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
         color: '#0C3D4E', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
       }}>MI SAZÓN</span>
 
+      {!signedIn ? (
+        <button
+          onClick={onSignIn}
+          style={{
+            ...GLASS, color: '#0C3D4E', borderRadius: 'var(--r-full)',
+            fontFamily: 'var(--font-body)', fontSize: '0.82rem',
+            fontWeight: 600, letterSpacing: '0.03em',
+            padding: '9px 20px', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center',
+          }}
+        >{t('nav.signIn')}</button>
+      ) : (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div ref={addRef} style={{ position: 'relative', display: isPhone ? 'none' : undefined }}>
           <button
@@ -148,6 +160,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
           style={navIconBtn}
         ><ProfileIcon /></button>
       </div>
+      )}
     </div>
   )
 }
@@ -917,6 +930,37 @@ function EmptyMyRecipes({ onAdd }) {
   )
 }
 
+/* Signed-out visitor on a tab that needs an account */
+function SignedOutPitch({ tab, onCreate, onSignIn }) {
+  const { t } = useI18n()
+  return (
+    <div style={{
+      background: 'var(--white)', borderRadius: 14, border: '1px solid var(--border-soft)',
+      padding: '44px 24px', textAlign: 'center',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+    }}>
+      <div style={{
+        fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 400,
+        color: 'var(--text-primary)', marginBottom: 8, lineHeight: 1.2,
+      }}>{t(`guest.${tab}.title`)}</div>
+      <div style={{
+        fontSize: '0.88rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
+        lineHeight: 1.5, maxWidth: 340, marginBottom: 22,
+      }}>{t(`guest.${tab}.body`)}</div>
+      <button onClick={onCreate} style={{
+        background: 'var(--green-primary)', color: '#F9F6F0', border: 'none', borderRadius: 999,
+        padding: '12px 26px', fontFamily: 'var(--font-body)', fontSize: '0.92rem', fontWeight: 600,
+        cursor: 'pointer',
+      }}>{t('guest.cta')}</button>
+      <button onClick={onSignIn} style={{
+        marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px',
+        color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: '0.85rem',
+        textDecoration: 'underline', textUnderlineOffset: 3,
+      }}>{t('guest.signIn')}</button>
+    </div>
+  )
+}
+
 /* Liked — no liked recipes yet */
 function EmptyLiked() {
   const { t } = useI18n()
@@ -1222,8 +1266,10 @@ function EmptyCollectionCard({ onCreate }) {
 }
 
 /* ─── BROWSE ───────────────────────────────────────────────────────────────── */
-export default function Browse({ onSelect, onAdd, session, activeTab, onTabChange, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange, refreshKey = 0 }) {
+export default function Browse({ onSelect, onAdd, session, activeTab, onTabChange, onProfile, onSelectCollection, isAdmin = false, adminNewCount = 0, onAdmin, mySort = 'newest', onMySortChange, refreshKey = 0, onRequireAccount, onSignIn }) {
   const { t, lang } = useI18n()
+  // Signed-out visitors browse Explore; anything that needs an account calls onRequireAccount
+  const uid = session?.user?.id || null
   // Explore's sort lives for the session only (resets to newest on reload); My Recipes' is saved on the profile.
   const [exploreSort, setExploreSortState] = useState(sortSession.explore)
   const [, setShuffleTick] = useState(0)   // bumped to re-render when Random is picked again
@@ -1231,7 +1277,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   const [addSheetOpen, setAddSheetOpen] = useState(false)
   // Start from the cached lists when they're still fresh (coming back from a recipe), so the
   // database isn't hit again for nothing. Any write or two minutes makes the cache stale.
-  const [cached] = useState(() => getListCache(session.user.id))
+  const [cached] = useState(() => (uid ? getListCache(uid) : null))
   const [myRecipes, setMyRecipes]         = useState(cached ? cached.my : [])
   const [publicRecipes, setPublicRecipes] = useState(cached ? cached.pub : [])
   const [collections, setCollections]     = useState(cached ? cached.collections : [])
@@ -1310,10 +1356,11 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   // written (migration not run, no profile row yet) fall back to this browser's copy so the dot
   // still works.
   useEffect(() => {
+    if (!uid) return
     let cancelled = false
-    const localKey = 'sazon_explore_seen_' + session.user.id
+    const localKey = 'sazon_explore_seen_' + uid
     const readLocal = () => { try { return Number(localStorage.getItem(localKey)) || 0 } catch { return 0 } }
-    supabase.from('profiles').select('explore_seen_at').eq('id', session.user.id).maybeSingle()
+    supabase.from('profiles').select('explore_seen_at').eq('id', uid).maybeSingle()
       .then(({ data, error }) => {
         if (cancelled) return
         if (!error && data && data.explore_seen_at) {
@@ -1324,15 +1371,16 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
         setExploreSeenAt(start)
         try { localStorage.setItem(localKey, String(start)) } catch { /* ignore */ }
         if (!error && data) {
-          supabase.from('profiles').update({ explore_seen_at: new Date(start).toISOString() }).eq('id', session.user.id)
+          supabase.from('profiles').update({ explore_seen_at: new Date(start).toISOString() }).eq('id', uid)
         }
       })
     return () => { cancelled = true }
-  }, [session.user.id])
+  }, [uid])
 
   // Background check for new public recipes: on open, every minute, and when the app comes back to
   // the foreground. A light one-row query, so the dot shows up even if the app stayed open all day.
   useEffect(() => {
+    if (!uid) return
     let cancelled = false
     let lastCheck = 0
     async function check() {
@@ -1340,7 +1388,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
       if (Date.now() - lastCheck < 60000) return              // at most once a minute
       lastCheck = Date.now()
       const base = () => supabase.from('recipes').select('made_public_at, created_at')
-        .eq('is_public', true).neq('user_id', session.user.id).limit(1)
+        .eq('is_public', true).neq('user_id', uid).limit(1)
       let res = await base().order('made_public_at', { ascending: false, nullsFirst: false })
       if (res.error) res = await base().order('created_at', { ascending: false })   // migration not run yet
       const r = res.data && res.data[0]
@@ -1357,39 +1405,40 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('focus', check)
     }
-  }, [session.user.id])
+  }, [uid])
 
   // Opening Explore clears the dot (and remembers it on the profile, so it holds on every device).
   useEffect(() => {
-    if (activeTab !== 'public' || loading || exploreSeenAt === undefined) return
+    if (!uid || activeTab !== 'public' || loading || exploreSeenAt === undefined) return
     const now = Date.now()
     // The list may be older than the dot (it was found by the background check): reload it.
     if (newestPublicAt > exploreSeenAt && !publicRecipes.some(r => new Date(r.made_public_at || r.created_at).getTime() >= newestPublicAt)) fetchAll()
     setExploreSeenAt(now)
-    try { localStorage.setItem('sazon_explore_seen_' + session.user.id, String(now)) } catch { /* ignore */ }
-    supabase.from('profiles').update({ explore_seen_at: new Date(now).toISOString() }).eq('id', session.user.id)
+    try { localStorage.setItem('sazon_explore_seen_' + uid, String(now)) } catch { /* ignore */ }
+    supabase.from('profiles').update({ explore_seen_at: new Date(now).toISOString() }).eq('id', uid)
   }, [activeTab, loading, exploreSeenAt === undefined])
 
   async function fetchAll() {
     setLoading(true)
     beginListFetch()
     let finalMy = null, finalPub = null, finalCols = null
+    // Signed out: only the public Explore list is loaded; the personal lists stay empty.
+    const none = Promise.resolve({ data: [], error: null })
+    const pubQuery = supabase.from('recipes').select('*').eq('is_public', true)
     const [myRes, pubRes, likesRes, colRes, opensRes] = await Promise.all([
-      supabase.from('recipes').select('*')
-        .eq('user_id', session.user.id)
+      uid ? supabase.from('recipes').select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false }) : none,
+      (uid ? pubQuery.neq('user_id', uid) : pubQuery)
         .order('created_at', { ascending: false }),
-      supabase.from('recipes').select('*')
-        .eq('is_public', true)
-        .neq('user_id', session.user.id)
-        .order('created_at', { ascending: false }),
-      supabase.from('likes').select('recipe_id')
-        .eq('user_id', session.user.id),
-      supabase.from('collections').select('id, name, description, cover_photo_url, created_at')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false }),
+      uid ? supabase.from('likes').select('recipe_id')
+        .eq('user_id', uid) : none,
+      uid ? supabase.from('collections').select('id, name, description, cover_photo_url, created_at')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false }) : none,
       // When I last opened each of my recipes (private table; errors = migration not run yet)
-      supabase.from('recipe_opens').select('recipe_id, opened_at')
-        .eq('user_id', session.user.id),
+      uid ? supabase.from('recipe_opens').select('recipe_id, opened_at')
+        .eq('user_id', uid) : none,
     ])
     if (!myRes.error) {
       const openedAt = new Map((opensRes.data || []).map(o => [o.recipe_id, o.opened_at]))
@@ -1460,7 +1509,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
     }
 
     // Remember the lists for a quick return from a recipe — only when everything loaded.
-    if (finalMy && finalPub && finalCols) setListCache(session.user.id, { my: finalMy, pub: finalPub, collections: finalCols })
+    if (uid && finalMy && finalPub && finalCols) setListCache(uid, { my: finalMy, pub: finalPub, collections: finalCols })
     setLoading(false)
   }
 
@@ -1473,14 +1522,15 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
 
   async function toggleLike(recipe, e) {
     e.stopPropagation()
+    if (!uid) { onRequireAccount?.('like', recipe); return }
     const newIsLiked = !recipe.is_liked
     // Optimistic update
     setPublicRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, is_liked: newIsLiked } : r))
     if (newIsLiked) {
-      await supabase.from('likes').insert({ user_id: session.user.id, recipe_id: recipe.id })
+      await supabase.from('likes').insert({ user_id: uid, recipe_id: recipe.id })
     } else {
       await supabase.from('likes').delete()
-        .eq('user_id', session.user.id).eq('recipe_id', recipe.id)
+        .eq('user_id', uid).eq('recipe_id', recipe.id)
     }
   }
 
@@ -1489,7 +1539,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   async function handleCreateCollection({ name, description }) {
     const { data, error } = await supabase
       .from('collections')
-      .insert({ user_id: session.user.id, name, description: description || null })
+      .insert({ user_id: uid, name, description: description || null })
       .select().single()
     if (!error && data) {
       setCollections(prev => [{ ...data, recipe_count: 0, photos: [] }, ...prev])
@@ -1634,6 +1684,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
         onAddCollection={() => setModalMode('create')}
         onProfile={onProfile}
         isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={onAdmin}
+        signedIn={!!uid} onSignIn={onSignIn}
       />
 
       {/* Collection modal — create or edit (name, description, cover).
@@ -1669,7 +1720,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
         <>
           <BottomNav
             tabs={TABS} active={activeTab} onChange={onTabChange}
-            dots={{ public: hasNewExplore }} onAdd={() => setAddSheetOpen(true)}
+            dots={{ public: hasNewExplore }} onAdd={() => (uid ? setAddSheetOpen(true) : onRequireAccount?.('create'))}
           />
           <BottomSheet open={addSheetOpen} onClose={() => setAddSheetOpen(false)} label={t('nav.add')}>
             <SheetRow onClick={() => { setAddSheetOpen(false); onAdd() }}>{t('nav.addRecipe')}</SheetRow>
@@ -1684,8 +1735,17 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
           activeTab === 'collections' ? <CollectionGridSkeleton /> : <RecipeGridSkeleton />
         ) : (
           <>
+            {/* ── Signed out: personal tabs invite to create an account ── */}
+            {!uid && activeTab !== 'public' && (
+              <SignedOutPitch
+                tab={activeTab}
+                onCreate={() => onRequireAccount?.('tab:' + activeTab)}
+                onSignIn={onSignIn}
+              />
+            )}
+
             {/* ── MY RECIPES TAB ── */}
-            {activeTab === 'mine' && (
+            {uid && activeTab === 'mine' && (
               myFiltered.length === 0 ? (
                 myRecipes.length === 0
                   ? <EmptyMyRecipes onAdd={onAdd} />
@@ -1707,14 +1767,14 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
 
             {/* ── FAVOURITES TAB ── */}
             {/* Shows own favourited recipes + public recipes the user has liked */}
-            {activeTab === 'favourites' && (
+            {uid && activeTab === 'favourites' && (
               allLiked.length === 0 ? (
                 <EmptyLiked />
               ) : (
                 <div className="masonry-grid">
                   {allLiked.map(recipe => (
                     <div key={recipe.id} className="masonry-item">
-                      {recipe.user_id === session.user.id ? (
+                      {recipe.user_id === uid ? (
                         <MyRecipeCard
                           recipe={recipe}
                           onClick={() => onSelect(recipe)}
@@ -1734,7 +1794,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
             )}
 
             {/* ── MY COLLECTIONS TAB ── */}
-            {activeTab === 'collections' && (
+            {uid && activeTab === 'collections' && (
               <>
                 {/* Masonry grid — matches recipe card layout and breakpoints exactly */}
                 {collections.length > 0 && colFiltered.length === 0 ? (

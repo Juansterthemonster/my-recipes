@@ -287,9 +287,9 @@ function AuthShell({ children }) {
 
 /* ─── AUTH SCREEN ────────────────────────────────────────────────────────────── */
 // modes: 'signin' | 'signup' | 'verify' | 'forgot' | 'forgot-sent'
-export default function AuthScreen() {
+export default function AuthScreen({ initialMode = 'signin', onExplore = null }) {
   const { t } = useI18n()
-  const [mode, setMode]                   = useState('signin')
+  const [mode, setMode]                   = useState(initialMode)
   const [email, setEmail]                 = useState('')
   const [password, setPassword]           = useState('')
   const [confirm, setConfirm]             = useState('')
@@ -654,6 +654,13 @@ export default function AuthScreen() {
           }}>
             {isSignUp ? t('auth.signIn') : t('auth.signUp')}
           </button>
+          {onExplore && (
+            <button onClick={onExplore} style={{
+              marginTop: 10, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
+              color: 'var(--green-primary)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600,
+              textDecoration: 'underline', textUnderlineOffset: 3,
+            }}>{t('auth.explore')} →</button>
+          )}
         </div>
       </div>
     </AuthShell>

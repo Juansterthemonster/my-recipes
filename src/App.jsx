@@ -37,6 +37,12 @@ export default function App() {
     const h = window.location.hash.replace('#', '')
     return ['mine', 'favourites', 'collections', 'public'].includes(h) ? h : 'mine'
   })
+  // Was a tab named in the URL on load? If not, a signed-out visitor starts on Explore.
+  const [hadHashTab] = useState(() => ['mine', 'favourites', 'collections', 'public'].includes(window.location.hash.replace('#', '')))
+  // Signed-out visitors browse the app; the sign-in screen only shows when asked for
+  // (Sign in button, an action that needs an account) or right after signing out.
+  // null = browsing · 'signin' | 'signup' = sign-in screen in that mode
+  const [authView, setAuthView] = useState(null)
   const [username, setUsername]   = useState(null)
 
   // ── Share link state ──────────────────────────────────────────────────────
@@ -69,7 +75,14 @@ export default function App() {
       if (event === 'PASSWORD_RECOVERY') {
         setSession(session)
         setView('reset')
+      } else if (event === 'SIGNED_OUT') {
+        // Signing out (or deleting the account) lands on the sign-in screen
+        setSession(null)
+        setSelectedRecipe(null)
+        setView('browse')
+        setAuthView('signin')
       } else {
+        if (session) setAuthView(null)
         setSession(session)
       }
     })
@@ -90,10 +103,18 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (session !== null || hadHashTab || shareRecipeId || authView) return
+    setActiveTab('public')
+    if (view === 'browse') window.history.replaceState({ view: 'browse', tab: 'public', recipe: null }, '', '#public')
+  }, [session === null])
+
   // Handle browser back/forward
   useEffect(() => {
     function handlePop(e) {
       const s = e.state
+      setAuthView(s?.view === 'auth' ? (s.mode || 'signin') : null)
+      if (s?.view === 'auth') return
       if (!s) { setSelectedRecipe(null); setView('browse'); setActiveTab('mine'); return }
       if (s.view === 'detail' && s.recipe)         { setSelectedRecipe(s.recipe); setDetailFromCollection(!!s.fromCollection); setView('detail') }
       else if (s.view === 'edit' && s.recipe)     { setSelectedRecipe(s.recipe); setView('edit') }
@@ -200,20 +221,39 @@ export default function App() {
   // Once both the session and the shared recipe are available, navigate the
   // logged-in user into the normal full-featured Detail view.
   useEffect(() => {
-    if (!shareRecipeId || shareLoading || session === undefined || !session) return
+    if (!shareRecipeId || shareLoading || session === undefined) return
     if (!shareRecipe) return
     setSelectedRecipe(shareRecipe)
+    setActiveTab('public')
     setView('detail')
     setShareRecipeId(null)
-    window.history.replaceState(
-      { view: 'detail', tab: 'mine', recipe: shareRecipe },
-      '',
-      '#detail',
-    )
+    // Explore sits under the recipe, so Back lands there (signed in or not)
+    window.history.replaceState({ view: 'browse', tab: 'public', recipe: null }, '', '/#public')
+    window.history.pushState({ view: 'detail', tab: 'public', recipe: shareRecipe }, '', '#detail')
   }, [session, shareRecipe, shareLoading, shareRecipeId])
 
   async function signOut() {
-    await supabase.auth.signOut()
+    await supabase.auth.signOut()   // the SIGNED_OUT event shows the sign-in screen
+  }
+
+  // Signed-out visitors: open the sign-in screen (its own history entry, so Back returns)
+  function openAuth(mode = 'signin') {
+    window.history.pushState({ view: 'auth', mode, tab: activeTab, recipe: null }, '', '#signin')
+    setAuthView(mode)
+  }
+  // Something that needs an account was tapped (save, like, create, collections…).
+  // Step 2 replaces this with a bottom sheet that resumes the action after sign-up.
+  function requireAccount() {
+    openAuth('signup')
+  }
+  // "Explore recipes first" on the sign-in screen
+  function exploreFromAuth() {
+    if (window.history.state?.view === 'auth') { window.history.back(); return }
+    setAuthView(null)
+    setSelectedRecipe(null)
+    setView('browse')
+    setActiveTab('public')
+    window.history.replaceState({ view: 'browse', tab: 'public', recipe: null }, '', '#public')
   }
 
   // type: 'success' (default, green) or 'error' (red error colours)
@@ -333,7 +373,8 @@ export default function App() {
     setShareRecipeId(null)
     setShareRecipe(null)
     setShareError(false)
-    window.history.replaceState({}, '', '/')
+    setActiveTab('public')
+    window.history.replaceState({ view: 'browse', tab: 'public', recipe: null }, '', '/#public')
   }
 
   // Still resolving session — render nothing to avoid flash
@@ -382,27 +423,15 @@ export default function App() {
       )
     }
 
-    // Render recipe in read-only mode
-    return (
-      <div className="min-h-screen bg-[#F9F6F0]">
-        <div className="mx-auto max-w-2xl lg:max-w-[1400px]">
-          <Detail
-            recipe={shareRecipe}
-            session={null}
-            readOnly={true}
-            onBack={exitShareView}
-            onSignIn={exitShareView}
-            onEdit={() => {}}
-            onDelete={() => {}}
-          />
-        </div>
-      </div>
-    )
+    // Loaded: the effect above opens it in the normal recipe view
+    return <DetailSkeleton />
   }
 
-  // No session — show auth screen
-  if (!session) return <AuthScreen />
-  if (needsUsername) {
+  // Signed out and the sign-in screen was asked for
+  if (!session && authView) {
+    return <AuthScreen key={authView} initialMode={authView} onExplore={exploreFromAuth} />
+  }
+  if (session && needsUsername) {
     return (
       <ChooseUsername
         session={session}
@@ -416,7 +445,7 @@ export default function App() {
     <div className="min-h-screen bg-[#F9F6F0]">
       <Toast visible={toast.visible} message={toast.message} onHide={hideToast} />
       <div className="mx-auto max-w-2xl lg:max-w-[1400px]">
-        {view === 'profile' && (
+        {view === 'profile' && session && (
           <Profile
             session={session}
             username={username}
@@ -429,7 +458,7 @@ export default function App() {
             adminNewCount={adminNewCount}
           />
         )}
-        {view === 'admin' && isAdmin && <AdminDashboard onBack={() => { setAdminNewCount(0); goBack() }} onOpenRecipe={openRecipeById} />}
+        {view === 'admin' && isAdmin && session && <AdminDashboard onBack={() => { setAdminNewCount(0); goBack() }} onOpenRecipe={openRecipeById} />}
         {view === 'browse' && (
           <Browse
             onSelect={openDetail} onAdd={openAdd}
@@ -441,9 +470,11 @@ export default function App() {
             isAdmin={isAdmin} adminNewCount={adminNewCount} onAdmin={openAdmin}
             mySort={mySort} onMySortChange={changeMySort}
             refreshKey={listRefreshKey}
+            onRequireAccount={requireAccount}
+            onSignIn={() => openAuth('signin')}
           />
         )}
-        {view === 'collection' && selectedCollection && (
+        {view === 'collection' && selectedCollection && session && (
           <CollectionDetail
             collection={selectedCollection}
             session={session}
@@ -463,9 +494,10 @@ export default function App() {
             onToast={showToast}
             fromCollection={detailFromCollection}
             username={username}
+            onRequireAccount={session ? null : requireAccount}
           />
         )}
-        {(view === 'add' || view === 'edit') && (
+        {(view === 'add' || view === 'edit') && session && (
           <RecipeForm
             recipe={selectedRecipe}
             onBack={goBack}

@@ -543,6 +543,7 @@ export default function Detail({
   session,
   readOnly = false,
   onSignIn,
+  onRequireAccount = null,   // signed-out visitor tapped something that needs an account
   onToast,
   fromCollection = false,
   username = null,
@@ -746,6 +747,7 @@ export default function Detail({
   }
 
   async function handleToggleLike() {
+    if (!session?.user) { onRequireAccount?.('like', recipe); return }
     const newIsLiked = !isLiked
     setIsLiked(newIsLiked)
     if (newIsLiked) {
@@ -757,6 +759,7 @@ export default function Detail({
   }
 
   async function handleAddToMyRecipes() {
+    if (!session?.user) { onRequireAccount?.('save', recipe); return }
     if (isAdded || adding) return
     setAdding(true)
     const { id, created_at, updated_at, last_opened_at: _opened, short_code: _code, starter_by: _starter, author_username, is_liked: _liked, ...rest } = recipe
@@ -1043,7 +1046,7 @@ export default function Detail({
             )}
 
             {/* ── NON-OWNER (logged in) actions ── */}
-            {!isOwner && session?.user && (
+            {!isOwner && (session?.user || onRequireAccount) && (
               <>
                 {isAdded ? (
                   <span style={{
@@ -1071,7 +1074,7 @@ export default function Detail({
                 {/* Kebab menu — Add to collection */}
                 <div ref={menuRef} style={{ position: 'relative' }}>
                   <button
-                    onClick={() => setMenuOpen(o => !o)}
+                    onClick={() => session?.user ? setMenuOpen(o => !o) : onRequireAccount?.('collection', recipe)}
                     aria-label={t('detail.moreOptions')}
                     style={{
                       width: 34, height: 34,
@@ -1303,7 +1306,7 @@ export default function Detail({
                 >
                   <HeartIcon filled={recipe.is_favourite} />
                 </button>
-              ) : session?.user ? (
+              ) : (session?.user || onRequireAccount) ? (
                 <button
                   onClick={handleToggleLike}
                   aria-label={isLiked ? t('card.unlike') : t('card.like')}
@@ -1422,7 +1425,7 @@ export default function Detail({
                   >
                     <HeartIcon filled={recipe.is_favourite} />
                   </button>
-                ) : session?.user ? (
+                ) : (session?.user || onRequireAccount) ? (
                   <button
                     onClick={handleToggleLike}
                     aria-label={isLiked ? t('card.unlike') : t('card.like')}

@@ -11,7 +11,7 @@ export default {
     'card.removeFav': 'Remove from favourites', 'card.addFav': 'Add to favourites',
     'card.unlike': 'Unlike recipe', 'card.like': 'Like recipe',
     'card.public': 'Public', 'card.by': 'by @{author}',
-    'nav.signIn': 'Log in',
+    'nav.signIn': 'Sign in',
     'guest.mine.title': 'Your own recipe book', 'guest.mine.body': 'Add your own recipes, save ones you love from Explore and keep them all in one place.',
     'guest.favourites.title': 'Keep your favourites close', 'guest.favourites.body': 'Like recipes as you explore and find them here whenever you want to cook.',
     'guest.collections.title': 'Organize recipes your way', 'guest.collections.body': 'Group recipes into collections for weeknights, holidays or anything you like.',

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../i18n'
 import CardImg from './CardImg'
+import DefaultCoverTile from './DefaultCoverTile'
 import { loadCollectionPhotos } from '../utils/collectionPhotos'
 
 /* ─── COLLECTION EDIT MODAL ─────────────────────────────────────────────────
@@ -118,20 +119,7 @@ export default function CollectionEditModal({ title, collectionId = null, initia
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>{t('col.cover')}</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              {/* Default collage */}
-              <button
-                type="button"
-                onClick={() => setCover(null)}
-                aria-label={t('col.useDefault')}
-                aria-pressed={cover === null}
-                style={{
-                  aspectRatio: '1/1', borderRadius: 8, cursor: 'pointer',
-                  border: cover === null ? '2.5px solid #0C3D4E' : '1.5px solid var(--border-soft)',
-                  background: 'var(--white)', color: 'var(--text-secondary)',
-                  fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
-                  lineHeight: 1.15, padding: 4,
-                }}
-              >{t('col.default')}</button>
+              <DefaultCoverTile selected={cover === null} onClick={() => setCover(null)} />
               {coverOptions.map(url => (
                 <button
                   type="button"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useI18n } from '../i18n'
 import CardImg from './CardImg'
+import DefaultCoverTile from './DefaultCoverTile'
 import { loadCollectionPhotos } from '../utils/collectionPhotos'
 
 /* ─── COLLECTION COVER PICKER ───────────────────────────────────────────────
@@ -55,14 +56,7 @@ export default function CollectionCoverPicker({ collectionId, current = null, on
           <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{t('browse.loading')}</div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
-            <button
-              type="button" onClick={() => setCover(null)}
-              aria-label={t('col.useDefault')} aria-pressed={cover === null}
-              style={{
-                ...tile(cover === null), background: 'var(--white)', color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 600, lineHeight: 1.15, padding: 4,
-              }}
-            >{t('col.default')}</button>
+            <DefaultCoverTile selected={cover === null} onClick={() => setCover(null)} />
             {options.map(url => (
               <button
                 type="button" key={url} onClick={() => setCover(url)}

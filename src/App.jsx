@@ -246,7 +246,7 @@ export default function App() {
   function requireAccount() {
     openAuth('signup')
   }
-  // "Explore recipes first" on the sign-in screen
+  // "Explore without an account" on the sign-in screen
   function exploreFromAuth() {
     if (window.history.state?.view === 'auth') { window.history.back(); return }
     setAuthView(null)

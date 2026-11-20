@@ -631,12 +631,12 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
           </button>
           {onExplore && (
             <>
-              <div style={{ height: 1, background: 'var(--border-soft)', margin: '12px 0 8px' }} />
+              <div style={{ height: 1, background: 'var(--border-soft)', margin: '12px 0 4px' }} />
               <button onClick={onExplore} style={{
-                display: 'block', margin: '0 auto', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
+                display: 'block', margin: '0 auto', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 8px 8px',
                 color: 'var(--green-primary)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600,
                 textDecoration: 'underline', textUnderlineOffset: 3,
-              }}>{t('auth.explore')} →</button>
+              }}>{t('auth.explore')}</button>
             </>
           )}
         </div>

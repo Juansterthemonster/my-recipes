@@ -1,5 +1,5 @@
 /* ─── i18n ───────────────────────────────────────────────────────────────────
-   Tiny zero-dependency translation layer (English / French / Spanish).
+   Tiny zero-dependency translation layer (core: no React in this file) (English / French / Spanish).
 
    • Strings live in src/i18n/locales/<area>.js as { en: {...}, fr: {...}, es: {...} }
      (one file per screen/area so the three languages sit side by side). All files
@@ -15,7 +15,8 @@
 
    Canonical values that are saved to the database (diet tags, meal types) stay in
    English; only their on-screen labels are translated (see tagLabel()).        */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+/* This file holds the plain (non-React) parts so the React files stay component-only,
+   which keeps Vite's Fast Refresh working. Import from 'src/i18n' as before. */
 
 export const LANGUAGES = [
   { code: 'en', label: 'English',  locale: 'en-US' },
@@ -41,7 +42,7 @@ export function detectBrowserLanguage() {
   return 'en'
 }
 
-function lookup(lang, key, params) {
+export function lookup(lang, key, params) {
   let str = messages[lang]?.[key] ?? messages.en[key]
   if (params && params.count !== undefined) {
     const form = new Intl.PluralRules(LANGUAGES.find(l => l.code === lang)?.locale || 'en').select(params.count)
@@ -60,41 +61,8 @@ function lookup(lang, key, params) {
 let currentLang = detectBrowserLanguage()
 export function translate(key, params) { return lookup(currentLang, key, params) }
 export function getLanguage() { return currentLang }
+export function setCurrentLanguage(code) { currentLang = code }
 
-const I18nContext = createContext(null)
-
-export function I18nProvider({ children }) {
-  const [lang, setLangState] = useState(currentLang)
-
-  const setLang = useCallback(next => {
-    if (!SUPPORTED.includes(next)) return
-    currentLang = next
-    setLangState(next)
-  }, [])
-
-  useEffect(() => { document.documentElement.lang = lang }, [lang])
-
-  const value = useMemo(() => {
-    const locale = LANGUAGES.find(l => l.code === lang)?.locale || 'en-US'
-    return {
-      lang,
-      setLang,
-      t: (key, params) => lookup(lang, key, params),
-      // Short date, e.g. "Oct 13, 2026" / "13 oct. 2026" / "13 oct 2026"
-      formatDate: iso => iso
-        ? new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
-        : null,
-    }
-  }, [lang, setLang])
-
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
-}
-
-export function useI18n() {
-  const ctx = useContext(I18nContext)
-  if (!ctx) throw new Error('useI18n must be used inside <I18nProvider>')
-  return ctx
-}
 
 /* Display label for a canonical English tag value (diet / meal type).
    Unknown tags (e.g. custom values) are shown as stored. */

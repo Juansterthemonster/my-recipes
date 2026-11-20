@@ -112,7 +112,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
 
   return (
     <div style={{ paddingBottom: 40 }}>
-      <div className="px-4 lg:px-10" style={{ padding: '16px 0 0' }}>
+      <div className="mx-4 lg:mx-10" style={{ paddingTop: 16 }}>
         <button onClick={onBack} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontWeight: 600,

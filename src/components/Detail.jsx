@@ -600,6 +600,32 @@ export default function Detail({
     return () => mq.removeEventListener('change', onChange)
   }, [])
   const photoScrollRef = useRef(null)
+  // Phones/tablets: tap the photo to show all of it (it is cropped to a 260px band by default).
+  // The page just grows — the recipe moves down — no lightbox. Tap again to crop it back.
+  const [photoOpen, setPhotoOpen] = useState(false)
+  const [photoOpenH, setPhotoOpenH] = useState(260)
+  const singlePhotoRef = useRef(null)
+  function measurePhoto() {
+    const box = photos.length > 1 ? photoScrollRef.current : singlePhotoRef.current
+    if (!box || !box.clientWidth) return
+    const img = (photos.length > 1 ? box.children[activePhoto] : box)?.querySelector('img')
+    if (!img || !img.naturalWidth) return
+    setPhotoOpenH(Math.round(box.clientWidth * img.naturalHeight / img.naturalWidth))
+  }
+  useEffect(() => {
+    if (!photoOpen) return
+    measurePhoto()
+    window.addEventListener('resize', measurePhoto)
+    return () => window.removeEventListener('resize', measurePhoto)
+  }, [photoOpen, activePhoto])
+  const photoBoxStyle = {
+    height: photoOpen ? photoOpenH : 260, transition: 'height 260ms ease', cursor: 'pointer',
+  }
+  const photoToggleProps = {
+    role: 'button', tabIndex: 0, 'aria-expanded': photoOpen,
+    onClick: () => setPhotoOpen(o => !o),
+    onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPhotoOpen(o => !o) } },
+  }
   function handlePhotoScroll(e) {
     const el = e.currentTarget
     if (!el.clientWidth) return
@@ -1147,15 +1173,17 @@ export default function Detail({
                     onScroll={handlePhotoScroll}
                     className="pill-row"
                     style={{
-                      display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory',
-                      WebkitOverflowScrolling: 'touch',
+                      display: 'flex', overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x mandatory',
+                      WebkitOverflowScrolling: 'touch', ...photoBoxStyle,
                     }}
+                    {...photoToggleProps}
                   >
                     {photos.map((url, i) => (
                       <div key={url + i} style={{ flex: '0 0 100%', scrollSnapAlign: 'start' }}>
                         <img
                           src={url} alt={t('detail.photoAlt', { name: recipe.name, n: i + 1 })}
-                          style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
+                          onLoad={i === activePhoto ? measurePhoto : undefined}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         />
                       </div>
                     ))}
@@ -1201,10 +1229,13 @@ export default function Detail({
                 </div>
               </>
             ) : (
-              <img
-                src={photos[0]} alt={recipe.name}
-                style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
-              />
+              <div ref={singlePhotoRef} style={photoBoxStyle} {...photoToggleProps}>
+                <img
+                  src={photos[0]} alt={recipe.name}
+                  onLoad={measurePhoto}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
             )}
 
             {/* Dots + arrows only make sense against the mobile carousel above

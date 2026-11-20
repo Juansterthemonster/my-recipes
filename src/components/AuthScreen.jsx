@@ -631,9 +631,7 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
           </button>
           {onExplore && (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />{t('auth.or')}<span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
-              </div>
+              <div style={{ height: 1, background: 'var(--border-soft)', margin: '12px 0 8px' }} />
               <button onClick={onExplore} style={{
                 display: 'block', margin: '0 auto', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
                 color: 'var(--green-primary)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600,

@@ -69,7 +69,12 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
 
   // Triangle shape, and the card outline with a notch where the triangle's base sits.
   const tri = below ? 'polygon(50% 0, 0 100%, 100% 100%)' : 'polygon(0 0, 100% 0, 50% 100%)'
-  const x1 = arrowX - ARROW_W / 2 + 1.5, x2 = arrowX + ARROW_W / 2 - 1.5
+  const x1 = arrowX - ARROW_W / 2, x2 = arrowX + ARROW_W / 2
+  const k = 1.41   // edge thickness measured along the base
+  const W = ARROW_W, H = ARROW_H
+  const chevron = below
+    ? `polygon(${W/2}px 0, ${W}px ${H}px, ${W-k}px ${H}px, ${W/2}px ${k}px, ${k}px ${H}px, 0 ${H}px)`
+    : `polygon(${W/2}px ${H}px, ${W}px 0, ${W-k}px 0, ${W/2}px ${H-k}px, ${k}px 0, 0 0)`
   const ringClip = below
     ? `polygon(0 0, ${x1}px 0, ${x1}px 4px, ${x2}px 4px, ${x2}px 0, 100% 0, 100% 100%, 0 100%)`
     : `polygon(0 0, 100% 0, 100% 100%, ${x2}px 100%, ${x2}px calc(100% - 4px), ${x1}px calc(100% - 4px), ${x1}px 100%, 0 100%)`
@@ -92,33 +97,34 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
 
       <div style={{
         position: 'fixed', left: cardLeft, width: cardW, pointerEvents: 'auto', ...cardPos,
-        ...GLASS_FILL, borderRadius: 24, padding: '20px 20px 16px',
-        boxShadow: '0 18px 50px rgba(6,30,39,0.28), 0 2px 8px rgba(6,30,39,0.10)',
-        display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '20px 20px 16px',
       }}>
-        {/* Card outline: a separate ring with a gap where the triangle joins, so the edge
-            flows around the triangle instead of running across its base. */}
+        {/* The card, its outline and the triangle are separate layers, all frosted directly over the
+            page (a glass layer nested inside another one would blur differently and look off-colour).
+            The outline has a gap where the triangle joins so the edge flows around it. */}
+        <div aria-hidden="true" style={{
+          position: 'absolute', inset: 0, borderRadius: 24, ...GLASS_FILL,
+          boxShadow: '0 18px 50px rgba(6,30,39,0.28), 0 2px 8px rgba(6,30,39,0.10)',
+        }} />
         <div aria-hidden="true" style={{
           position: 'absolute', inset: 0, borderRadius: 24, pointerEvents: 'none',
           border: `1px solid ${CARD_EDGE}`, boxSizing: 'border-box', clipPath: ringClip,
         }} />
-        {/* Triangle pointing at the lit element: edge-coloured triangle with a slightly smaller
-            glass one on top, so it has the same outline as the card. */}
         <div aria-hidden="true" style={{
-          position: 'absolute', left: arrowX - ARROW_W / 2, width: ARROW_W, height: ARROW_H + 1,
+          position: 'absolute', left: arrowX - ARROW_W / 2, width: ARROW_W, height: ARROW_H + 0.5,
           ...(below ? { top: -ARROW_H } : { bottom: -ARROW_H }),
-          clipPath: tri, background: ARROW_EDGE,
-        }}>
-          <div style={{
-            position: 'absolute', left: 1.5, right: 1.5,
-            ...(below ? { top: 1.5, bottom: 0 } : { top: 0, bottom: 1.5 }),
-            clipPath: tri, ...GLASS_FILL,
-          }} />
-        </div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{title}</div>
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 6 }}>{body}</div>
+          clipPath: tri, ...GLASS_FILL,
+        }} />
+        <div aria-hidden="true" style={{
+          position: 'absolute', left: arrowX - ARROW_W / 2, width: ARROW_W, height: ARROW_H,
+          ...(below ? { top: -ARROW_H } : { bottom: -ARROW_H }),
+          clipPath: chevron, background: CARD_EDGE,
+        }} />
+
+        <div style={{ position: 'relative', fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{title}</div>
+        <div style={{ position: 'relative', fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 6 }}>{body}</div>
         <button onClick={onClose} style={{
-          alignSelf: 'flex-end', marginTop: 14,
+          position: 'relative', alignSelf: 'flex-end', marginTop: 14,
           background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',
           borderRadius: 999, padding: '8px 20px', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600,

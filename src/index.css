@@ -122,8 +122,8 @@
   --nav-edge:       rgba(255,255,255,0.75);
   --nav-shadow:     0 10px 30px rgba(6,30,39,0.16), 0 1px 3px rgba(6,30,39,0.08);
   --nav-active:     rgba(12,61,78,0.18);
-  --nav-fg:         #3D7080;
-  --nav-fg-on:      #0C3D4E;
+  --nav-fg:         #26292B;
+  --nav-fg-on:      #0A0A0A;
   --nav-dot-ring:   #FFFFFF;
   --sys-band:       rgba(12,61,78,0.87);   /* band behind the system navigation bar: teal, see-through (dark theme: dark grey) */
 

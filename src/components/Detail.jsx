@@ -9,6 +9,7 @@ import { uploadToR2 } from '../utils/uploadToR2'
 import { slugify } from '../utils/slugify'
 import { getNativeShare } from '../utils/inApp'
 import Spotlight from './Spotlight'
+import GlassDialog from './GlassDialog'
 import { tourSeen, markTourSeen } from '../utils/tours'
 
 // Must match the MAX_PHOTOS check in RecipeForm.jsx — same cap, enforced on
@@ -259,14 +260,6 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
     fetchData()
   }, [])
 
-  // Freeze the page behind the sheet so scrolling stays inside it
-  useEffect(() => {
-    const html = document.documentElement, body = document.body
-    const prev = [html.style.overflow, body.style.overflow]
-    html.style.overflow = 'hidden'; body.style.overflow = 'hidden'
-    return () => { html.style.overflow = prev[0]; body.style.overflow = prev[1] }
-  }, [])
-
   // Focus the new-collection input when it appears
   useEffect(() => {
     if (showInput && newColRef.current) newColRef.current.focus()
@@ -343,37 +336,15 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
   )
 
   return (
-    <>
-      {/* ── Backdrop ── */}
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, touchAction: 'none' }}
-      />
-
-      {/* ── Sheet ──
-          Phones: full width, flush to the bottom. Desktop: centred, capped at 520px.
-          Styled like the iOS "Add to collection" sheet: grouped rounded lists on a soft page
-          background, name + recipe count per row. Android layout kept: tick on the right, Save at the bottom. */}
-      <div style={{
-        position: 'fixed',
-        bottom: 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))',   // above the system navigation bar
-        left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: 520, zIndex: 201,
-        background: 'var(--cream)',
-        borderRadius: '24px 24px 0 0',
-        boxShadow: '0 -4px 32px rgba(0,0,0,0.14)',
-        maxHeight: '82vh', overscrollBehavior: 'contain',
-        display: 'flex', flexDirection: 'column',
-      }}>
-        {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, flexShrink: 0 }}>
-          <div style={{ width: 36, height: 5, borderRadius: 3, background: 'var(--border)' }} />
-        </div>
-
+    <GlassDialog solid open onClose={onClose} label={t('detail.addToCollection')} maxWidth={520}>
+      {/* Styled like the iOS "Add to collection" sheet: grouped rounded lists, name + recipe count per row.
+          Android layout kept: tick on the right, Save at the bottom. The sheet itself (GlassDialog → BottomSheet on
+          phones) provides the drag handle, drag-to-close and scrolling. */}
+      <div>
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-          padding: '14px 18px 12px 22px', flexShrink: 0,
+          padding: '6px 6px 14px', flexShrink: 0,
         }}>
           <span style={{
             fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 400, lineHeight: 1.2,
@@ -391,7 +362,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
         </div>
 
         {/* Scrollable content */}
-        <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', flex: 1, minHeight: 0, padding: '4px 16px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ padding: '0 0 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* New collection */}
           <div style={groupCard}>
@@ -505,7 +476,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
         </div>
 
         {/* Footer — Save */}
-        <div style={{ padding: '10px 16px 18px', flexShrink: 0 }}>
+        <div style={{ position: 'sticky', bottom: 0, padding: '10px 0 16px', background: 'var(--cream)' }}>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -520,7 +491,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
           >{saving ? t('col.saving') : t('col.save')}</button>
         </div>
       </div>
-    </>
+    </GlassDialog>
   )
 }
 

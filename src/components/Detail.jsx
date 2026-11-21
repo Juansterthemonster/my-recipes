@@ -259,6 +259,14 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
     fetchData()
   }, [])
 
+  // Freeze the page behind the sheet so scrolling stays inside it
+  useEffect(() => {
+    const html = document.documentElement, body = document.body
+    const prev = [html.style.overflow, body.style.overflow]
+    html.style.overflow = 'hidden'; body.style.overflow = 'hidden'
+    return () => { html.style.overflow = prev[0]; body.style.overflow = prev[1] }
+  }, [])
+
   // Focus the new-collection input when it appears
   useEffect(() => {
     if (showInput && newColRef.current) newColRef.current.focus()
@@ -339,7 +347,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
       {/* ── Backdrop ── */}
       <div
         onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, touchAction: 'none' }}
       />
 
       {/* ── Sheet ──
@@ -354,7 +362,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
         background: 'var(--cream)',
         borderRadius: '24px 24px 0 0',
         boxShadow: '0 -4px 32px rgba(0,0,0,0.14)',
-        maxHeight: '82vh',
+        maxHeight: '82vh', overscrollBehavior: 'contain',
         display: 'flex', flexDirection: 'column',
       }}>
         {/* Drag handle */}
@@ -383,7 +391,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
         </div>
 
         {/* Scrollable content */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '4px 16px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', flex: 1, minHeight: 0, padding: '4px 16px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* New collection */}
           <div style={groupCard}>

@@ -118,7 +118,7 @@
   --field-label:    #6E6E73;
 
   /* floating tab bar (iOS-style glass pill) */
-  --nav-glass:      rgba(255,255,255,0.58);
+  --nav-glass:      rgba(255,255,255,0.45);
   --nav-edge:       rgba(255,255,255,0.75);
   --nav-shadow:     0 10px 30px rgba(6,30,39,0.16), 0 1px 3px rgba(6,30,39,0.08);
   --nav-active:     rgba(12,61,78,0.10);
@@ -193,7 +193,7 @@
     --field-bg: #252D30;  --field-border: #3C484B;  --field-text: #E8EEF0;
     --field-placeholder: #7B9096;  --field-label: #A9BEC4;
 
-    --nav-glass: rgba(44,52,55,0.55);  --nav-edge: rgba(255,255,255,0.14);
+    --nav-glass: rgba(44,52,55,0.40);  --nav-edge: rgba(255,255,255,0.14);
     --nav-shadow: 0 10px 30px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3);
     --sys-band: rgba(21,26,28,0.9);
     --nav-active: rgba(255,255,255,0.13);  --nav-fg: #A9BEC4;  --nav-fg-on: #FFFFFF;  --nav-dot-ring: #2A3234;
@@ -245,7 +245,7 @@
     --field-bg: #252D30;  --field-border: #3C484B;  --field-text: #E8EEF0;
     --field-placeholder: #7B9096;  --field-label: #A9BEC4;
 
-    --nav-glass: rgba(44,52,55,0.55);  --nav-edge: rgba(255,255,255,0.14);
+    --nav-glass: rgba(44,52,55,0.40);  --nav-edge: rgba(255,255,255,0.14);
     --nav-shadow: 0 10px 30px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3);
     --sys-band: rgba(21,26,28,0.9);
     --nav-active: rgba(255,255,255,0.13);  --nav-fg: #A9BEC4;  --nav-fg-on: #FFFFFF;  --nav-dot-ring: #2A3234;

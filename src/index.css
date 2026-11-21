@@ -120,6 +120,8 @@
   /* floating tab bar (iOS-style glass pill) */
   --nav-glass:      rgba(255,255,255,0.45);
   --nav-edge:       rgba(255,255,255,0.75);
+  --nav-rim-a: rgba(255,255,255,0.95);  --nav-rim-b: rgba(255,255,255,0.10);  --nav-rim-c: rgba(255,255,255,0.70);
+  --nav-inset: inset 0 1px 2px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(255,255,255,0.25);
   --nav-shadow:     0 10px 30px rgba(6,30,39,0.16), 0 1px 3px rgba(6,30,39,0.08);
   --nav-active:     rgba(12,61,78,0.18);
   --nav-fg:         #26292B;
@@ -194,6 +196,8 @@
     --field-placeholder: #7B9096;  --field-label: #A9BEC4;
 
     --nav-glass: rgba(44,52,55,0.40);  --nav-edge: rgba(255,255,255,0.14);
+    --nav-rim-a: rgba(255,255,255,0.42);  --nav-rim-b: rgba(255,255,255,0.05);  --nav-rim-c: rgba(255,255,255,0.28);
+    --nav-inset: inset 0 1px 2px rgba(255,255,255,0.18), inset 0 -1px 2px rgba(255,255,255,0.08);
     --nav-shadow: 0 10px 30px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3);
     --sys-band: rgba(21,26,28,0.9);
     --nav-active: rgba(0,0,0,0.30);  --nav-fg: #F2F6F7;  --nav-fg-on: #FFFFFF;  --nav-dot-ring: #2A3234;
@@ -246,6 +250,8 @@
     --field-placeholder: #7B9096;  --field-label: #A9BEC4;
 
     --nav-glass: rgba(44,52,55,0.40);  --nav-edge: rgba(255,255,255,0.14);
+    --nav-rim-a: rgba(255,255,255,0.42);  --nav-rim-b: rgba(255,255,255,0.05);  --nav-rim-c: rgba(255,255,255,0.28);
+    --nav-inset: inset 0 1px 2px rgba(255,255,255,0.18), inset 0 -1px 2px rgba(255,255,255,0.08);
     --nav-shadow: 0 10px 30px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3);
     --sys-band: rgba(21,26,28,0.9);
     --nav-active: rgba(0,0,0,0.30);  --nav-fg: #F2F6F7;  --nav-fg-on: #FFFFFF;  --nav-dot-ring: #2A3234;

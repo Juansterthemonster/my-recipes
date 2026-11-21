@@ -217,10 +217,16 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
           height: NAV_HEIGHT, borderRadius: NAV_HEIGHT / 2, padding: 4,
           background: 'var(--nav-glass)',
           backdropFilter: 'blur(4.5px) saturate(1.4)', WebkitBackdropFilter: 'blur(4.5px) saturate(1.4)',
-          border: '1px solid var(--nav-edge)',
-          boxShadow: 'var(--nav-shadow)',
+          boxShadow: 'var(--nav-shadow), var(--nav-inset)',
         }}
       >
+        {/* glass rim: a gradient hairline that catches light at the top-left and bottom-right and fades between */}
+        <span aria-hidden style={{
+          position: 'absolute', inset: 0, borderRadius: 'inherit', padding: 1.5, pointerEvents: 'none',
+          background: 'linear-gradient(135deg, var(--nav-rim-a) 0%, var(--nav-rim-b) 38%, var(--nav-rim-b) 62%, var(--nav-rim-c) 100%)',
+          WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)', WebkitMaskComposite: 'xor',
+          mask: 'linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0)',
+        }} />
         <div style={{ display: 'flex', height: '100%', gap: 2 }}>
           {tabs.map(tab => {
             const on = active === tab.key

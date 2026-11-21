@@ -349,7 +349,7 @@ input[type=number] { -moz-appearance: textfield; }
 /* ─── Android app: page is drawn underneath the system navigation bar ─────────
    The app shell (sazon-android MainActivity) sets --sazon-bottom-inset to the height of that bar.
    Screens WITHOUT the phone bottom nav get a solid teal strip there so the system icons stay readable;
-   the floating bottom nav (html.bottom-nav-on) gets a translucent page-coloured band there instead.
+   the floating bottom nav (html.bottom-nav-on) gets a translucent dark band there instead (same in light and dark mode).
    In browsers the variable is not set, so the browser's own safe-area inset is used instead: it is 0 on
    desktop and in Chrome without edge-to-edge (nothing changes), and the real bar/home-indicator height
    where the browser draws the page under the system bar (Chrome Android edge-to-edge, iPhone Safari). */
@@ -367,7 +367,7 @@ body::after {
 /* With the floating tab bar the strip under it is a see-through page-coloured band, so the system
    navigation bar (Android) / home indicator stays readable while cards scroll behind it. */
 html.bottom-nav-on body::after {
-  background: var(--cream-90);
+  background: rgba(21,26,28,0.9);   /* always the dark-theme page colour, in light mode too (light cream is too pale behind the system icons) */
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
 html.bottom-nav-on #root { padding-bottom: 0; }

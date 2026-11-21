@@ -28,7 +28,7 @@ export default function CollectionCoverPicker({ collectionId, current = null, on
   }
 
   return (
-    <GlassDialog open onClose={onClose} label={t('col.selectCover')} maxWidth={420}>
+    <GlassDialog solid open onClose={onClose} label={t('col.selectCover')} maxWidth={420}>
       {/* iOS-style header: Cancel · title · Save */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <button onClick={onClose} disabled={saving} style={{

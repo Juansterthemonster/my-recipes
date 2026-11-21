@@ -3,10 +3,11 @@ import { useI18n } from '../i18n'
 import CardImg from './CardImg'
 import DefaultCoverTile from './DefaultCoverTile'
 import CoverTile from './CoverTile'
+import GlassDialog from './GlassDialog'
 import { loadCollectionPhotos } from '../utils/collectionPhotos'
 
 /* ─── COLLECTION EDIT MODAL ─────────────────────────────────────────────────
-   Centred overlay used for both "New collection" and "Edit collection".
+   Bottom sheet on phones, centred card on larger screens; used for both "New collection" and "Edit collection".
    Fields: name (required), description (optional) and — when editing — a cover
    photo picked from the recipes already in the collection.
    Accepts an async onSave({ name, description, cover }) callback — caller is
@@ -54,24 +55,7 @@ export default function CollectionEditModal({ title, collectionId = null, initia
   }
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 300 }}
-      />
-      {/* Dialog */}
-      <div style={{
-        position: 'fixed', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 301,
-        background: '#F9F6F0',
-        borderRadius: 16,
-        padding: '28px 24px',
-        width: 'min(380px, calc(100vw - 48px))',
-        maxHeight: 'calc(100vh - 48px)', overflowY: 'auto',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
-      }}>
+    <GlassDialog solid open onClose={onClose} label={title} maxWidth={380}>
         <div style={{
           fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
           color: 'var(--text-primary)', marginBottom: 18,
@@ -80,6 +64,7 @@ export default function CollectionEditModal({ title, collectionId = null, initia
         <label style={labelStyle}>{t('col.name')}</label>
         <input
           ref={inputRef}
+          autoFocus
           value={name}
           onChange={e => { setName(e.target.value); if (error) setError(null) }}
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
@@ -154,7 +139,6 @@ export default function CollectionEditModal({ title, collectionId = null, initia
             }}
           >{saving ? t('col.saving') : t('col.save')}</button>
         </div>
-      </div>
-    </>
+    </GlassDialog>
   )
 }

@@ -47,7 +47,7 @@ function PlusIcon() {
 /* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
 // Slides up from the bottom; closes on backdrop tap, Escape, or the handle. Rendered in a portal
 // so it sits above everything regardless of where it's used.
-export function BottomSheet({ open, onClose, label, children, glass = false }) {
+export function BottomSheet({ open, onClose, label, children, glass = false, background = '#FFFFFF' }) {
   const [mounted, setMounted] = useState(open)
   const [entered, setEntered] = useState(false)
   const shown = open && entered   // sliding in/out is driven by this
@@ -116,7 +116,7 @@ export function BottomSheet({ open, onClose, label, children, glass = false }) {
           position: 'absolute', left: 0, right: 0, bottom: 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))',
           ...(glass
             ? { ...FROST_FILL, border: `1px solid ${FROST_EDGE}`, borderBottom: 'none', boxShadow: '0 -8px 40px rgba(6,30,39,0.22)' }
-            : { background: '#FFFFFF', boxShadow: '0 -8px 30px rgba(12,61,78,0.18)' }),
+            : { background, boxShadow: '0 -8px 30px rgba(12,61,78,0.18)' }),
           borderRadius: '20px 20px 0 0',
           padding: '10px 16px 16px',
           transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',

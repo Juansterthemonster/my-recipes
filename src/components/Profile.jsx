@@ -1,6 +1,7 @@
 import { getThemePref, setThemePref } from '../utils/theme'
 import { useState, useEffect } from 'react'
 import { GLASS } from '../utils/glass'
+import GlassDialog from './GlassDialog'
 import { supabase } from '../supabase'
 import { useI18n, LANGUAGES, translate } from '../i18n'
 
@@ -165,6 +166,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
   const [usernameLoading, setUsernameLoading] = useState(false)
   const [usernameError,   setUsernameError]   = useState(null)
   const [usernameSaved,   setUsernameSaved]   = useState(false)
+  const [usernameOpen,    setUsernameOpen]    = useState(false)
 
   // ── Change password
   const [newPassword,     setNewPassword]     = useState('')
@@ -305,6 +307,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       await supabase.auth.updateUser({ data: { username: trimmedUsername } })
 
       setUsernameSaved(true)
+      setUsernameOpen(false)
+      onToast?.(translate('profile.usernameSaved'))
       setUsernameStatus(null)
       onUsernameChange(trimmedUsername)
       setTimeout(() => setUsernameSaved(false), 3000)
@@ -450,9 +454,18 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           style={{
             fontFamily: 'var(--font-display)', fontWeight: 400,
             color: 'var(--text-primary)', lineHeight: 1.15,
-            letterSpacing: '-0.01em', marginBottom: 20,
+            letterSpacing: '-0.01em', marginBottom: 6,
           }}
         >@{username}</h1>
+        <button
+          type="button"
+          onClick={() => { setNewUsername(username || ''); setUsernameError(null); setUsernameStatus(null); setUsernameOpen(true) }}
+          style={{
+            background: 'none', border: 'none', padding: 0, marginBottom: 20, cursor: 'pointer', alignSelf: 'flex-start',
+            fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
+            color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3,
+          }}
+        >{t('profile.changeUsername')}</button>
 
         {/* Divider */}
         <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 0 18px' }} />
@@ -481,45 +494,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         </div>
       </div>
 
-      {/* Username + password: third column on desktop */}
+      {/* Password: third column on desktop */}
       <div className="flex flex-col gap-3">
-
-      {/* ── Change username card ── */}
-      <div style={card}>
-        <div style={sectionLabel}>{t('profile.username')}</div>
-        <form onSubmit={handleUsernameSubmit} noValidate>
-          {usernameError && <div style={errBlock}>{usernameError}</div>}
-          <div className="lg:max-w-[280px]" style={{ marginBottom: 16 }}>
-            <label style={lbl}>{t('profile.newUsername')}</label>
-            <input
-              type="text"
-              value={newUsername}
-              onChange={e => { setNewUsername(e.target.value); setUsernameError(null) }}
-              placeholder={t('profile.usernamePlaceholder')}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              style={inp}
-              onFocus={focus}
-              onBlur={blur}
-            />
-            <UsernameHint />
-          </div>
-          <button
-            type="submit"
-            disabled={usernameLoading}
-            style={{
-              ...btnHug,
-              opacity: usernameLoading ? 0.7 : 1,
-              cursor: usernameLoading ? 'default' : 'pointer',
-            }}
-            onMouseEnter={e => { if (!usernameLoading) e.currentTarget.style.background = 'var(--green-mid)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
-          >
-            {usernameLoading ? t('profile.saving') : t('profile.saveUsername')}
-          </button>
-        </form>
-      </div>
 
       {/* ── Change password card (only for accounts that have a password; Google-only accounts don't) ── */}
       {hasPassword && (
@@ -715,6 +691,51 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         {' · '}
         <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
       </p>
+
+      {/* ── Change-username dialog (bottom sheet on phones) ── */}
+      <GlassDialog solid open={usernameOpen} onClose={() => setUsernameOpen(false)} label={t('profile.changeUsername')} maxWidth={400}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: 16 }}>
+          {t('profile.changeUsername')}
+        </div>
+        <form onSubmit={handleUsernameSubmit} noValidate>
+          {usernameError && <div style={errBlock}>{usernameError}</div>}
+          <div style={{ marginBottom: 18 }}>
+            <label style={lbl}>{t('profile.newUsername')}</label>
+            <input
+              type="text"
+              autoFocus
+              value={newUsername}
+              onChange={e => { setNewUsername(e.target.value); setUsernameError(null) }}
+              placeholder={t('profile.usernamePlaceholder')}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              style={inp}
+              onFocus={focus}
+              onBlur={blur}
+            />
+            <UsernameHint />
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => setUsernameOpen(false)}
+              style={{
+                background: 'transparent', border: '1.5px solid var(--border-soft)', color: 'var(--text-primary)',
+                borderRadius: 'var(--r-full)', padding: '10px 22px', fontFamily: 'var(--font-body)',
+                fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer',
+              }}
+            >{t('col.cancel')}</button>
+            <button
+              type="submit"
+              disabled={usernameLoading}
+              style={{ ...btnHug, opacity: usernameLoading ? 0.7 : 1, cursor: usernameLoading ? 'default' : 'pointer' }}
+            >
+              {usernameLoading ? t('profile.saving') : t('profile.saveUsername')}
+            </button>
+          </div>
+        </form>
+      </GlassDialog>
 
       {/* ── Delete-account confirmation modal ── */}
       {deleteOpen && (

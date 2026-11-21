@@ -448,9 +448,9 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
 
       {/* ── Stats card ── */}
       {/* Desktop: 3-column page — stats take two columns, language + appearance the third */}
-      <div className="mx-4 mt-4 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
+      <div className="mx-4 mt-4 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3">
 
-      <div className="lg:col-span-2 lg:self-stretch flex flex-col" style={card}>
+      <div className="lg:col-span-2 flex flex-col" style={card}>
         <div style={sectionLabel}>{t('profile.yourProfile')}</div>
 
         {/* Username display + account links on the right */}
@@ -505,7 +505,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       {/* Language + appearance: third column on desktop */}
       <div className="flex flex-col gap-3">
       {/* ── Language card ── */}
-      <div style={card}>
+      <div className="lg:flex-1" style={card}>
         <div style={sectionLabel}>{t('profile.language')}</div>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
@@ -538,7 +538,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
 
       {/* ── Appearance card ── */}
-      <div style={card}>
+      <div className="lg:flex-1" style={card}>
         <div style={sectionLabel}>{t('profile.appearance')}</div>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',

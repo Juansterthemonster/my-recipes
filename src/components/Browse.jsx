@@ -167,32 +167,41 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
 }
 
 /* ─── FILTER ICON ───────────────────────────────────────────────────────────── */
-function FilterIcon() {
+// Circled glyphs matching the iOS app's SF Symbols (line.3.horizontal.decrease.circle and
+// arrow.up.arrow.down.circle): outline normally, solid circle with the glyph cut out when active.
+function CircleGlyph({ id, filled, children }) {
+  const props = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
+  if (!filled) return <svg {...props}><circle cx="12" cy="12" r="9.2" />{children}</svg>
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      {/* Row 1 — handle at left */}
-      <line x1="4" y1="6" x2="6.5" y2="6" />
-      <circle cx="9" cy="6" r="2.5" />
-      <line x1="11.5" y1="6" x2="20" y2="6" />
-      {/* Row 2 — handle at right */}
-      <line x1="4" y1="12" x2="12.5" y2="12" />
-      <circle cx="15" cy="12" r="2.5" />
-      <line x1="17.5" y1="12" x2="20" y2="12" />
-      {/* Row 3 — handle at left */}
-      <line x1="4" y1="18" x2="6.5" y2="18" />
-      <circle cx="9" cy="18" r="2.5" />
-      <line x1="11.5" y1="18" x2="20" y2="18" />
+    <svg {...props}>
+      <defs>
+        <mask id={id}>
+          <rect width="24" height="24" fill="#fff" />
+          <g stroke="#000" strokeWidth="1.8">{children}</g>
+        </mask>
+      </defs>
+      <circle cx="12" cy="12" r="9.2" fill="currentColor" stroke="none" mask={`url(#${id})`} />
     </svg>
   )
 }
 
-/* ─── SEARCH BAR ───────────────────────────────────────────────────────────── */
-function SortIcon() {
+function FilterIcon({ active = false }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="15" y2="12" /><line x1="4" y1="17" x2="10" y2="17" />
-    </svg>
+    <CircleGlyph id="filter-cut" filled={active}>
+      <line x1="7.2" y1="9.1" x2="16.8" y2="9.1" />
+      <line x1="9" y1="12.1" x2="15" y2="12.1" />
+      <line x1="10.8" y1="15.1" x2="13.2" y2="15.1" />
+    </CircleGlyph>
+  )
+}
+
+/* ─── SEARCH BAR ───────────────────────────────────────────────────────────── */
+function SortIcon({ active = false }) {
+  return (
+    <CircleGlyph id="sort-cut" filled={active}>
+      <path d="M9.3 16V8.3M6.8 10.7L9.3 8.2l2.5 2.5" />
+      <path d="M14.7 8v7.7M12.2 13.3l2.5 2.5 2.5-2.5" />
+    </CircleGlyph>
   )
 }
 
@@ -219,7 +228,7 @@ function SortButton({ sort }) {
           borderRadius: 'var(--r-full)', color: active ? 'var(--on-primary)' : 'var(--text-secondary)',
           cursor: 'pointer', transition: 'background 150ms, border-color 150ms, color 150ms',
         }}
-      ><SortIcon /></button>
+      ><SortIcon active={active} /></button>
       {open && (
         <div role="menu" style={{
           position: 'absolute', right: 0, top: 48, zIndex: 20, minWidth: 210,
@@ -297,7 +306,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
             transition: 'background 150ms, border-color 150ms, color 150ms',
           }}
         >
-          <FilterIcon />
+          <FilterIcon active={filterActive} />
         </button>
         {sort && <SortButton sort={sort} />}
       </div>

@@ -9,7 +9,7 @@ import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-const NAV_HEIGHT = 62   // the floating pill
+const NAV_HEIGHT = 68   // the floating pill
 const NAV_GAP = 10      // space between the pill and the bottom edge / system bar
 
 /* ─── ICONS — drawn to match the iOS tab bar's SF Symbols: outline when idle, filled when selected ── */

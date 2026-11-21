@@ -10,7 +10,7 @@ export const GLASS = {
 // iOS-style frosted glass for dialogs (spotlight tour card, "what's new" sheet): see-through, strongly
 // blurred, bright edge. Fill only — add the border/shadow where it is used.
 export const FROST_FILL = {
-  background: 'rgba(255,255,255,0.68)',   // flat, so the tour triangle matches the card exactly
+  background: 'rgba(250,248,243,0.88)',   // flat, so the tour triangle matches the card exactly
   backdropFilter: 'blur(28px) saturate(1.9)',
   WebkitBackdropFilter: 'blur(28px) saturate(1.9)',
 }

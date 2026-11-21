@@ -571,7 +571,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
 
       {/* ── Help & support ── */}
-      <div style={card}>
+      <div className={isAdmin ? '' : 'lg:col-span-2'} style={card}>
         <div style={sectionLabel}>{t('profile.support')}</div>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',

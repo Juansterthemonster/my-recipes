@@ -110,9 +110,9 @@ function PasswordField({ label, value, onChange, autoComplete }) {
 
 /* ─── STAT GRID ───────────────────────────────────────────────────────────── */
 /* Reusable 2-column grid of labelled stats tiles.                             */
-function StatGrid({ items }) {
+function StatGrid({ items, className = 'grid-cols-2' }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+    <div className={`grid gap-2 lg:flex-1 lg:[grid-auto-rows:1fr] ${className}`}>
       {items.map(({ value, label }) => (
         <div key={label} style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -438,7 +438,10 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
 
       {/* ── Stats card ── */}
-      <div className="mx-4 mt-4 lg:mx-10" style={card}>
+      {/* Desktop: 3-column page — stats take two columns, username + password the third */}
+      <div className="mx-4 mt-4 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
+
+      <div className="lg:col-span-2 lg:self-stretch flex flex-col" style={card}>
         <div style={sectionLabel}>{t('profile.yourProfile')}</div>
 
         {/* Username display */}
@@ -454,26 +457,32 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         {/* Divider */}
         <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 0 18px' }} />
 
-        {/* ── My stats ── */}
-        <div style={sectionLabel}>{t('profile.yourStats')}</div>
+        {/* My stats + others' activity: stacked on mobile, side by side on desktop */}
+        <div className="lg:flex-1 lg:grid lg:grid-cols-[2fr_1fr] lg:gap-x-8">
+        <div className="flex flex-col">
+        <div className="lg:min-h-[3.1em]" style={sectionLabel}>{t('profile.yourStats')}</div>
         <StatGrid items={[
           { value: stats.totalCount,    label: t('profile.totalRecipes') },
           { value: stats.publicCount,   label: t('profile.publicRecipes') },
           { value: stats.myCopiedCount, label: t('profile.recipesCopied') },
           { value: stats.myLikedCount,  label: t('profile.recipesLiked') },
         ]} />
+        </div>
 
         {/* ── Others' activity ── */}
-        <div style={{ height: 1, background: 'var(--border-soft)', margin: '20px 0 18px' }} />
-        <div style={sectionLabel}>{t('profile.othersActivity')}</div>
-        <StatGrid items={[
+        <div className="lg:hidden" style={{ height: 1, background: 'var(--border-soft)', margin: '20px 0 18px' }} />
+        <div className="flex flex-col">
+        <div className="lg:min-h-[3.1em]" style={sectionLabel}>{t('profile.othersActivity')}</div>
+        <StatGrid className="grid-cols-2 lg:grid-cols-1" items={[
           { value: stats.theirCopiedCount, label: t('profile.timesCopied') },
           { value: stats.theirLikedCount,  label: t('profile.timesLiked') },
         ]} />
+        </div>
+        </div>
       </div>
 
-      {/* Username, password and language/appearance: stacked on mobile (same order), three columns on desktop */}
-      <div className="mx-4 mt-3 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
+      {/* Username + password: third column on desktop */}
+      <div className="flex flex-col gap-3">
 
       {/* ── Change username card ── */}
       <div style={card}>
@@ -560,8 +569,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
       )}
 
-      {/* Language + appearance: stacked in the third column on desktop */}
-      <div className="flex flex-col gap-3">
+      </div>
+
       {/* ── Language card ── */}
       <div style={card}>
         <div style={sectionLabel}>{t('profile.language')}</div>
@@ -625,12 +634,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           })}
         </div>
       </div>
-      </div>
 
-      </div>
-
-      {/* Support, admin and account: stacked on mobile, three columns on desktop */}
-      <div className="mx-4 mt-3 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
       {/* ── Help & support ── */}
       <div style={card}>
         <div style={sectionLabel}>{t('profile.support')}</div>

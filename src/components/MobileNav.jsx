@@ -216,7 +216,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
           bottom: `calc(${SAFE_BOTTOM} + ${NAV_GAP}px)`,
           height: NAV_HEIGHT, borderRadius: NAV_HEIGHT / 2, padding: 4,
           background: 'var(--nav-glass)',
-          backdropFilter: 'blur(12px) saturate(1.6)', WebkitBackdropFilter: 'blur(12px) saturate(1.6)',
+          backdropFilter: 'blur(5px) saturate(1.4)', WebkitBackdropFilter: 'blur(5px) saturate(1.4)',
           border: '1px solid var(--nav-edge)',
           boxShadow: 'var(--nav-shadow)',
         }}

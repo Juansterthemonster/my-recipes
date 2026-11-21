@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../i18n'
 import CardImg from './CardImg'
 import DefaultCoverTile from './DefaultCoverTile'
+import CoverTile from './CoverTile'
 import { loadCollectionPhotos } from '../utils/collectionPhotos'
 
 /* ─── COLLECTION EDIT MODAL ─────────────────────────────────────────────────
@@ -118,23 +119,12 @@ export default function CollectionEditModal({ title, collectionId = null, initia
         {collectionId && coverOptions.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>{t('col.cover')}</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               <DefaultCoverTile selected={cover === null} onClick={() => setCover(null)} />
               {coverOptions.map(url => (
-                <button
-                  type="button"
-                  key={url}
-                  onClick={() => setCover(url)}
-                  aria-label={t('col.useThisPhoto')}
-                  aria-pressed={cover === url}
-                  style={{
-                    aspectRatio: '1/1', borderRadius: 8, cursor: 'pointer', padding: 0, overflow: 'hidden',
-                    border: cover === url ? '2.5px solid #0C3D4E' : '1.5px solid var(--border-soft)',
-                    background: 'var(--green-primary)',
-                  }}
-                >
-                  <CardImg src={url} alt="" sizes="25vw" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                </button>
+                <CoverTile key={url} selected={cover === url} onClick={() => setCover(url)} label={t('col.useThisPhoto')} background="var(--green-primary)">
+                  <CardImg src={url} alt="" sizes="30vw" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </CoverTile>
               ))}
             </div>
           </div>

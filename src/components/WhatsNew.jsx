@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { supabase } from '../supabase'
 import { useI18n } from '../i18n'
-import { useIsPhone } from '../utils/useIsPhone'
-import { BottomSheet } from './MobileNav'
+import GlassDialog from './GlassDialog'
 import { ANNOUNCEMENTS, MAX_VIEWS, RECENT_DAYS } from '../announcements'
 import { whatsNewState } from '../utils/whatsNewState'
-import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    WhatsNew — the "what's new" sheet (see src/announcements.js for the rules).
@@ -77,33 +74,10 @@ function Content({ items, onGotIt }) {
 // a bottom sheet on phones, a centred card on larger screens.
 export function AnnouncementSheet({ items, open, onClose, onGotIt }) {
   const { t } = useI18n()
-  const isPhone = useIsPhone()
-  const label = t('ann.eyebrow')
-  const body = <Content items={items} onGotIt={onGotIt} />
-  return isPhone
-    ? <BottomSheet glass open={open} onClose={onClose} label={label}>{body}</BottomSheet>
-    : <CenteredDialog open={open} onClose={onClose} label={label}>{body}</CenteredDialog>
-}
-
-// Desktop / tablet: a centred card instead of a bottom sheet
-function CenteredDialog({ open, onClose, label, children }) {
-  useEffect(() => {
-    if (!open) return
-    const onKey = e => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-  if (!open) return null
-  return createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: FROST_DIM }} />
-      <div role="dialog" aria-modal="true" aria-label={label} style={{
-        position: 'relative', width: '100%', maxWidth: 440, maxHeight: '85vh', overflowY: 'auto',
-        ...FROST_FILL, border: `1px solid ${FROST_EDGE}`, borderRadius: 24, padding: '28px 24px 22px',
-        boxShadow: '0 18px 50px rgba(6,30,39,0.28), 0 2px 8px rgba(6,30,39,0.10)',
-      }}>{children}</div>
-    </div>,
-    document.body
+  return (
+    <GlassDialog open={open} onClose={onClose} label={t('ann.eyebrow')}>
+      <Content items={items} onGotIt={onGotIt} />
+    </GlassDialog>
   )
 }
 

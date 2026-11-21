@@ -1018,4 +1018,4 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 - All colours are CSS variables in `src/index.css`; the dark values live in the `@media (prefers-color-scheme: dark)` block right after `:root` and mirror the iOS `Theme.swift` (page #151A1C, cards #1F2527, pale-teal primary #CFE7EE with dark `--on-primary`).
 - Never hard-code a hex colour for a surface or text — use a token. Fixed colours: `--fixed-teal` (collection tile, sign-in hero) and white-on-photo overlays.
 - `--text-on-dark` / `--on-primary*` are only for text on a `--green-primary` fill (it flips to dark text in dark mode).
-- Manual Light/Dark/Auto switch is not built yet (would add `[data-theme]` overrides + a Profile setting).
+- Profile → Appearance (Light / Dark / Auto) sets `data-theme` on `<html>` via `src/utils/theme.js`; saved in localStorage `sazon:theme` on this device only (not on the account) and applied by an inline script in `index.html` before first paint. Auto = no attribute, the media query decides. The dark palette is therefore defined twice in index.css (media query + `[data-theme="dark"]`) — change both.

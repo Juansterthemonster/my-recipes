@@ -21,6 +21,18 @@
     </script>
     <meta name="theme-color" content="#0C3D4E" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#151A1C" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Saved Light/Dark choice (Profile): apply before first paint so there is no flash
+      try {
+        var th = localStorage.getItem('sazon:theme');
+        if (th === 'light' || th === 'dark') {
+          document.documentElement.setAttribute('data-theme', th);
+          var bar = th === 'dark' ? '#151A1C' : '#0C3D4E';
+          var ms = document.querySelectorAll('meta[name="theme-color"]');
+          for (var i = 0; i < ms.length; i++) ms[i].setAttribute('content', bar);
+        }
+      } catch (e) {}
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

@@ -1,3 +1,4 @@
+import { getThemePref, setThemePref } from '../utils/theme'
 import { useState, useEffect } from 'react'
 import { GLASS } from '../utils/glass'
 import { supabase } from '../supabase'
@@ -142,6 +143,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
   // Google-only accounts have no password to change
   const hasPassword = !session?.user?.identities || session.user.identities.some(i => i.provider === 'email')
   const [languageSaving, setLanguageSaving] = useState(false)
+  const [themePref, setThemePrefState] = useState(getThemePref)
   // ── Delete account (confirmation modal)
   const [deleteOpen, setDeleteOpen]       = useState(false)
   const [deleteText, setDeleteText]       = useState('')
@@ -588,6 +590,37 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
                   transition: 'background 150ms, color 150ms, border-color 150ms',
                 }}
               >{l.label}</button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Appearance card ── */}
+      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+        <div style={sectionLabel}>{t('profile.appearance')}</div>
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
+          margin: '0 0 14px', lineHeight: 1.5,
+        }}>{t('profile.appearanceHint')}</p>
+        <div role="radiogroup" aria-label={t('profile.appearance')} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {['light', 'dark', 'auto'].map(mode => {
+            const active = themePref === mode
+            return (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => { setThemePref(mode); setThemePrefState(mode) }}
+                style={{
+                  padding: '8px 18px', borderRadius: 'var(--r-full)',
+                  border: `1.5px solid ${active ? 'var(--green-primary)' : 'var(--border-soft)'}`,
+                  background: active ? 'var(--green-primary)' : 'transparent',
+                  color: active ? 'var(--on-primary)' : 'var(--text-primary)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500, cursor: 'pointer',
+                  transition: 'background 150ms, color 150ms, border-color 150ms',
+                }}
+              >{t('profile.theme.' + mode)}</button>
             )
           })}
         </div>

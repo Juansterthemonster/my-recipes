@@ -472,15 +472,15 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         ]} />
       </div>
 
-      {/* Username + password: stacked on mobile (same order), side by side on desktop */}
-      <div className="mx-4 mt-3 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-2">
+      {/* Username, password and language/appearance: stacked on mobile (same order), three columns on desktop */}
+      <div className="mx-4 mt-3 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
 
       {/* ── Change username card ── */}
       <div style={card}>
         <div style={sectionLabel}>{t('profile.username')}</div>
         <form onSubmit={handleUsernameSubmit} noValidate>
           {usernameError && <div style={errBlock}>{usernameError}</div>}
-          <div style={{ marginBottom: 16 }}>
+          <div className="lg:max-w-[280px]" style={{ marginBottom: 16 }}>
             <label style={lbl}>{t('profile.newUsername')}</label>
             <input
               type="text"
@@ -527,7 +527,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
               {t('profile.passwordUpdated')}
             </div>
           )}
-          <div style={{ marginBottom: 14 }}>
+          <div className="lg:max-w-[280px]" style={{ marginBottom: 14 }}>
             <PasswordField
               label={t('profile.newPassword')}
               value={newPassword}
@@ -535,7 +535,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
               autoComplete="new-password"
             />
           </div>
-          <div style={{ marginBottom: 16 }}>
+          <div className="lg:max-w-[280px]" style={{ marginBottom: 16 }}>
             <PasswordField
               label={t('profile.confirmPassword')}
               value={confirmPassword}
@@ -560,10 +560,10 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
       )}
 
-      </div>
-
+      {/* Language + appearance: stacked in the third column on desktop */}
+      <div className="flex flex-col gap-3">
       {/* ── Language card ── */}
-      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+      <div style={card}>
         <div style={sectionLabel}>{t('profile.language')}</div>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
@@ -596,7 +596,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
 
       {/* ── Appearance card ── */}
-      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+      <div style={card}>
         <div style={sectionLabel}>{t('profile.appearance')}</div>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
@@ -625,9 +625,14 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           })}
         </div>
       </div>
+      </div>
 
+      </div>
+
+      {/* Support, admin and account: stacked on mobile, three columns on desktop */}
+      <div className="mx-4 mt-3 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
       {/* ── Help & support ── */}
-      <div className="mx-4 mt-3 lg:mx-10" style={card}>
+      <div style={card}>
         <div style={sectionLabel}>{t('profile.support')}</div>
         <p style={{
           fontFamily: 'var(--font-body)', fontSize: '0.875rem', color: 'var(--text-secondary)',
@@ -645,7 +650,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
 
       {/* ── Owner-only: app dashboard (shown only when the database says this account is an admin) ── */}
       {isAdmin && (
-        <div className="mx-4 mt-3 lg:mx-10" style={card}>
+        <div style={card}>
           <div style={sectionLabel}>Admin</div>
           <button
             onClick={onOpenAdmin}
@@ -666,15 +671,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         </div>
       )}
 
-      {/* ── Legal links ── */}
-      <p className="mx-4 mt-6 lg:mx-10" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
-        <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
-        {' · '}
-        <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
-      </p>
-
       {/* ── Sign out ── */}
-      <div className="mx-4 mt-3 mb-10 lg:mx-10" style={card}>
+      <div style={card}>
         <div style={sectionLabel}>{t('profile.account')}</div>
         <button
           onClick={onSignOut}
@@ -705,6 +703,14 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           {t('profile.deleteAccount')}
         </button>
       </div>
+      </div>
+
+      {/* ── Legal links ── */}
+      <p className="mx-4 mt-6 mb-10 lg:mx-10" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.privacy')}</a>
+        {' · '}
+        <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t('legal.terms')}</a>
+      </p>
 
       {/* ── Delete-account confirmation modal ── */}
       {deleteOpen && (

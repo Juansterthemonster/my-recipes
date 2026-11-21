@@ -1022,4 +1022,4 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 
 ## v4.46 — Phone tab bar matches iOS
 - `MobileNav.jsx` BottomNav is now a floating glass pill (inset 14px, 10px above the bottom/system bar) with an inner rounded highlight on the selected tab; colours are the `--nav-*` tokens in index.css (light + both dark blocks).
-- Icons mirror the iOS SF Symbols (book, heart, square.grid.2x2, globe.americas): outline when idle, filled when selected. They are hand-drawn SVGs, not the Apple glyphs.
+- Icons mirror the iOS SF Symbols (book, heart, square.grid.2x2; Explore keeps the original compass): outline when idle, filled when selected. They are hand-drawn SVGs, not the Apple glyphs.

@@ -38,26 +38,22 @@ const ICONS = {
       <rect x="13.2" y="13.2" width="7" height="7" rx="1.9" />
     </svg>
   ),
-  public: on => (    // globe.americas / .fill
+  public: on => (    // compass (the original Explore icon), drawn at the same weight as the others; filled when selected
     <svg {...svgProps} fill="none">
       {on ? (
         <>
           <defs>
-            <mask id="nav-globe-cut">
+            <mask id="nav-compass-cut">
               <rect width="24" height="24" fill="#fff" />
-              <g fill="#000" stroke="none">
-                <path d="M4.9 6.6C6.6 4.4 9.8 3.5 12.6 4.4L13.6 6.1 11.7 7.4 12.8 9.2 10.7 10.8 9.5 13C8 12.4 6.6 11.2 5.7 9.9 5.1 8.8 4.5 7.6 4.9 6.6Z" />
-                <path d="M10.6 12.9C12.7 12.2 15.2 13.2 16.2 15.1 15.7 17.3 14.3 19 12.8 20.6 11.6 19.7 10.7 17.8 10.3 15.9 10.1 14.7 10.2 13.7 10.6 12.9Z" />
-              </g>
+              <path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z" fill="#000" stroke="#000" strokeWidth="1.2" />
             </mask>
           </defs>
-          <circle cx="12" cy="12" r="9.2" fill="currentColor" mask="url(#nav-globe-cut)" />
+          <circle cx="12" cy="12" r="9.2" fill="currentColor" mask="url(#nav-compass-cut)" />
         </>
       ) : (
         <>
           <circle cx="12" cy="12" r="9.2" />
-          <path d="M4.9 6.6C6.6 4.4 9.8 3.5 12.6 4.4L13.6 6.1 11.7 7.4 12.8 9.2 10.7 10.8 9.5 13C8 12.4 6.6 11.2 5.7 9.9 5.1 8.8 4.5 7.6 4.9 6.6Z" />
-          <path d="M10.6 12.9C12.7 12.2 15.2 13.2 16.2 15.1 15.7 17.3 14.3 19 12.8 20.6 11.6 19.7 10.7 17.8 10.3 15.9 10.1 14.7 10.2 13.7 10.6 12.9Z" />
+          <path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z" />
         </>
       )}
     </svg>

@@ -1019,3 +1019,7 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 - Never hard-code a hex colour for a surface or text — use a token. Fixed colours: `--fixed-teal` (collection tile, sign-in hero) and white-on-photo overlays.
 - `--text-on-dark` / `--on-primary*` are only for text on a `--green-primary` fill (it flips to dark text in dark mode).
 - Profile → Appearance (Light / Dark / Auto) sets `data-theme` on `<html>` via `src/utils/theme.js`; saved in localStorage `sazon:theme` on this device only (not on the account) and applied by an inline script in `index.html` before first paint. Auto = no attribute, the media query decides. The dark palette is therefore defined twice in index.css (media query + `[data-theme="dark"]`) — change both.
+
+## v4.46 — Phone tab bar matches iOS
+- `MobileNav.jsx` BottomNav is now a floating glass pill (inset 14px, 10px above the bottom/system bar) with an inner rounded highlight on the selected tab; colours are the `--nav-*` tokens in index.css (light + both dark blocks).
+- Icons mirror the iOS SF Symbols (book, heart, square.grid.2x2, globe.americas): outline when idle, filled when selected. They are hand-drawn SVGs, not the Apple glyphs.

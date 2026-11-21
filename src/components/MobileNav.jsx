@@ -9,39 +9,62 @@ import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-const NAV_HEIGHT = 59
+const NAV_HEIGHT = 62   // the floating pill
+const NAV_GAP = 10      // space between the pill and the bottom edge / system bar
 
-/* ─── ICONS (24px, 2.2 stroke, round caps/joins, currentColor) ──────────────────────────── */
+/* ─── ICONS — drawn to match the iOS tab bar's SF Symbols: outline when idle, filled when selected ── */
 const svgProps = {
-  width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-  strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+  width: 26, height: 26, viewBox: '0 0 24 24', stroke: 'currentColor',
+  strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
 }
+const fillOf = on => (on ? 'currentColor' : 'none')
 const ICONS = {
-  mine: (    // open book, iOS style: arched tops, bottoms curving down to the spine
-    <svg {...svgProps} strokeWidth={1.9}>
-      <g transform="translate(12 11.5) scale(1.15) translate(-12 -11.5)">
-      <path d="M12 7.4C11 5.6 9.4 5 7.4 5 5.4 5 3.5 5.6 3.5 7.6V17.4C5 16.2 6.8 15.8 8.8 15.9 10.2 16 11.3 16.6 12 18Z" />
-      <path d="M12 7.4C13 5.6 14.6 5 16.6 5 18.6 5 20.5 5.6 20.5 7.6V17.4C19 16.2 17.2 15.8 15.2 15.9 13.8 16 12.7 16.6 12 18Z" />
-      </g>
+  mine: on => (    // book / book.fill — open book
+    <svg {...svgProps} fill={fillOf(on)}>
+      <path d="M12 7.2C11 5.4 9.3 4.8 7.3 4.8 5.3 4.8 3.3 5.4 3.3 7.4V17.6C4.9 16.4 6.8 16 8.8 16.1 10.2 16.2 11.3 16.8 12 18.2Z" />
+      <path d="M12 7.2C13 5.4 14.7 4.8 16.7 4.8 18.7 4.8 20.7 5.4 20.7 7.4V17.6C19.1 16.4 17.2 16 15.2 16.1 13.8 16.2 12.7 16.8 12 18.2Z" />
     </svg>
   ),
-  favourites: (    // same heart as the recipe cards (Browse.jsx HeartIcon), with the nav's thicker stroke
-    <svg {...svgProps}><g transform="translate(12 13) scale(0.9) translate(-12 -13)"><path vectorEffect="non-scaling-stroke" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></g></svg>
-  ),
-  collections: (    // 2 x 2 grid of rounded squares (iOS style)
-    <svg {...svgProps}>
-      <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
-      <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
-      <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
-      <rect x="13.5" y="13.5" width="7" height="7" rx="2" />
+  favourites: on => (    // heart / heart.fill
+    <svg {...svgProps} fill={fillOf(on)}>
+      <path d="M12 20.2C5.6 15.9 3.2 12.6 3.2 9.1 3.2 6.5 5.2 4.6 7.6 4.6 9.5 4.6 11.1 5.6 12 7.2 12.9 5.6 14.5 4.6 16.4 4.6 18.8 4.6 20.8 6.5 20.8 9.1 20.8 12.6 18.4 15.9 12 20.2Z" />
     </svg>
   ),
-  public: (    // compass with a rounded needle
-    <svg {...svgProps}><circle cx="12" cy="12" r="9.5" /><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z" /></svg>
+  collections: on => (    // square.grid.2x2 / .fill
+    <svg {...svgProps} fill={fillOf(on)}>
+      <rect x="3.8" y="3.8" width="7" height="7" rx="1.9" />
+      <rect x="13.2" y="3.8" width="7" height="7" rx="1.9" />
+      <rect x="3.8" y="13.2" width="7" height="7" rx="1.9" />
+      <rect x="13.2" y="13.2" width="7" height="7" rx="1.9" />
+    </svg>
+  ),
+  public: on => (    // globe.americas / .fill
+    <svg {...svgProps} fill="none">
+      {on ? (
+        <>
+          <defs>
+            <mask id="nav-globe-cut">
+              <rect width="24" height="24" fill="#fff" />
+              <g fill="#000" stroke="none">
+                <path d="M4.9 6.6C6.6 4.4 9.8 3.5 12.6 4.4L13.6 6.1 11.7 7.4 12.8 9.2 10.7 10.8 9.5 13C8 12.4 6.6 11.2 5.7 9.9 5.1 8.8 4.5 7.6 4.9 6.6Z" />
+                <path d="M10.6 12.9C12.7 12.2 15.2 13.2 16.2 15.1 15.7 17.3 14.3 19 12.8 20.6 11.6 19.7 10.7 17.8 10.3 15.9 10.1 14.7 10.2 13.7 10.6 12.9Z" />
+              </g>
+            </mask>
+          </defs>
+          <circle cx="12" cy="12" r="9.2" fill="currentColor" mask="url(#nav-globe-cut)" />
+        </>
+      ) : (
+        <>
+          <circle cx="12" cy="12" r="9.2" />
+          <path d="M4.9 6.6C6.6 4.4 9.8 3.5 12.6 4.4L13.6 6.1 11.7 7.4 12.8 9.2 10.7 10.8 9.5 13C8 12.4 6.6 11.2 5.7 9.9 5.1 8.8 4.5 7.6 4.9 6.6Z" />
+          <path d="M10.6 12.9C12.7 12.2 15.2 13.2 16.2 15.1 15.7 17.3 14.3 19 12.8 20.6 11.6 19.7 10.7 17.8 10.3 15.9 10.1 14.7 10.2 13.7 10.6 12.9Z" />
+        </>
+      )}
+    </svg>
   ),
 }
 function PlusIcon() {
-  return <svg {...svgProps} width="26" height="26" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+  return <svg {...svgProps} fill="none" width="26" height="26" strokeWidth="2.2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 }
 
 /* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
@@ -181,7 +204,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         aria-label={t('nav.add')}
         style={{
           position: 'fixed', right: 19, zIndex: 31,
-          bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
+          bottom: `calc(${NAV_HEIGHT + NAV_GAP}px + ${SAFE_BOTTOM} + 14px)`,
           width: 68, height: 68, borderRadius: 18,   // between the M3 baseline (56) and Expressive medium (80) sizes
           background: 'var(--green-light)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer',   // light container, teal icon (inverse of the bar)
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -192,14 +215,17 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
       <nav
         aria-label="Main"
         style={{
-          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
-          // Brand teal, see-through so cards show faintly behind it while scrolling, with a very light blur (1px)
-          background: 'var(--bar-bg)',
-          backdropFilter: 'blur(1px)', WebkitBackdropFilter: 'blur(1px)',
-          paddingBottom: SAFE_BOTTOM,
+          // Floating glass pill, like the iOS tab bar: inset from the screen edges, fully rounded
+          position: 'fixed', left: 14, right: 14, zIndex: 30,
+          bottom: `calc(${SAFE_BOTTOM} + ${NAV_GAP}px)`,
+          height: NAV_HEIGHT, borderRadius: NAV_HEIGHT / 2, padding: 4,
+          background: 'var(--nav-glass)',
+          backdropFilter: 'blur(24px) saturate(1.8)', WebkitBackdropFilter: 'blur(24px) saturate(1.8)',
+          border: '1px solid var(--nav-edge)',
+          boxShadow: 'var(--nav-shadow)',
         }}
       >
-        <div style={{ display: 'flex', height: NAV_HEIGHT }}>
+        <div style={{ display: 'flex', height: '100%', gap: 2 }}>
           {tabs.map(tab => {
             const on = active === tab.key
             return (
@@ -208,28 +234,25 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 onClick={() => onChange(tab.key)}
                 aria-current={on ? 'page' : undefined}
                 style={{
-                  flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', paddingTop: 3,   // nudges the icons 3px lower
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                  color: on ? 'var(--on-bar)' : 'var(--on-bar-dim)',
-                  fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: on ? 700 : 500,
-                  WebkitTapHighlightColor: 'transparent',
+                  position: 'relative', flex: 1, minWidth: 0, height: '100%', border: 'none', cursor: 'pointer',
+                  borderRadius: (NAV_HEIGHT - 8) / 2,
+                  background: on ? 'var(--nav-active)' : 'transparent', transition: 'background 180ms',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                  color: on ? 'var(--nav-fg-on)' : 'var(--nav-fg)',
+                  fontFamily: 'var(--font-body)', fontSize: '0.66rem', fontWeight: 600, letterSpacing: '0.01em',
+                  WebkitTapHighlightColor: 'transparent', padding: '0 2px',
                 }}
               >
-                <span style={{
-                  position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 52, height: 30, borderRadius: 15,
-                  background: on ? 'var(--bar-pill)' : 'transparent', transition: 'background 150ms',
-                  color: on ? 'var(--text-primary)' : 'inherit',
-                }}>
-                  {ICONS[tab.key]}
+                <span style={{ position: 'relative', display: 'flex' }}>
+                  {ICONS[tab.key](on)}
                   {dots[tab.key] && (
                     <span
                       role="img" aria-label={t('explore.newDot')}
-                      style={{ position: 'absolute', top: 3, right: 12, width: 8, height: 8, borderRadius: '50%', background: 'var(--cream)', border: '1.5px solid var(--green-primary)' }}
+                      style={{ position: 'absolute', top: 0, right: -3, width: 9, height: 9, borderRadius: '50%', background: 'var(--heart)', border: '1.5px solid var(--nav-dot-ring)' }}
                     />
                   )}
                 </span>
-                <span style={{ maxWidth: '100%', padding: '0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {t(`bnav.${tab.key}`)}
                 </span>
               </button>
@@ -242,4 +265,4 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
 }
 
 // Space to leave under the page content so the last cards aren't hidden by the bar + button.
-export const BOTTOM_NAV_CLEARANCE = `calc(${NAV_HEIGHT + 100}px + ${SAFE_BOTTOM})`
+export const BOTTOM_NAV_CLEARANCE = `calc(${NAV_HEIGHT + NAV_GAP + 100}px + ${SAFE_BOTTOM})`

@@ -4,7 +4,7 @@ export const GLASS = {
   backdropFilter: 'blur(10px) saturate(1.5)',
   WebkitBackdropFilter: 'blur(10px) saturate(1.5)',
   border: '1px solid var(--glass-edge)',
-  boxShadow: '0 0 0 1px rgba(12,61,78,0.07), 0 3px 10px rgba(12,61,78,0.10), inset 0 1px 0 rgba(255,255,255,0.95)',
+  boxShadow: '0 0 0 1px var(--glass-ring), 0 3px 10px var(--glass-drop), inset 0 1px 0 var(--glass-inset)',
 }
 
 // iOS-style frosted glass for dialogs (spotlight tour card, "what's new" sheet): see-through, strongly

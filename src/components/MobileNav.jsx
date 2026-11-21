@@ -210,7 +210,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 style={{
                   flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', paddingTop: 3,   // nudges the icons 3px lower
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                  color: on ? 'var(--on-primary)' : 'var(--on-bar-dim)',
+                  color: on ? 'var(--on-bar)' : 'var(--on-bar-dim)',
                   fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: on ? 700 : 500,
                   WebkitTapHighlightColor: 'transparent',
                 }}

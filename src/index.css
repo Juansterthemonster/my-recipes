@@ -6,6 +6,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
+  color-scheme: light dark;   /* native controls, scrollbars and form fields follow the system theme */
   /* ── Primary — Dark Teal (#0C3D4E) ───────────────────────────────────
      Used for: nav bar, primary buttons, active indicators, bullet points,
      step numbers, toggle active state, focus rings, icon accents.
@@ -121,6 +122,9 @@
   --glass-b:        rgba(255,255,255,0.4);
   --glass-edge:     rgba(255,255,255,0.9);
   --glass-inset:    rgba(255,255,255,0.95);
+  --glass-ring:     rgba(12,61,78,0.07);
+  --glass-drop:     rgba(12,61,78,0.10);
+  --on-danger:      #FFFFFF;
   --frost-fill:     rgba(250,248,243,0.88);
   --frost-edge:     rgba(255,255,255,0.75);
   --frost-dim:      rgba(6,30,39,0.34);
@@ -131,6 +135,58 @@
   --r-sm: 8px; --r-md: 14px; --r-lg: 14px; --r-xl: 32px; --r-full: 999px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 180ms; --dur-mid: 300ms;
+}
+
+/* ═══ Dark theme — follows the system setting (same values as the iOS app's Theme.swift) ═══
+   Soft teal-tinted greys rather than pure black: page #151A1C, cards #1F2527 (one step lighter =
+   "raised", as in Gmail's dark mode), pale-teal primary with dark text on it. Photos, the teal
+   collection tile and the sign-in hero keep their colours in both themes. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green-primary: #CFE7EE;  --green-dark: #A9CFDA;  --green-mid: #B5D9E4;
+    --green-light: #17343D;    --green-tint: #1A2D32;
+    --violet-accent: #5FB0D9;  --violet-light: #17323D;
+    --amber-light: #3B3410;
+
+    --cream: #151A1C;  --cream-mid: #252E31;
+    --text-primary: #E8EEF0;  --text-secondary: #A9BEC4;  --text-tertiary: #7B9096;
+    --border: #3C484B;  --border-soft: #2D3739;
+
+    --surface: #1F2527;
+    --on-primary: #0F1416;  --on-primary-white: #0F1416;  --text-on-dark: #0F1416;   /* only ever used on a --green-primary fill */
+    --on-photo-bg: #1F2527;  --on-photo-text: #E8EEF0;
+    --border-card: #3C484B;  --border-focus: #6F8286;
+    --cream-90: rgba(21,26,28,0.9);
+    --ink-08: rgba(232,238,240,0.08);  --ink-50: rgba(232,238,240,0.5);  --ink-55: rgba(232,238,240,0.55);
+    --placeholder: #8A9A9F;
+    --skeleton-a: #232B2D;  --skeleton-b: #2C3537;
+
+    --bar-bg: rgba(31,37,39,0.88);  --bar-solid: #1F2527;
+    --on-bar: #E8EEF0;  --on-bar-dim: rgba(232,238,240,0.62);
+    --bar-pill: rgba(207,231,238,0.16);  --on-bar-pill: #CFE7EE;
+    --bar-dot: #CFE7EE;  --bar-dot-ring: #1F2527;
+    --fab-bg: #CFE7EE;  --fab-fg: #0F1416;
+
+    --danger-text: #F28B90;  --danger-bg: #3A1F22;  --danger-border: #6B2E33;  --danger-border-strong: #8A3A40;
+    --danger-strong: #F28B90;  --danger-bg-soft: #3A1F22;  --danger-menu: #F28B90;
+    --danger-hover: #F05A5E;  --danger-alt: #F28B90;  --heart: #F05A5E;  --on-danger: #2A0F11;
+    --warn-bg: #3B3410;  --warn-text: #F1D77A;
+    --success-text: #8FD0A6;  --success-text-soft: #8FD0A6;  --success-text-dark: #A9DDB8;
+    --success-bg: #1B2E23;  --success-border: #2F5A40;
+    --badge-neutral-bg: #2A3234;  --badge-neutral-text: #A9BEC4;
+    --amber-pale: #3B3410;  --amber-text: #F1D77A;
+    --graphite: #E1E8EA;  --graphite-bg: #2A3234;
+    --neutral-bg: #2A3234;  --neutral-bg-hover: #323C3F;  --neutral-bg-hover-2: #3A4548;  --neutral-bg-2: #252D30;
+    --neutral-fg: #8A9A9F;  --neutral-fg-2: #8A9A9F;  --neutral-border: #3C484B;
+    --hover-neutral: #252D30;
+    --field-bg: #252D30;  --field-border: #3C484B;  --field-text: #E8EEF0;
+    --field-placeholder: #7B9096;  --field-label: #A9BEC4;
+
+    --glass-a: rgba(255,255,255,0.10);  --glass-b: rgba(255,255,255,0.04);
+    --glass-edge: rgba(255,255,255,0.14);  --glass-inset: rgba(255,255,255,0.10);
+    --glass-ring: rgba(255,255,255,0.05);  --glass-drop: rgba(0,0,0,0.35);
+    --frost-fill: rgba(36,43,46,0.9);  --frost-edge: rgba(255,255,255,0.12);  --frost-dim: rgba(0,0,0,0.5);
+  }
 }
 
 /* Always reserve the vertical scrollbar's width so short pages (few cards, no

@@ -712,7 +712,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
                 onClick={handleDeleteAccount}
                 disabled={deleting || deleteText.trim().toUpperCase() !== 'DELETE'}
                 style={{
-                  background: 'var(--danger-text)', color: '#fff', border: 'none', borderRadius: 'var(--r-full)',
+                  background: 'var(--danger-text)', color: 'var(--on-danger)', border: 'none', borderRadius: 'var(--r-full)',
                   padding: '10px 20px', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
                   opacity: (deleting || deleteText.trim().toUpperCase() !== 'DELETE') ? 0.45 : 1,
                   cursor: (deleting || deleteText.trim().toUpperCase() !== 'DELETE') ? 'default' : 'pointer',

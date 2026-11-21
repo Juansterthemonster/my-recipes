@@ -1013,3 +1013,9 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 4. **For UI changes** — paste the component name and describe what you want. Claude can read and edit the actual `.jsx` files directly
 5. **For DB changes** — Claude can write the Supabase SQL migration for you to run in the Supabase SQL editor
 6. **For design reference** — see `STYLEGUIDE_v2.md` for the complete visual system
+
+## v4.45 — Dark theme (follows the system setting)
+- All colours are CSS variables in `src/index.css`; the dark values live in the `@media (prefers-color-scheme: dark)` block right after `:root` and mirror the iOS `Theme.swift` (page #151A1C, cards #1F2527, pale-teal primary #CFE7EE with dark `--on-primary`).
+- Never hard-code a hex colour for a surface or text — use a token. Fixed colours: `--fixed-teal` (collection tile, sign-in hero) and white-on-photo overlays.
+- `--text-on-dark` / `--on-primary*` are only for text on a `--green-primary` fill (it flips to dark text in dark mode).
+- Manual Light/Dark/Auto switch is not built yet (would add `[data-theme]` overrides + a Profile setting).

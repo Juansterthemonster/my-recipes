@@ -30,6 +30,11 @@ const btnHug = {
   ...btnPrimary, width: 'auto', display: 'inline-flex', alignItems: 'center',
   justifyContent: 'center', padding: '10px 24px',
 }
+const linkBtn = {
+  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+  fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
+  color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3,
+}
 const card = {
   background: 'var(--surface)', borderRadius: 'var(--r-lg)',
   border: '1px solid var(--border-soft)', padding: '20px 24px',
@@ -167,13 +172,13 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
   const [usernameError,   setUsernameError]   = useState(null)
   const [usernameSaved,   setUsernameSaved]   = useState(false)
   const [usernameOpen,    setUsernameOpen]    = useState(false)
+  const [passwordOpen,    setPasswordOpen]    = useState(false)
 
   // ── Change password
   const [newPassword,     setNewPassword]     = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordError,   setPasswordError]   = useState(null)
-  const [passwordSaved,   setPasswordSaved]   = useState(false)
 
   /* ── Fetch stats on mount ───────────────────────────────────────────────── */
   useEffect(() => {
@@ -351,8 +356,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
     } else {
       setNewPassword('')
       setConfirmPassword('')
-      setPasswordSaved(true)
-      setTimeout(() => setPasswordSaved(false), 3000)
+      setPasswordOpen(false)
+      onToast?.(translate('profile.passwordUpdated'))
     }
   }
 
@@ -442,30 +447,33 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
       </div>
 
       {/* ── Stats card ── */}
-      {/* Desktop: 3-column page — stats take two columns, username + password the third */}
+      {/* Desktop: 3-column page — stats take two columns, language + appearance the third */}
       <div className="mx-4 mt-4 lg:mx-10 flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-start">
 
       <div className="lg:col-span-2 lg:self-stretch flex flex-col" style={card}>
         <div style={sectionLabel}>{t('profile.yourProfile')}</div>
 
-        {/* Username display */}
+        {/* Username display + account links on the right */}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2" style={{ marginBottom: 20 }}>
         <h1
           className="text-[1.5rem] md:text-[1.8rem]"
           style={{
             fontFamily: 'var(--font-display)', fontWeight: 400,
             color: 'var(--text-primary)', lineHeight: 1.15,
-            letterSpacing: '-0.01em', marginBottom: 6,
+            letterSpacing: '-0.01em', margin: 0,
           }}
         >@{username}</h1>
-        <button
-          type="button"
-          onClick={() => { setNewUsername(username || ''); setUsernameError(null); setUsernameStatus(null); setUsernameOpen(true) }}
-          style={{
-            background: 'none', border: 'none', padding: 0, marginBottom: 20, cursor: 'pointer', alignSelf: 'flex-start',
-            fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
-            color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3,
-          }}
-        >{t('profile.changeUsername')}</button>
+        <div className="flex flex-wrap gap-x-5 gap-y-1">
+          <button type="button" style={linkBtn}
+            onClick={() => { setNewUsername(username || ''); setUsernameError(null); setUsernameStatus(null); setUsernameOpen(true) }}
+          >{t('profile.changeUsername')}</button>
+          {hasPassword && (
+            <button type="button" style={linkBtn}
+              onClick={() => { setNewPassword(''); setConfirmPassword(''); setPasswordError(null); setPasswordOpen(true) }}
+            >{t('profile.changePassword')}</button>
+          )}
+        </div>
+        </div>
 
         {/* Divider */}
         <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 0 18px' }} />
@@ -494,59 +502,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         </div>
       </div>
 
-      {/* Password: third column on desktop */}
+      {/* Language + appearance: third column on desktop */}
       <div className="flex flex-col gap-3">
-
-      {/* ── Change password card (only for accounts that have a password; Google-only accounts don't) ── */}
-      {hasPassword && (
-      <div style={card}>
-        <div style={sectionLabel}>{t('profile.password')}</div>
-        <form onSubmit={handlePasswordSubmit} noValidate>
-          {passwordError && <div style={errBlock}>{passwordError}</div>}
-          {passwordSaved && (
-            <div style={{
-              background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: 8,
-              padding: '10px 14px', color: 'var(--success-text)',
-              fontFamily: 'var(--font-body)', fontSize: '0.875rem', marginBottom: 16,
-            }}>
-              {t('profile.passwordUpdated')}
-            </div>
-          )}
-          <div className="lg:max-w-[280px]" style={{ marginBottom: 14 }}>
-            <PasswordField
-              label={t('profile.newPassword')}
-              value={newPassword}
-              onChange={e => { setNewPassword(e.target.value); setPasswordError(null) }}
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="lg:max-w-[280px]" style={{ marginBottom: 16 }}>
-            <PasswordField
-              label={t('profile.confirmPassword')}
-              value={confirmPassword}
-              onChange={e => { setConfirmPassword(e.target.value); setPasswordError(null) }}
-              autoComplete="new-password"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={passwordLoading}
-            style={{
-              ...btnHug,
-              opacity: passwordLoading ? 0.7 : 1,
-              cursor: passwordLoading ? 'default' : 'pointer',
-            }}
-            onMouseEnter={e => { if (!passwordLoading) e.currentTarget.style.background = 'var(--green-mid)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'var(--green-primary)' }}
-          >
-            {passwordLoading ? t('profile.updating') : t('profile.updatePassword')}
-          </button>
-        </form>
-      </div>
-      )}
-
-      </div>
-
       {/* ── Language card ── */}
       <div style={card}>
         <div style={sectionLabel}>{t('profile.language')}</div>
@@ -609,6 +566,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             )
           })}
         </div>
+      </div>
+
       </div>
 
       {/* ── Help & support ── */}
@@ -736,6 +695,52 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           </div>
         </form>
       </GlassDialog>
+
+      {/* ── Change-password dialog (only for accounts that have a password; Google-only accounts don't) ── */}
+      {hasPassword && (
+      <GlassDialog solid open={passwordOpen} onClose={() => setPasswordOpen(false)} label={t('profile.changePassword')} maxWidth={400}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: 16 }}>
+          {t('profile.changePassword')}
+        </div>
+        <form onSubmit={handlePasswordSubmit} noValidate>
+          {passwordError && <div style={errBlock}>{passwordError}</div>}
+          <div style={{ marginBottom: 14 }}>
+            <PasswordField
+              label={t('profile.newPassword')}
+              value={newPassword}
+              onChange={e => { setNewPassword(e.target.value); setPasswordError(null) }}
+              autoComplete="new-password"
+            />
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <PasswordField
+              label={t('profile.confirmPassword')}
+              value={confirmPassword}
+              onChange={e => { setConfirmPassword(e.target.value); setPasswordError(null) }}
+              autoComplete="new-password"
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => setPasswordOpen(false)}
+              style={{
+                background: 'transparent', border: '1.5px solid var(--border-soft)', color: 'var(--text-primary)',
+                borderRadius: 'var(--r-full)', padding: '10px 22px', fontFamily: 'var(--font-body)',
+                fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer',
+              }}
+            >{t('col.cancel')}</button>
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              style={{ ...btnHug, opacity: passwordLoading ? 0.7 : 1, cursor: passwordLoading ? 'default' : 'pointer' }}
+            >
+              {passwordLoading ? t('profile.updating') : t('profile.updatePassword')}
+            </button>
+          </div>
+        </form>
+      </GlassDialog>
+      )}
 
       {/* ── Delete-account confirmation modal ── */}
       {deleteOpen && (

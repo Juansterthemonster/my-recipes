@@ -231,6 +231,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
   const [newColName,   setNewColName]   = useState('')
   const [showInput,    setShowInput]    = useState(false)
   const [creating,     setCreating]     = useState(false)
+  const [counts,       setCounts]       = useState({})
   const newColRef = useRef(null)
 
   useEffect(() => {
@@ -243,7 +244,14 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
           .eq('recipe_id', recipeId),
       ])
       const memberIds = new Set((memberRes.data || []).map(r => r.collection_id))
-      setCollections(colRes.data || [])
+      const cols = colRes.data || []
+      setCollections(cols)
+      if (cols.length) {
+        const { data: rows } = await supabase.from('collection_recipes').select('collection_id').in('collection_id', cols.map(c => c.id))
+        const tally = {}
+        ;(rows || []).forEach(r => { tally[r.collection_id] = (tally[r.collection_id] || 0) + 1 })
+        setCounts(tally)
+      }
       setOriginalIds(memberIds)
       setCheckedIds(new Set(memberIds))
       setLoading(false)
@@ -317,216 +325,189 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
     [...originalIds].some(id => !checkedIds.has(id))
   )
 
-  /* ── Shared menu-item button style ── */
-  const menuItemStyle = {
-    display: 'flex', alignItems: 'center', gap: 12,
-    width: '100%', padding: '14px 20px', textAlign: 'left',
-    fontSize: '0.95rem', color: 'var(--text-primary)',
-    background: 'none', border: 'none', borderBottom: '1px solid var(--border-soft)',
-    cursor: 'pointer', fontFamily: 'var(--font-body)',
+  const groupCard = {
+    background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 14, overflow: 'hidden',
   }
+  const closeIcon = (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  )
 
   return (
     <>
       {/* ── Backdrop ── */}
       <div
         onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.4)',
-          zIndex: 200,
-        }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }}
       />
 
-      {/* ── Sheet ── */}
-      {/*
-        Responsive sizing:
-        • Mobile  (<640 px)  — full width, flush to bottom, rounded top corners only.
-        • Desktop (≥640 px)  — centred, capped at 520 px, small gap from bottom,
-                               fully rounded so it floats above the viewport edge.
-      */}
+      {/* ── Sheet ──
+          Phones: full width, flush to the bottom. Desktop: centred, capped at 520px.
+          Styled like the iOS "Add to collection" sheet: grouped rounded lists on a soft page
+          background, name + recipe count per row. Android layout kept: tick on the right, Save at the bottom. */}
       <div style={{
         position: 'fixed',
         bottom: 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))',   // above the system navigation bar
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: 520,
-        zIndex: 201,
+        left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 520, zIndex: 201,
         background: 'var(--cream)',
-        borderRadius: '22px 22px 0 0',
+        borderRadius: '24px 24px 0 0',
         boxShadow: '0 -4px 32px rgba(0,0,0,0.14)',
-        maxHeight: '80vh',
+        maxHeight: '82vh',
         display: 'flex', flexDirection: 'column',
       }}>
         {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 14, paddingBottom: 4, flexShrink: 0 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, flexShrink: 0 }}>
+          <div style={{ width: 36, height: 5, borderRadius: 3, background: 'var(--border)' }} />
         </div>
 
         {/* Header */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 20px 16px', flexShrink: 0,
-          borderBottom: '1px solid var(--border-soft)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          padding: '14px 18px 12px 22px', flexShrink: 0,
         }}>
           <span style={{
-            fontFamily: 'var(--font-body)', fontSize: '1rem', fontWeight: 600,
+            fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 400, lineHeight: 1.2,
             color: 'var(--text-primary)',
           }}>{t('detail.addToCollection')}</span>
           <button
             onClick={onClose}
             aria-label={t('detail.close')}
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-secondary)', padding: 4, borderRadius: 6,
+              width: 32, height: 32, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+              background: 'var(--neutral-bg)', border: 'none', color: 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          >{closeIcon}</button>
         </div>
 
-        {/* Scrollable list */}
-        <div style={{ overflowY: 'auto', flex: 1 }}>
+        {/* Scrollable content */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '4px 16px 12px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* ＋ New collection */}
-          {showInput ? (
-            <div style={{
-              padding: '12px 20px', borderBottom: '1px solid var(--border-soft)',
-              display: 'flex', gap: 8, alignItems: 'center',
-            }}>
-              <input
-                ref={newColRef}
-                value={newColName}
-                onChange={e => setNewColName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowInput(false); setNewColName('') } }}
-                placeholder={t('detail.collectionName')}
-                maxLength={60}
-                style={{
-                  flex: 1, minWidth: 0,
-                  background: 'var(--surface)', border: '1.5px solid var(--border-soft)',
-                  borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-body)',
-                  fontSize: '0.9rem', color: 'var(--text-primary)',
-                  padding: '9px 14px', outline: 'none',
-                }}
-                onFocus={e => e.target.style.borderColor = 'var(--green-primary)'}
-                onBlur={e => e.target.style.borderColor = 'var(--border-soft)'}
-              />
+          {/* New collection */}
+          <div style={groupCard}>
+            {showInput ? (
+              <div style={{ padding: '10px 12px 10px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  ref={newColRef}
+                  value={newColName}
+                  onChange={e => setNewColName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowInput(false); setNewColName('') } }}
+                  placeholder={t('detail.collectionName')}
+                  maxLength={60}
+                  style={{
+                    flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
+                    fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--text-primary)', padding: '8px 0',
+                  }}
+                />
+                <button
+                  onClick={handleCreate}
+                  disabled={!newColName.trim() || creating}
+                  style={{
+                    flexShrink: 0, padding: '8px 16px', borderRadius: 'var(--r-full)',
+                    background: newColName.trim() ? 'var(--green-primary)' : 'var(--border-soft)',
+                    color: newColName.trim() ? 'var(--on-primary-white)' : 'var(--text-tertiary)',
+                    border: 'none', cursor: newColName.trim() ? 'pointer' : 'default',
+                    fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600,
+                    transition: 'background 150ms, color 150ms',
+                  }}
+                >{creating ? t('detail.creating') : t('detail.create')}</button>
+                <button
+                  onClick={() => { setShowInput(false); setNewColName('') }}
+                  aria-label={t('detail.close')}
+                  style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 6, display: 'flex' }}
+                >{closeIcon}</button>
+              </div>
+            ) : (
               <button
-                onClick={handleCreate}
-                disabled={!newColName.trim() || creating}
+                onClick={() => setShowInput(true)}
                 style={{
-                  flexShrink: 0, padding: '9px 16px',
-                  borderRadius: 'var(--r-full)',
-                  background: newColName.trim() ? 'var(--green-primary)' : 'var(--border-soft)',
-                  color: newColName.trim() ? 'var(--on-primary-white)' : 'var(--text-tertiary)',
-                  border: 'none', cursor: newColName.trim() ? 'pointer' : 'default',
-                  fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
-                  transition: 'background 150ms, color 150ms',
-                }}
-              >{creating ? t('detail.creating') : t('detail.create')}</button>
-              <button
-                onClick={() => { setShowInput(false); setNewColName('') }}
-                style={{
-                  flexShrink: 0, background: 'none', border: 'none',
-                  cursor: 'pointer', color: 'var(--text-secondary)', padding: 4,
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 56,
+                  padding: '0 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'var(--font-body)', fontSize: '0.97rem', fontWeight: 600, color: 'var(--text-primary)',
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <span style={{
+                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                  background: 'var(--green-light)', color: 'var(--text-primary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </span>
+                {t('detail.newCollection')}
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowInput(true)}
-              style={{
-                ...menuItemStyle,
-                color: 'var(--green-primary)', fontWeight: 500,
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              {t('detail.newCollection')}
-            </button>
-          )}
+            )}
+          </div>
 
           {/* Collection list */}
           {loading ? (
-            <div style={{
-              padding: '32px 20px', textAlign: 'center',
-              fontSize: '0.9rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
-            }}>{t('browse.loading')}</div>
+            <div style={{ padding: '28px 20px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>{t('browse.loading')}</div>
           ) : collections.length === 0 ? (
-            <div style={{
-              padding: '32px 20px', textAlign: 'center',
-              fontSize: '0.875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
-            }}>{t('detail.createFirst')}</div>
+            <div style={{ padding: '20px 20px 28px', textAlign: 'center', fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>{t('detail.createFirst')}</div>
           ) : (
-            collections.map(col => {
-              const checked = checkedIds.has(col.id)
-              return (
-                <button
-                  key={col.id}
-                  onClick={() => toggleCheck(col.id)}
-                  style={{
-                    ...menuItemStyle,
-                    justifyContent: 'space-between',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--green-light)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                >
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                    {col.name}
-                  </span>
-                  {/* Custom checkbox */}
-                  <span style={{
-                    width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                    border: `2px solid ${checked ? 'var(--green-primary)' : 'var(--border)'}`,
-                    background: checked ? 'var(--green-primary)' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 150ms, border-color 150ms',
-                  }}>
-                    {checked && (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                        stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </span>
-                </button>
-              )
-            })
+            <div style={groupCard}>
+              {collections.map((col, i) => {
+                const checked = checkedIds.has(col.id)
+                return (
+                  <button
+                    key={col.id}
+                    onClick={() => toggleCheck(col.id)}
+                    role="checkbox"
+                    aria-checked={checked}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
+                      width: '100%', minHeight: 64, padding: '10px 16px', textAlign: 'left',
+                      background: checked ? 'var(--green-tint)' : 'none', border: 'none', cursor: 'pointer',
+                      borderTop: i === 0 ? 'none' : '1px solid var(--border-soft)',
+                      transition: 'background 150ms',
+                    }}
+                  >
+                    <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{
+                        fontFamily: 'var(--font-body)', fontSize: '0.97rem', fontWeight: 500, color: 'var(--text-primary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{col.name}</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        {t('col.recipeCount', { count: counts[col.id] || 0 })}
+                      </span>
+                    </span>
+                    {/* Tick on the right (circle, like the iOS selection mark) */}
+                    <span style={{
+                      width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                      border: `1.75px solid ${checked ? 'var(--green-primary)' : 'var(--text-tertiary)'}`,
+                      background: checked ? 'var(--green-primary)' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'background 150ms, border-color 150ms',
+                    }}>
+                      {checked && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                          stroke="var(--on-primary-white)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           )}
         </div>
 
-        {/* Footer — Save button */}
-        <div style={{
-          padding: '16px 20px',
-          borderTop: '1px solid var(--border-soft)',
-          flexShrink: 0,
-          background: 'var(--cream)',
-        }}>
+        {/* Footer — Save */}
+        <div style={{ padding: '10px 16px 18px', flexShrink: 0 }}>
           <button
             onClick={handleSave}
             disabled={saving}
             style={{
-              width: '100%', padding: '14px',
-              borderRadius: 'var(--r-full)',
+              width: '100%', padding: '15px', borderRadius: 'var(--r-full)',
               background: hasChanges ? 'var(--green-primary)' : 'var(--border-soft)',
               color: hasChanges ? 'var(--on-primary-white)' : 'var(--text-tertiary)',
-              border: 'none',
-              cursor: hasChanges ? 'pointer' : 'default',
-              fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
-              transition: 'background 150ms, color 150ms',
-              opacity: saving ? 0.7 : 1,
+              border: 'none', cursor: hasChanges ? 'pointer' : 'default',
+              fontFamily: 'var(--font-body)', fontSize: '0.97rem', fontWeight: 600,
+              transition: 'background 150ms, color 150ms', opacity: saving ? 0.7 : 1,
             }}
           >{saving ? t('col.saving') : t('col.save')}</button>
         </div>

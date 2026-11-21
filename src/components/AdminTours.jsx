@@ -27,14 +27,14 @@ export default function AdminTours() {
 
   return (
     <div style={{
-      background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)',
+      background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)',
       padding: '20px 24px', marginBottom: 16,
     }}>
       <div style={{ ...labelStyle, marginBottom: 4 }}>Spotlight tours</div>
       <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12 }}>
         Each tour shows once per device. Reset it to see it again.
       </div>
-      {note && <div style={{ background: '#E3EED6', color: '#2F5D1F', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{note}</div>}
+      {note && <div style={{ background: 'var(--green-light)', color: 'var(--success-text-dark)', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{note}</div>}
       {TOURS.map((tour, i) => (
         <div key={tour.id} style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',

@@ -31,7 +31,7 @@ const fmtDateTime = iso => iso
   : '—'
 
 const card = {
-  background: 'var(--white)', borderRadius: 'var(--r-lg)',
+  background: 'var(--surface)', borderRadius: 'var(--r-lg)',
   border: '1px solid var(--border-soft)', padding: '20px 24px',
 }
 
@@ -117,7 +117,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
         <button onClick={onBack} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontWeight: 600,
-          color: '#0C3D4E', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
+          color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -133,7 +133,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
         </h1>
 
         {error && (
-          <div style={{ background: '#FFF0F0', border: '1px solid #F5BABA', borderRadius: 8, padding: '10px 14px', color: '#A03030', fontFamily: 'var(--font-body)', fontSize: '0.875rem' }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', color: 'var(--danger-text)', fontFamily: 'var(--font-body)', fontSize: '0.875rem' }}>
             {error}
           </div>
         )}
@@ -180,14 +180,14 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       }}>
                         <div style={{ minWidth: 0 }}>
                           {isNew && (
-                            <span style={{ background: '#0C3D4E', color: '#F9F6F0', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 999, marginRight: 8, verticalAlign: 'middle' }}>NEW</span>
+                            <span style={{ background: 'var(--green-primary)', color: 'var(--on-primary)', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 999, marginRight: 8, verticalAlign: 'middle' }}>NEW</span>
                           )}
                           {r.is_public && onOpenRecipe ? (
                             <button
                               onClick={() => onOpenRecipe(r.recipe_id)}
                               style={{
                                 background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
-                                font: 'inherit', fontWeight: 500, color: '#0C3D4E',
+                                font: 'inherit', fontWeight: 500, color: 'var(--text-primary)',
                                 textDecoration: 'underline', textUnderlineOffset: 3,
                               }}
                             >{r.recipe_name || '(untitled)'}</button>
@@ -219,7 +219,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                     aria-label="Sort users by"
                     style={{
                       flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-soft)',
-                      background: 'var(--white)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem',
+                      background: 'var(--surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem',
                     }}
                   >
                     {COLUMNS.map(c => <option key={c.key} value={c.key}>Sort: {c.label}</option>)}
@@ -228,8 +228,8 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                     onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
                     aria-label={sortDir === 'asc' ? 'Ascending' : 'Descending'}
                     style={{
-                      padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-soft)', background: 'var(--white)',
-                      color: '#0C3D4E', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+                      padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-soft)', background: 'var(--surface)',
+                      color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
                     }}
                   >{sortDir === 'asc' ? '↑' : '↓'}</button>
                 </div>
@@ -264,7 +264,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                           fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
                           letterSpacing: '0.1em', textTransform: 'uppercase',
-                          color: sortKey === c.key ? '#0C3D4E' : 'var(--text-tertiary)',
+                          color: sortKey === c.key ? 'var(--text-primary)' : 'var(--text-tertiary)',
                         }}>
                           {c.label}{sortKey === c.key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                         </button>

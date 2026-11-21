@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import { toMins, fromMins } from './TimePicker'
 
 const inp = {
-  width:'100%', background:'var(--white)', border:'1.5px solid var(--border)',
+  width:'100%', background:'var(--surface)', border:'1.5px solid var(--border)',
   borderRadius:8, fontFamily:'var(--font-body)', fontSize:'1rem',
   color:'var(--text-primary)', padding:'10px 14px', outline:'none',
   transition:'border-color 180ms'
@@ -14,7 +14,7 @@ const lbl = {
   fontFamily:'var(--font-body)'
 }
 const card = {
-  background:'var(--white)', borderRadius:'var(--r-lg)',
+  background:'var(--surface)', borderRadius:'var(--r-lg)',
   border:'1px solid var(--border-soft)', padding:'20px'
 }
 const btnPill = {
@@ -24,13 +24,13 @@ const btnPill = {
   transition:'background 180ms'
 }
 const btnGhost = {
-  background:'var(--white)', color:'var(--text-secondary)',
+  background:'var(--surface)', color:'var(--text-secondary)',
   border:'1.5px solid var(--border)', borderRadius:'var(--r-full)',
   fontFamily:'var(--font-body)', fontSize:'0.82rem', fontWeight:500,
   padding:'9px 22px', cursor:'pointer', transition:'all 180ms'
 }
 
-function focus(e) { e.target.style.borderColor = '#999' }
+function focus(e) { e.target.style.borderColor = 'var(--border-focus)' }
 function blur(e) { e.target.style.borderColor = 'var(--border)' }
 
 function TimeBox({ val, onChange, unit }) {
@@ -109,7 +109,7 @@ export default function RecipeForm({ recipe, onBack, onSave }) {
     <div className="min-h-screen" style={{ background:'var(--cream)' }}>
 
       {/* Nav */}
-      <div style={{ background:'var(--white)', borderBottom:'1px solid var(--border-soft)' }}
+      <div style={{ background:'var(--surface)', borderBottom:'1px solid var(--border-soft)' }}
         className="px-5 py-4 flex items-center justify-between sticky top-0 z-10">
         <button onClick={onBack} style={{ fontSize:'0.9rem', color:'var(--text-secondary)',
           background:'none', border:'none', cursor:'pointer', fontFamily:'var(--font-body)' }}>
@@ -128,7 +128,7 @@ export default function RecipeForm({ recipe, onBack, onSave }) {
 
       <div className="mx-4 mt-4 pb-10" style={{ display:'flex', flexDirection:'column', gap:12 }}>
         {error && (
-          <div style={{ background:'#FFF0F0', border:'1px solid #F5BABA', color:'#A03030',
+          <div style={{ background:'var(--danger-bg)', border:'1px solid var(--danger-border)', color:'var(--danger-text)',
             fontSize:'0.85rem', padding:'12px 16px', borderRadius:8, fontFamily:'var(--font-body)' }}>
             {error}
           </div>

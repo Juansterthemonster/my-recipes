@@ -47,7 +47,7 @@ function PlusIcon() {
 /* ─── BOTTOM SHEET ────────────────────────────────────────────────────── */
 // Slides up from the bottom; closes on backdrop tap, Escape, or the handle. Rendered in a portal
 // so it sits above everything regardless of where it's used.
-export function BottomSheet({ open, onClose, label, children, glass = false, background = '#FFFFFF' }) {
+export function BottomSheet({ open, onClose, label, children, glass = false, background = 'var(--surface)' }) {
   const [mounted, setMounted] = useState(open)
   const [entered, setEntered] = useState(false)
   const shown = open && entered   // sliding in/out is driven by this
@@ -145,7 +145,7 @@ export function SheetRow({ onClick, children, trailing, danger = false, last = f
         width: '100%', minHeight: 54, padding: '0 8px', textAlign: 'left',
         background: 'none', border: 'none', borderBottom: last ? 'none' : '1px solid var(--border-soft)',
         fontFamily: 'var(--font-body)', fontSize: '1rem', cursor: 'pointer',
-        color: danger ? '#B42318' : 'var(--text-primary)',
+        color: danger ? 'var(--danger-alt)' : 'var(--text-primary)',
       }}
     ><span>{children}</span>{trailing}</button>
   )
@@ -183,7 +183,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
           position: 'fixed', right: 19, zIndex: 31,
           bottom: `calc(${NAV_HEIGHT}px + ${SAFE_BOTTOM} + 16px)`,
           width: 68, height: 68, borderRadius: 18,   // between the M3 baseline (56) and Expressive medium (80) sizes
-          background: '#E3EED6', color: '#0C3D4E', border: 'none', cursor: 'pointer',   // light container, teal icon (inverse of the bar)
+          background: 'var(--green-light)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer',   // light container, teal icon (inverse of the bar)
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)',   // Material 3 elevation, kept small
         }}
@@ -194,7 +194,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
           // Brand teal, see-through so cards show faintly behind it while scrolling, with a very light blur (1px)
-          background: 'rgba(12,61,78,0.87)',
+          background: 'var(--bar-bg)',
           backdropFilter: 'blur(1px)', WebkitBackdropFilter: 'blur(1px)',
           paddingBottom: SAFE_BOTTOM,
         }}
@@ -210,7 +210,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 style={{
                   flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', paddingTop: 3,   // nudges the icons 3px lower
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                  color: on ? '#F9F6F0' : 'rgba(249,246,240,0.7)',
+                  color: on ? 'var(--on-primary)' : 'var(--on-bar-dim)',
                   fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: on ? 700 : 500,
                   WebkitTapHighlightColor: 'transparent',
                 }}
@@ -218,14 +218,14 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 <span style={{
                   position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 52, height: 30, borderRadius: 15,
-                  background: on ? 'rgba(227,238,214,0.4)' : 'transparent', transition: 'background 150ms',
-                  color: on ? '#0C3D4E' : 'inherit',
+                  background: on ? 'var(--bar-pill)' : 'transparent', transition: 'background 150ms',
+                  color: on ? 'var(--text-primary)' : 'inherit',
                 }}>
                   {ICONS[tab.key]}
                   {dots[tab.key] && (
                     <span
                       role="img" aria-label={t('explore.newDot')}
-                      style={{ position: 'absolute', top: 3, right: 12, width: 8, height: 8, borderRadius: '50%', background: '#F9F6F0', border: '1.5px solid #0C3D4E' }}
+                      style={{ position: 'absolute', top: 3, right: 12, width: 8, height: 8, borderRadius: '50%', background: 'var(--cream)', border: '1.5px solid var(--green-primary)' }}
                     />
                   )}
                 </span>

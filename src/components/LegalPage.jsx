@@ -129,7 +129,7 @@ export default function LegalPage({ kind }) {
   return (
     <div style={{ background: 'var(--cream)', minHeight: '100vh', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.95rem' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px 64px' }}>
-        <a href="/" style={{ fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#0C3D4E', textDecoration: 'none', fontSize: '1.05rem' }}>
+        <a href="/" style={{ fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-primary)', textDecoration: 'none', fontSize: '1.05rem' }}>
           Mi Sazón
         </a>
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '2rem', margin: '24px 0 4px', lineHeight: 1.15 }}>{title}</h1>

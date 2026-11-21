@@ -4,7 +4,7 @@ import { useI18n } from '../i18n'
 
 /* ─── SHARED STYLES (mirrors AuthScreen) ─────────────────────────────────────── */
 const inp = {
-  width: '100%', background: 'var(--white)', border: '1.5px solid var(--border)',
+  width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)',
   borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: '1rem',
   color: 'var(--text-primary)', padding: '10px 14px', outline: 'none',
   transition: 'border-color 180ms', boxSizing: 'border-box',
@@ -21,7 +21,7 @@ const btnPrimary = {
   cursor: 'pointer', transition: 'background 180ms', letterSpacing: '0.02em',
 }
 
-function focus(e) { e.target.style.borderColor = '#999' }
+function focus(e) { e.target.style.borderColor = 'var(--border-focus)' }
 function blur(e)  { e.target.style.borderColor = 'var(--border)' }
 
 /* ─── EYE ICON ───────────────────────────────────────────────────────────────── */
@@ -118,11 +118,11 @@ export default function ResetPassword({ onDone }) {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
 
       {/* Nav */}
       <div
-        style={{ background: '#F9F6F0', position: 'sticky', top: 0, zIndex: 10 }}
+        style={{ background: 'var(--cream)', position: 'sticky', top: 0, zIndex: 10 }}
         className="
           px-5 py-[14px] flex items-center justify-between
           lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -132,7 +132,7 @@ export default function ResetPassword({ onDone }) {
       >
         <span style={{
           fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontWeight: 800,
-          color: '#0C3D4E', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
+          color: 'var(--text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
         }}>MI SAZÓN</span>
       </div>
 
@@ -154,14 +154,14 @@ export default function ResetPassword({ onDone }) {
 
         {error && (
           <div style={{
-            background: '#FFF0F0', border: '1px solid #F5BABA', color: '#A03030',
+            background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)',
             fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8,
             fontFamily: 'var(--font-body)', marginBottom: 16,
           }}>{error}</div>
         )}
 
         <div style={{
-          background: 'var(--white)', borderRadius: 'var(--r-lg)',
+          background: 'var(--surface)', borderRadius: 'var(--r-lg)',
           border: '1px solid var(--border-soft)', padding: '24px',
         }}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

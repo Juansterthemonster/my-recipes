@@ -2,7 +2,7 @@
    2:3 (same shape as the collection card, so photos are cropped the way they will appear),
    the chosen tile is full brightness with a thin white ring and a glass check badge in the
    corner; the others are slightly dimmed and a touch smaller. */
-export default function CoverTile({ selected, onClick, label, children, background = 'var(--white)' }) {
+export default function CoverTile({ selected, onClick, label, children, background = 'var(--surface)' }) {
   return (
     <button
       type="button"

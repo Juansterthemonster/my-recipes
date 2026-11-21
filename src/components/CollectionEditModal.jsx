@@ -43,7 +43,7 @@ export default function CollectionEditModal({ title, collectionId = null, initia
 
   const fieldStyle = {
     width: '100%', boxSizing: 'border-box',
-    background: 'var(--white)',
+    background: 'var(--surface)',
     border: '1.5px solid var(--border-soft)',
     borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-body)',
     fontSize: '0.95rem', color: 'var(--text-primary)',
@@ -70,14 +70,14 @@ export default function CollectionEditModal({ title, collectionId = null, initia
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
           placeholder={t('col.namePlaceholder')}
           maxLength={60}
-          style={{ ...fieldStyle, borderColor: error ? '#f5baba' : 'var(--border-soft)', marginBottom: error ? 8 : 16 }}
-          onFocus={e => e.target.style.borderColor = error ? '#f5baba' : 'var(--green-primary)'}
-          onBlur={e => e.target.style.borderColor = error ? '#f5baba' : 'var(--border-soft)'}
+          style={{ ...fieldStyle, borderColor: error ? 'var(--danger-border)' : 'var(--border-soft)', marginBottom: error ? 8 : 16 }}
+          onFocus={e => e.target.style.borderColor = error ? 'var(--danger-border)' : 'var(--green-primary)'}
+          onBlur={e => e.target.style.borderColor = error ? 'var(--danger-border)' : 'var(--border-soft)'}
         />
 
         {error && (
           <div style={{
-            fontSize: '0.8rem', color: '#a31621', fontFamily: 'var(--font-body)',
+            fontSize: '0.8rem', color: 'var(--danger-strong)', fontFamily: 'var(--font-body)',
             marginBottom: 16, display: 'flex', alignItems: 'center', gap: 5,
           }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -130,9 +130,9 @@ export default function CollectionEditModal({ title, collectionId = null, initia
             disabled={saving}
             style={{
               padding: '10px 20px', borderRadius: 'var(--r-full)',
-              background: '#0C3D4E',
+              background: 'var(--green-primary)',
               border: 'none',
-              color: '#fff',
+              color: 'var(--on-primary-white)',
               cursor: saving ? 'default' : 'pointer',
               fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
               opacity: saving ? 0.7 : 1,

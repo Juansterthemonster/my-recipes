@@ -29,9 +29,9 @@ const fmtDateTime = iso => iso
 // What happened to a report: status badge colours + a plain-language line
 const STATUS_LABEL = { open: 'Unactioned', actioned: 'Actioned', dismissed: 'Dismissed' }
 const STATUS_STYLE = {
-  open:      { background: '#FFF4E0', color: '#8A5A00' },
-  actioned:  { background: '#E3EED6', color: '#2F5D1F' },
-  dismissed: { background: '#EEF1F2', color: '#5A6B70' },
+  open:      { background: 'var(--warn-bg)', color: 'var(--warn-text)' },
+  actioned:  { background: 'var(--green-light)', color: 'var(--success-text-dark)' },
+  dismissed: { background: 'var(--badge-neutral-bg)', color: 'var(--badge-neutral-text)' },
 }
 const RESOLUTION_TEXT = {
   made_private: 'Recipe made private',
@@ -46,7 +46,7 @@ function outcomeText(r) {
 }
 
 const card = {
-  background: 'var(--white)', borderRadius: 'var(--r-lg)',
+  background: 'var(--surface)', borderRadius: 'var(--r-lg)',
   border: '1px solid var(--border-soft)', padding: '20px 24px',
 }
 
@@ -58,9 +58,9 @@ const labelStyle = {
 const btn = (kind = 'plain') => ({
   padding: '7px 14px', borderRadius: 999, cursor: 'pointer',
   fontFamily: 'var(--font-body)', fontSize: '0.8rem', fontWeight: 600,
-  border: kind === 'danger' ? '1px solid #E0A0A0' : '1px solid var(--border-soft)',
-  background: kind === 'primary' ? '#0C3D4E' : 'var(--white)',
-  color: kind === 'primary' ? '#F9F6F0' : kind === 'danger' ? '#A03030' : '#0C3D4E',
+  border: kind === 'danger' ? '1px solid var(--danger-border-strong)' : '1px solid var(--border-soft)',
+  background: kind === 'primary' ? 'var(--green-primary)' : 'var(--surface)',
+  color: kind === 'primary' ? 'var(--on-primary)' : kind === 'danger' ? 'var(--danger-text)' : 'var(--text-primary)',
 })
 
 export default function AdminReports({ onOpenRecipe, onCountChange }) {
@@ -119,15 +119,15 @@ export default function AdminReports({ onOpenRecipe, onCountChange }) {
               padding: '5px 12px', borderRadius: 999, cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: '0.74rem', fontWeight: 600,
               border: '1px solid var(--border-soft)',
-              background: tab === t.key ? '#0C3D4E' : 'var(--white)',
-              color: tab === t.key ? '#F9F6F0' : '#0C3D4E',
+              background: tab === t.key ? 'var(--green-primary)' : 'var(--surface)',
+              color: tab === t.key ? 'var(--on-primary)' : 'var(--text-primary)',
             }}>{t.label}</button>
           ))}
         </div>
       </div>
 
       {error && (
-        <div style={{ background: '#FFF0F0', border: '1px solid #F5BABA', borderRadius: 8, padding: '10px 14px', color: '#A03030', fontFamily: 'var(--font-body)', fontSize: '0.875rem', marginBottom: 10 }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', color: 'var(--danger-text)', fontFamily: 'var(--font-body)', fontSize: '0.875rem', marginBottom: 10 }}>
           {error}
         </div>
       )}
@@ -151,13 +151,13 @@ export default function AdminReports({ onOpenRecipe, onCountChange }) {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ minWidth: 0 }}>
-                    <span style={{ background: '#F0F5E8', color: '#0C3D4E', fontSize: '0.64rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, marginRight: 8, verticalAlign: 'middle' }}>
+                    <span style={{ background: 'var(--green-tint)', color: 'var(--text-primary)', fontSize: '0.64rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, marginRight: 8, verticalAlign: 'middle' }}>
                       {REASONS[r.reason] || r.reason}
                     </span>
                     {r.recipe_exists && r.recipe_is_public && onOpenRecipe ? (
                       <button onClick={() => onOpenRecipe(r.recipe_id)} style={{
                         background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
-                        font: 'inherit', fontWeight: 600, color: '#0C3D4E',
+                        font: 'inherit', fontWeight: 600, color: 'var(--text-primary)',
                         textDecoration: 'underline', textUnderlineOffset: 3,
                       }}>{r.recipe_name || '(untitled)'}</button>
                     ) : (
@@ -183,7 +183,7 @@ export default function AdminReports({ onOpenRecipe, onCountChange }) {
                   Author {r.author_username ? `@${r.author_username}` : '(unknown)'}
                   {r.author_email ? ` · ${r.author_email}` : ''}
                   {Number(r.author_open_reports) >= 2 && (
-                    <span style={{ color: '#A03030', fontWeight: 600 }}> · {Number(r.author_open_reports)} open reports on this author</span>
+                    <span style={{ color: 'var(--danger-text)', fontWeight: 600 }}> · {Number(r.author_open_reports)} open reports on this author</span>
                   )}
                 </div>
                 <div style={{ color: 'var(--text-tertiary)', marginTop: 2, fontSize: '0.8rem', overflowWrap: 'anywhere' }}>

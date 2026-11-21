@@ -6,7 +6,7 @@ import CoverTile from './CoverTile'
 export default function DefaultCoverTile({ selected, onClick }) {
   const { t } = useI18n()
   return (
-    <CoverTile selected={selected} onClick={onClick} label={t('col.useDefault')} background="#0C3D4E">
+    <CoverTile selected={selected} onClick={onClick} label={t('col.useDefault')} background="var(--fixed-teal)">
       <span style={{
         position: 'absolute', left: 9, right: 9, bottom: 10, display: 'flex', flexDirection: 'column',
         alignItems: 'flex-start', textAlign: 'left', color: '#fff',

@@ -30,7 +30,7 @@ export default function Toast({ message, visible, onHide }) {
 
   // Error toasts use the app's error colours (same as inline error blocks)
   const isError = message.type === 'error'
-  const fg = isError ? '#A03030' : 'var(--green-primary)'
+  const fg = isError ? 'var(--danger-text)' : 'var(--green-primary)'
 
   return (
     <div style={{
@@ -51,9 +51,9 @@ export default function Toast({ message, visible, onHide }) {
         gap: 12,
         padding: '14px 18px',
         borderRadius: 'var(--r-md)',
-        background: isError ? '#FFF0F0' : 'var(--green-light)',
+        background: isError ? 'var(--danger-bg)' : 'var(--green-light)',
         color: fg,
-        border: isError ? '1px solid #F5BABA' : 'none',
+        border: isError ? '1px solid var(--danger-border)' : 'none',
         boxShadow: '0 4px 20px rgba(44, 61, 28, 0.12)',
       }}>
         <span style={{

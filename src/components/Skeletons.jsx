@@ -29,7 +29,7 @@ function PhotoCardSkeleton() {
 function PlainCardSkeleton({ spacer = 34 }) {
   return (
     <div aria-hidden="true" style={{
-      borderRadius: 8, background: '#FFFFFF', border: '1px solid #D1D5DB',
+      borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border-card)',
       display: 'flex', flexDirection: 'column',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 12px 0' }}>
@@ -93,7 +93,7 @@ export function DetailSkeleton() {
   const { t } = useI18n()
   const line = (w, h = 12, mb = 10) => <div className="skeleton" style={{ width: w, height: h, borderRadius: 999, marginBottom: mb }} />
   return (
-    <div role="status" aria-busy="true" aria-label={t('browse.loading')} style={{ background: '#F9F6F0', minHeight: '100vh' }}>
+    <div role="status" aria-busy="true" aria-label={t('browse.loading')} style={{ background: 'var(--cream)', minHeight: '100vh' }}>
       <div className="mx-auto max-w-2xl px-5 pt-5 pb-10" aria-hidden="true">
         <div className="skeleton" style={{ width: '100%', aspectRatio: '4/3', borderRadius: 12, marginBottom: 20 }} />
         {line('28%', 9, 12)}

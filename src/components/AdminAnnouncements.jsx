@@ -61,7 +61,7 @@ export default function AdminAnnouncements() {
 
   return (
     <div style={{
-      background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)',
+      background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)',
       padding: '20px 24px', marginBottom: 16,
     }}>
       <div style={{ ...labelStyle, marginBottom: 4 }}>What's new announcements</div>
@@ -69,8 +69,8 @@ export default function AdminAnnouncements() {
         Try them here. Preview shows the sheet without saving anything.
       </div>
 
-      {problem && <div style={{ background: '#FFF4E0', color: '#8A5A00', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{problem}</div>}
-      {note && <div style={{ background: '#E3EED6', color: '#2F5D1F', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{note}</div>}
+      {problem && <div style={{ background: 'var(--warn-bg)', color: 'var(--warn-text)', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{problem}</div>}
+      {note && <div style={{ background: 'var(--green-light)', color: 'var(--success-text-dark)', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{note}</div>}
 
       {list.map((a, i) => {
         const m = mine?.[a.id]

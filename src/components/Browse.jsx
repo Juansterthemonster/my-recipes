@@ -54,7 +54,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
     // Same round button as search filter / sort
     width: 42, height: 42, padding: 0, flexShrink: 0,
     ...GLASS,
-    borderRadius: 'var(--r-full)', color: '#0C3D4E', cursor: 'pointer',
+    borderRadius: 'var(--r-full)', color: 'var(--text-primary)', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   }
 
@@ -67,7 +67,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
 
   return (
     <div
-      style={{ background: isPhone ? 'rgba(249,246,240,0.9)' : '#F9F6F0', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 7 : undefined }}
+      style={{ background: isPhone ? 'var(--cream-90)' : 'var(--cream)', position: 'sticky', top: 0, zIndex: 10, paddingBottom: isPhone ? 7 : undefined }}
       className="
         px-5 py-[14px] flex items-center justify-between
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -77,14 +77,14 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
     >
       <span style={{
         fontFamily: 'var(--font-body)', fontSize: '1.45rem', fontWeight: 800,
-        color: '#0C3D4E', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
+        color: 'var(--text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
       }}>MI SAZÓN</span>
 
       {!signedIn ? (
         <button
           onClick={onSignIn}
           style={{
-            ...GLASS, color: '#0C3D4E', borderRadius: 'var(--r-full)',
+            ...GLASS, color: 'var(--text-primary)', borderRadius: 'var(--r-full)',
             fontFamily: 'var(--font-body)', fontSize: '0.82rem',
             fontWeight: 600, letterSpacing: '0.03em',
             padding: '9px 20px', cursor: 'pointer',
@@ -99,7 +99,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
             aria-haspopup="menu"
             aria-expanded={addOpen}
             style={{
-              ...GLASS, color: '#0C3D4E', borderRadius: 'var(--r-full)',
+              ...GLASS, color: 'var(--text-primary)', borderRadius: 'var(--r-full)',
               fontFamily: 'var(--font-body)', fontSize: '0.82rem',
               fontWeight: 500, letterSpacing: '0.05em',
               padding: '9px 22px', cursor: 'pointer',
@@ -110,7 +110,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
           {addOpen && (
             <div role="menu" style={{
               position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-              background: 'var(--white)', border: '1px solid var(--border-soft)',
+              background: 'var(--surface)', border: '1px solid var(--border-soft)',
               borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
               minWidth: 170, zIndex: 100, overflow: 'hidden',
             }}>
@@ -118,14 +118,14 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
                 role="menuitem"
                 onClick={() => { setAddOpen(false); onAdd() }}
                 style={{ ...addItemStyle, borderBottom: '1px solid var(--border-soft)' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
               >{t('nav.addRecipe')}</button>
               <button
                 role="menuitem"
                 onClick={() => { setAddOpen(false); onAddCollection() }}
                 style={addItemStyle}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
               >{t('nav.addCollection')}</button>
             </div>
@@ -145,7 +145,7 @@ function Nav({ onAdd, onAddCollection, onProfile, isAdmin = false, adminNewCount
               <span aria-hidden="true" style={{
                 position: 'absolute', top: -4, right: -4,
                 minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
-                background: '#0C3D4E', color: '#F9F6F0', border: '1.5px solid #F9F6F0',
+                background: 'var(--green-primary)', color: 'var(--on-primary)', border: '1.5px solid var(--cream)',
                 fontSize: '0.62rem', fontWeight: 700, lineHeight: '13px', textAlign: 'center',
                 boxSizing: 'border-box',
               }}>{adminNewCount > 9 ? '9+' : adminNewCount}</span>
@@ -215,15 +215,15 @@ function SortButton({ sort }) {
         aria-label={t('sort.label')} aria-haspopup="menu" aria-expanded={open}
         style={{
           width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          ...(active ? { background: '#0C3D4E', border: '1px solid #0C3D4E' } : GLASS),
-          borderRadius: 'var(--r-full)', color: active ? '#F9F6F0' : 'var(--text-secondary)',
+          ...(active ? { background: 'var(--green-primary)', border: '1px solid var(--green-primary)' } : GLASS),
+          borderRadius: 'var(--r-full)', color: active ? 'var(--on-primary)' : 'var(--text-secondary)',
           cursor: 'pointer', transition: 'background 150ms, border-color 150ms, color 150ms',
         }}
       ><SortIcon /></button>
       {open && (
         <div role="menu" style={{
           position: 'absolute', right: 0, top: 48, zIndex: 20, minWidth: 210,
-          background: '#FFFFFF', border: '1px solid var(--border-soft)', borderRadius: 14,
+          background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 14,
           boxShadow: '0 8px 24px rgba(12,61,78,0.14)', padding: 6,
         }}>
           {sort.options.map(opt => {
@@ -262,7 +262,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
   const filterActive = filtersOpen || hasActiveFilters
   return (
     <div
-      style={{ background: '#F9F6F0', ...(isPhone ? { paddingTop: 2, paddingBottom: 3 } : {}) }}
+      style={{ background: 'var(--cream)', ...(isPhone ? { paddingTop: 2, paddingBottom: 3 } : {}) }}
       className="
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
         lg:pl-[max(40px,calc((100vw-1400px)/2+40px))]
@@ -279,7 +279,7 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
             flex: 1, minWidth: 0,
             ...GLASS,
             borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
-            fontSize: '0.95rem', color: '#6B7280',
+            fontSize: '0.95rem', color: 'var(--placeholder)',
             padding: '10px 18px', outline: 'none',
           }}
         />
@@ -290,9 +290,9 @@ function SearchBar({ search, onSearch, filtersOpen, onToggleFilters, hasActiveFi
             flexShrink: 0,
             width: 42, height: 42,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            ...(filterActive ? { background: '#0C3D4E', border: '1px solid #0C3D4E' } : GLASS),
+            ...(filterActive ? { background: 'var(--green-primary)', border: '1px solid var(--green-primary)' } : GLASS),
             borderRadius: 'var(--r-full)',
-            color: filterActive ? '#F9F6F0' : 'var(--text-secondary)',
+            color: filterActive ? 'var(--on-primary)' : 'var(--text-secondary)',
             cursor: 'pointer',
             transition: 'background 150ms, border-color 150ms, color 150ms',
           }}
@@ -339,9 +339,9 @@ function PillGroup({ label, options, active, onToggle, renderLabel = o => o }) {
                 whiteSpace: 'nowrap',
                 padding: '8px 14px',
                 borderRadius: 'var(--r-full)',
-                border: isActive ? '1.5px solid #0C3D4E' : '1.5px solid var(--border-soft)',
-                background: isActive ? '#0C3D4E' : 'var(--white)',
-                color: isActive ? '#F9F6F0' : 'var(--text-secondary)',
+                border: isActive ? '1.5px solid var(--green-primary)' : '1.5px solid var(--border-soft)',
+                background: isActive ? 'var(--green-primary)' : 'var(--surface)',
+                color: isActive ? 'var(--on-primary)' : 'var(--text-secondary)',
                 fontSize: '0.78rem', fontWeight: isActive ? 600 : 400,
                 fontFamily: 'var(--font-body)', cursor: 'pointer',
                 transition: 'background 150ms, color 150ms, border-color 150ms',
@@ -358,7 +358,7 @@ function FilterBar({ activeDietary, activeMealTypes, activeTime, onToggleDietary
   const { t } = useI18n()
   return (
     <div
-      style={{ background: '#F9F6F0' }}
+      style={{ background: 'var(--cream)' }}
       className="
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
         lg:pl-[max(40px,calc((100vw-1400px)/2+40px))]
@@ -405,11 +405,11 @@ function TabBar({ active, onChange, dots = {} }) {
   return (
     <div
       style={{
-        background: '#F9F6F0',
+        background: 'var(--cream)',
         position: 'sticky',
         top: isPhone ? 65 : 62,
         zIndex: 9,
-        borderBottom: '5px solid #F9F6F0',
+        borderBottom: '5px solid var(--cream)',
       }}
       className="
         lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -444,7 +444,7 @@ function TabBar({ active, onChange, dots = {} }) {
                   style={{
                     position: 'absolute', top: -3, right: -10,
                     width: 7, height: 7, borderRadius: '50%',
-                    background: '#0C3D4E',
+                    background: 'var(--green-primary)',
                   }}
                 />
               )}
@@ -615,7 +615,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
           <button
             onClick={onToggleFavourite}
             aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
-            style={{ ...blurBtn, padding: 10, color: recipe.is_favourite ? '#D7191D' : '#fff', flexShrink: 0 }}
+            style={{ ...blurBtn, padding: 10, color: recipe.is_favourite ? 'var(--heart)' : '#fff', flexShrink: 0 }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
           ><HeartIcon filled={recipe.is_favourite} /></button>
@@ -662,7 +662,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
   return (
     <div onClick={onClick} style={{
       position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
-      background: '#FFFFFF', border: '1px solid #D1D5DB',
+      background: 'var(--surface)', border: '1px solid var(--border-card)',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top row: pill + heart */}
@@ -676,11 +676,11 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
           aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-            color: recipe.is_favourite ? '#D7191D' : '#0C3D4E',
+            color: recipe.is_favourite ? 'var(--heart)' : 'var(--text-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, borderRadius: 6, transition: 'background 150ms',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
           onMouseLeave={e => e.currentTarget.style.background = 'none'}
         ><HeartIcon filled={recipe.is_favourite} /></button>
       </div>
@@ -693,13 +693,13 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'rgba(12,61,78,0.5)',
+            textTransform: 'uppercase', color: 'var(--ink-50)',
             fontFamily: 'var(--font-body)', marginBottom: 5,
           }}>{mealTypeLabel}</div>
         )}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
-          color: '#0C3D4E', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
+          color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
           display: '-webkit-box', WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
@@ -713,7 +713,7 @@ function MyRecipeCard({ recipe, onClick, onToggleFavourite }) {
               }}>{t('card.public')}</span>
             )}
             {dietaryLabel && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--ink-55)', fontFamily: 'var(--font-body)' }}>
                 {dietaryLabel}
               </span>
             )}
@@ -734,7 +734,7 @@ function NewBadge({ onPhoto = false }) {
   return (
     <span style={{
       display: 'inline-block', marginBottom: 8,
-      background: onPhoto ? '#FFFFFF' : '#0C3D4E', color: onPhoto ? '#0C3D4E' : '#F9F6F0',
+      background: onPhoto ? 'var(--surface)' : 'var(--green-primary)', color: onPhoto ? 'var(--text-primary)' : 'var(--on-primary)',
       fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
       padding: '3px 8px', borderRadius: 999, fontFamily: 'var(--font-body)',
     }}>{t('explore.new')}</span>
@@ -772,7 +772,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
           <button
             onClick={onToggleLike}
             aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
-            style={{ ...blurBtn, padding: 10, color: recipe.is_liked ? '#D7191D' : '#fff', flexShrink: 0 }}
+            style={{ ...blurBtn, padding: 10, color: recipe.is_liked ? 'var(--heart)' : '#fff', flexShrink: 0 }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
           ><HeartIcon filled={recipe.is_liked} /></button>
@@ -817,7 +817,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
   return (
     <div onClick={onClick} style={{
       position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
-      background: '#FFFFFF', border: '1px solid #D1D5DB',
+      background: 'var(--surface)', border: '1px solid var(--border-card)',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top row: pill + heart */}
@@ -831,11 +831,11 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
           aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-            color: recipe.is_liked ? '#D7191D' : '#0C3D4E',
+            color: recipe.is_liked ? 'var(--heart)' : 'var(--text-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, borderRadius: 6, transition: 'background 150ms',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
           onMouseLeave={e => e.currentTarget.style.background = 'none'}
         ><HeartIcon filled={recipe.is_liked} /></button>
       </div>
@@ -849,18 +849,18 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'rgba(12,61,78,0.5)',
+            textTransform: 'uppercase', color: 'var(--ink-50)',
             fontFamily: 'var(--font-body)', marginBottom: 5,
           }}>{mealTypeLabel}</div>
         )}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
-          color: '#0C3D4E', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
+          color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
           display: '-webkit-box', WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
         {dietaryLabel && (
-          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--ink-55)', fontFamily: 'var(--font-body)' }}>
             {dietaryLabel}
           </div>
         )}
@@ -884,7 +884,7 @@ function PublicRecipeCard({ recipe, onClick, onToggleLike, isNew = false }) {
 function EmptyState({ title, sub }) {
   return (
     <div style={{
-      background: 'var(--white)', borderRadius: 14,
+      background: 'var(--surface)', borderRadius: 14,
       border: '1px solid var(--border-soft)',
       padding: '36px 20px', textAlign: 'center',
     }}>
@@ -902,14 +902,14 @@ function EmptyMyRecipes({ onAdd }) {
       type="button"
       onClick={onAdd}
       style={{
-        width: '100%', background: 'var(--white)', borderRadius: 14,
+        width: '100%', background: 'var(--surface)', borderRadius: 14,
         border: '1.5px dashed var(--border)',
         padding: '48px 24px', textAlign: 'center', cursor: 'pointer',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
         transition: 'border-color 150ms, background 150ms',
       }}
       onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green-primary)'; e.currentTarget.style.background = 'var(--cream)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--white)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)' }}
     >
       <div style={{ color: 'var(--green-primary)', marginBottom: 16 }}>
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
@@ -936,7 +936,7 @@ function SignedOutPitch({ tab, onCreate, onSignIn }) {
   const { t } = useI18n()
   return (
     <div style={{
-      background: 'var(--white)', borderRadius: 14, border: '1px solid var(--border-soft)',
+      background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border-soft)',
       padding: '44px 24px', textAlign: 'center',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
@@ -949,7 +949,7 @@ function SignedOutPitch({ tab, onCreate, onSignIn }) {
         lineHeight: 1.5, maxWidth: 340, marginBottom: 22,
       }}>{t(`guest.${tab}.body`)}</div>
       <button onClick={onCreate} style={{
-        background: 'var(--green-primary)', color: '#F9F6F0', border: 'none', borderRadius: 999,
+        background: 'var(--green-primary)', color: 'var(--on-primary)', border: 'none', borderRadius: 999,
         padding: '12px 26px', fontFamily: 'var(--font-body)', fontSize: '0.92rem', fontWeight: 600,
         cursor: 'pointer',
       }}>{t('guest.cta')}</button>
@@ -967,12 +967,12 @@ function EmptyLiked() {
   const { t } = useI18n()
   return (
     <div style={{
-      background: 'var(--white)', borderRadius: 14,
+      background: 'var(--surface)', borderRadius: 14,
       border: '1px solid var(--border-soft)',
       padding: '48px 24px', textAlign: 'center',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     }}>
-      <div style={{ color: '#D7191D', marginBottom: 16, opacity: 0.8 }}>
+      <div style={{ color: 'var(--heart)', marginBottom: 16, opacity: 0.8 }}>
         <svg width="30" height="30" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" strokeWidth="1.75"
           strokeLinecap="round" strokeLinejoin="round">
@@ -996,7 +996,7 @@ function EmptyExplore() {
   const { t } = useI18n()
   return (
     <div style={{
-      background: 'var(--white)', borderRadius: 14,
+      background: 'var(--surface)', borderRadius: 14,
       border: '1px solid var(--border-soft)',
       padding: '48px 24px', textAlign: 'center',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -1103,7 +1103,7 @@ function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete
           {menuOpen && (
             <div style={{
               position: 'absolute', right: 0, top: 'calc(100% + 4px)',
-              background: 'var(--white)', border: '1px solid var(--border-soft)',
+              background: 'var(--surface)', border: '1px solid var(--border-soft)',
               borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
               minWidth: 140, zIndex: 200, overflow: 'hidden',
             }}>
@@ -1115,7 +1115,7 @@ function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete
                   border: 'none', borderBottom: '1px solid var(--border-soft)',
                   cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
               >{t('col.edit')}</button>
               {/* Only when a recipe in the collection has a photo to choose from */}
@@ -1128,7 +1128,7 @@ function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete
                     border: 'none', borderBottom: '1px solid var(--border-soft)',
                     cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                 >{t('col.selectCover')}</button>
               )}
@@ -1136,12 +1136,12 @@ function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete
                 onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete() }}
                 style={{
                   display: 'block', width: '100%', padding: '12px 16px', textAlign: 'left',
-                  fontSize: '0.88rem', color: '#C0392B', background: 'none',
+                  fontSize: '0.88rem', color: 'var(--danger-menu)', background: 'none',
                   border: 'none', cursor: 'pointer',
                   fontFamily: 'var(--font-body)', transition: 'background 150ms, color 150ms',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#F43F5E'; e.currentTarget.style.color = '#F9F6F0' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#C0392B' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-hover)'; e.currentTarget.style.color = 'var(--on-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--danger-menu)' }}
               >{t('col.delete')}</button>
             </div>
           )}
@@ -1182,7 +1182,7 @@ function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete
     return (
       <div onClick={onClick} style={{
         position: 'relative', borderRadius: 8, cursor: 'pointer',
-        background: '#0C3D4E', display: 'flex', flexDirection: 'column',
+        background: 'var(--fixed-teal)', display: 'flex', flexDirection: 'column',
       }}>
         <div style={{
           display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
@@ -1246,7 +1246,7 @@ function EmptyCollectionCard({ onCreate }) {
       onClick={onCreate}
       style={{
         borderRadius: 10, overflow: 'hidden', cursor: 'pointer',
-        background: 'var(--white)', border: '1.5px dashed var(--border)',
+        background: 'var(--surface)', border: '1.5px dashed var(--border)',
       }}
     >
       {/* 1/3 the height of a real card (2/3 ratio ÷ 3 = 2/9) */}
@@ -1706,7 +1706,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   /* Masonry grid — columns defined in index.css .masonry-grid */
 
   return (
-    <div ref={pageRef} className="min-h-screen" style={{ background: '#F9F6F0' }}>
+    <div ref={pageRef} className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <Nav
         onAdd={onAdd}
         onAddCollection={() => setModalMode('create')}

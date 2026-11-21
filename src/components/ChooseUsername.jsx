@@ -42,7 +42,7 @@ export default function ChooseUsername({ session, onDone, onSignOut }) {
   return (
     <div style={{ background: 'var(--cream)', minHeight: '100vh' }}>
       <div style={{ padding: '18px 20px' }}>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontWeight: 800, color: '#0C3D4E', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           MI SAZÓN
         </span>
       </div>
@@ -57,12 +57,12 @@ export default function ChooseUsername({ session, onDone, onSignOut }) {
         </div>
 
         {error && (
-          <div style={{ background: '#FFF0F0', border: '1px solid #F5BABA', color: '#A03030', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
             {error}
           </div>
         )}
 
-        <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: 24 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: 24 }}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'var(--font-body)' }}>
@@ -72,7 +72,7 @@ export default function ChooseUsername({ session, onDone, onSignOut }) {
                 autoFocus type="text" value={name} maxLength={20} autoComplete="username"
                 onChange={e => { setName(e.target.value); if (error) setError('') }}
                 placeholder={t('auth.usernamePlaceholder')}
-                style={{ width: '100%', boxSizing: 'border-box', background: 'var(--white)', border: '1.5px solid var(--border)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--text-primary)', padding: '10px 14px', outline: 'none' }}
+                style={{ width: '100%', boxSizing: 'border-box', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--text-primary)', padding: '10px 14px', outline: 'none' }}
               />
               <p style={{ marginTop: 6, fontSize: '0.78rem', lineHeight: 1.4, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
                 {t('auth.usernameNote')}
@@ -80,7 +80,7 @@ export default function ChooseUsername({ session, onDone, onSignOut }) {
             </div>
             <button
               type="submit" disabled={saving}
-              style={{ background: 'var(--green-primary)', color: '#F9F6F0', border: 'none', borderRadius: 'var(--r-full)', padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 500, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}
+              style={{ background: 'var(--green-primary)', color: 'var(--on-primary)', border: 'none', borderRadius: 'var(--r-full)', padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 500, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}
             >{saving ? t('profile.saving') : t('username.continue')}</button>
           </form>
         </div>

@@ -21,7 +21,7 @@ function RemoveConfirmModal({ onConfirm, onCancel }) {
         position: 'fixed', top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 301,
-        background: '#F9F6F0',
+        background: 'var(--cream)',
         borderRadius: 16,
         padding: '28px 24px',
         width: 'min(360px, calc(100vw - 48px))',
@@ -53,8 +53,8 @@ function RemoveConfirmModal({ onConfirm, onCancel }) {
             onClick={onConfirm}
             style={{
               padding: '10px 20px', borderRadius: 'var(--r-full)',
-              background: '#0C3D4E', border: 'none',
-              color: '#fff', cursor: 'pointer',
+              background: 'var(--green-primary)', border: 'none',
+              color: 'var(--on-primary-white)', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
             }}
           >{t('cd.remove')}</button>
@@ -193,11 +193,11 @@ export default function CollectionDetail({ collection: collectionProp, session, 
   const count = recipes.length
 
   return (
-    <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
 
       {/* ── Nav ── */}
       <div
-        style={{ background: '#F9F6F0', position: 'sticky', top: 0, zIndex: 10 }}
+        style={{ background: 'var(--cream)', position: 'sticky', top: 0, zIndex: 10 }}
         className="
           px-5 py-[14px] flex items-center justify-between
           lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -211,7 +211,7 @@ export default function CollectionDetail({ collection: collectionProp, session, 
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
             fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontWeight: 600,
-            color: '#0C3D4E', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
+            color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
           }}
         >
           <BackArrow />
@@ -222,7 +222,7 @@ export default function CollectionDetail({ collection: collectionProp, session, 
         <button onClick={() => setEditing(true)} style={{
           ...GLASS,
           fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
-          borderRadius: 'var(--r-full)', color: '#0C3D4E',
+          borderRadius: 'var(--r-full)', color: 'var(--text-primary)',
           cursor: 'pointer', fontFamily: 'var(--font-body)',
         }}>{t('detail.edit')}</button>
       </div>
@@ -258,14 +258,14 @@ export default function CollectionDetail({ collection: collectionProp, session, 
         {/* Recipe grid */}
         {loading ? (
           <div style={{
-            background: 'var(--white)', borderRadius: 14,
+            background: 'var(--surface)', borderRadius: 14,
             border: '1px solid var(--border-soft)',
             padding: '48px 20px', textAlign: 'center',
             fontSize: '0.9rem', color: 'var(--text-secondary)',
           }}>{t('browse.loading')}</div>
         ) : recipes.length === 0 ? (
           <div style={{
-            background: 'var(--white)', borderRadius: 14,
+            background: 'var(--surface)', borderRadius: 14,
             border: '1px solid var(--border-soft)',
             padding: '48px 24px', textAlign: 'center',
             display: 'flex', flexDirection: 'column', alignItems: 'center',

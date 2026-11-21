@@ -132,7 +132,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
             <button
               onClick={onToggleFavourite}
               aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
-              style={{ ...blurBtn, padding: 10, color: recipe.is_favourite ? '#D7191D' : '#fff', flexShrink: 0 }}
+              style={{ ...blurBtn, padding: 10, color: recipe.is_favourite ? 'var(--heart)' : '#fff', flexShrink: 0 }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
             ><HeartIcon filled={recipe.is_favourite} /></button>
@@ -189,7 +189,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
   return (
     <div onClick={onClick} style={{
       position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
-      background: '#FFFFFF', border: '1px solid #D1D5DB',
+      background: 'var(--surface)', border: '1px solid var(--border-card)',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top row: pill + action buttons column */}
@@ -204,11 +204,11 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
             aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-              color: recipe.is_favourite ? '#D7191D' : '#0C3D4E',
+              color: recipe.is_favourite ? 'var(--heart)' : 'var(--text-primary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, borderRadius: 6, transition: 'background 150ms',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           ><HeartIcon filled={recipe.is_favourite} /></button>
           {onRemove && (
@@ -217,11 +217,11 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
               aria-label={t('card.removeFromCollection')}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-                color: '#0C3D4E',
+                color: 'var(--text-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, borderRadius: 6, transition: 'background 150ms',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}
             ><RemoveFromCollectionIcon /></button>
           )}
@@ -236,13 +236,13 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'rgba(12,61,78,0.5)',
+            textTransform: 'uppercase', color: 'var(--ink-50)',
             fontFamily: 'var(--font-body)', marginBottom: 5,
           }}>{mealTypeLabel}</div>
         )}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
-          color: '#0C3D4E', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
+          color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
           display: '-webkit-box', WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
@@ -256,7 +256,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
               }}>{t('card.public')}</span>
             )}
             {dietaryLabel && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--ink-55)', fontFamily: 'var(--font-body)' }}>
                 {dietaryLabel}
               </span>
             )}
@@ -300,7 +300,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
             <button
               onClick={onToggleLike}
               aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
-              style={{ ...blurBtn, padding: 10, color: recipe.is_liked ? '#D7191D' : '#fff', flexShrink: 0 }}
+              style={{ ...blurBtn, padding: 10, color: recipe.is_liked ? 'var(--heart)' : '#fff', flexShrink: 0 }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
             ><HeartIcon filled={recipe.is_liked} /></button>
@@ -354,7 +354,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
   return (
     <div onClick={onClick} style={{
       position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer',
-      background: '#FFFFFF', border: '1px solid #D1D5DB',
+      background: 'var(--surface)', border: '1px solid var(--border-card)',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top row: pill + action buttons column */}
@@ -369,11 +369,11 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
             aria-label={recipe.is_liked ? t('card.unlike') : t('card.like')}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-              color: recipe.is_liked ? '#D7191D' : '#0C3D4E',
+              color: recipe.is_liked ? 'var(--heart)' : 'var(--text-primary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, borderRadius: 6, transition: 'background 150ms',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           ><HeartIcon filled={recipe.is_liked} /></button>
           {onRemove && (
@@ -382,11 +382,11 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
               aria-label={t('card.removeFromCollection')}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-                color: '#0C3D4E',
+                color: 'var(--text-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, borderRadius: 6, transition: 'background 150ms',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}
             ><RemoveFromCollectionIcon /></button>
           )}
@@ -401,18 +401,18 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'rgba(12,61,78,0.5)',
+            textTransform: 'uppercase', color: 'var(--ink-50)',
             fontFamily: 'var(--font-body)', marginBottom: 5,
           }}>{mealTypeLabel}</div>
         )}
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
-          color: '#0C3D4E', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
+          color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
           display: '-webkit-box', WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
         {dietaryLabel && (
-          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(12,61,78,0.55)', fontFamily: 'var(--font-body)' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--ink-55)', fontFamily: 'var(--font-body)' }}>
             {dietaryLabel}
           </div>
         )}

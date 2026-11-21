@@ -88,7 +88,7 @@ export default function PullToRefresh() {
         aria-hidden="true"
         style={{
           position: 'fixed', top: 0, left: '50%', zIndex: 60, width: 40, height: 40,
-          borderRadius: '50%', background: '#0C3D4E', color: '#F9F6F0', opacity: 0,
+          borderRadius: '50%', background: 'var(--green-primary)', color: 'var(--on-primary)', opacity: 0,
           transform: 'translate(-50%, -52px)', pointerEvents: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 2px 10px rgba(0,0,0,0.25)',

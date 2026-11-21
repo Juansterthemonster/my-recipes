@@ -22,7 +22,7 @@ export function formatTime(totalMins) {
 export default function TimePicker({ label, hours, minutes, onHoursChange, onMinutesChange }) {
   return (
     <div className="flex-1">
-      <label className="block text-[11px] font-medium text-[#6E6E73] uppercase tracking-widest mb-2">{label}</label>
+      <label className="block text-[11px] font-medium text-[color:var(--field-label)] uppercase tracking-widest mb-2">{label}</label>
       <div className="flex gap-1.5 items-center">
         <div className="relative flex-1">
           <input
@@ -32,9 +32,9 @@ export default function TimePicker({ label, hours, minutes, onHoursChange, onMin
             value={hours || ''}
             onChange={e => onHoursChange(e.target.value)}
             placeholder="0"
-            className="w-full bg-[#F5F5F7] border border-[#E5E5EA] rounded-xl px-3 py-2.5 text-[14px] text-[#1D1D1F] outline-none placeholder-[#B0B0B5] pr-7"
+            className="w-full bg-[color:var(--field-bg)] border border-[color:var(--field-border)] rounded-xl px-3 py-2.5 text-[14px] text-[color:var(--field-text)] outline-none placeholder-[color:var(--field-placeholder)] pr-7"
           />
-          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[#B0B0B5] pointer-events-none">h</span>
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[color:var(--field-placeholder)] pointer-events-none">h</span>
         </div>
         <div className="relative flex-1">
           <input
@@ -44,9 +44,9 @@ export default function TimePicker({ label, hours, minutes, onHoursChange, onMin
             value={minutes || ''}
             onChange={e => onMinutesChange(e.target.value)}
             placeholder="0"
-            className="w-full bg-[#F5F5F7] border border-[#E5E5EA] rounded-xl px-3 py-2.5 text-[14px] text-[#1D1D1F] outline-none placeholder-[#B0B0B5] pr-7"
+            className="w-full bg-[color:var(--field-bg)] border border-[color:var(--field-border)] rounded-xl px-3 py-2.5 text-[14px] text-[color:var(--field-text)] outline-none placeholder-[color:var(--field-placeholder)] pr-7"
           />
-          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[#B0B0B5] pointer-events-none">m</span>
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[12px] text-[color:var(--field-placeholder)] pointer-events-none">m</span>
         </div>
       </div>
     </div>

@@ -10,13 +10,13 @@ import { parseIngredientText } from '../utils/parseIngredients'
    ───────────────────────────────────────────────────────────────────────────── */
 
 const field = {
-  width: '100%', boxSizing: 'border-box', background: 'var(--white)',
+  width: '100%', boxSizing: 'border-box', background: 'var(--surface)',
   border: '1.5px solid var(--border-soft)', borderRadius: 8,
   fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-primary)',
   padding: '8px 10px', outline: 'none',
 }
 const primaryBtn = {
-  background: '#0C3D4E', color: '#F9F6F0', border: 'none', borderRadius: 'var(--r-full)',
+  background: 'var(--green-primary)', color: 'var(--on-primary)', border: 'none', borderRadius: 'var(--r-full)',
   fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 20px', cursor: 'pointer',
 }
 const ghostBtn = {
@@ -63,7 +63,7 @@ export default function PasteIngredientsModal({ onAdd, onClose }) {
         onClick={e => e.stopPropagation()}
         onKeyDown={e => { if (e.key === 'Escape') onClose() }}
         style={{
-          background: '#F9F6F0', borderRadius: 16, padding: '24px 22px',
+          background: 'var(--cream)', borderRadius: 16, padding: '24px 22px',
           width: 'min(600px, 100%)', maxHeight: '88vh', overflowY: 'auto',
           boxShadow: '0 8px 40px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', gap: 14,
         }}
@@ -104,7 +104,7 @@ export default function PasteIngredientsModal({ onAdd, onClose }) {
             )}
 
             {groups.map((g, gi) => (
-              <div key={gi} style={{ background: 'var(--white)', border: '1px solid var(--border-soft)', borderRadius: 12, padding: 12 }}>
+              <div key={gi} style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 12, padding: 12 }}>
                 {g.label !== '' && (
                   <input
                     value={g.label} onChange={e => updateLabel(gi, e.target.value)}

@@ -5,7 +5,7 @@ import { IN_APP_WEBVIEW, IN_NATIVE_APP, GOOGLE_WEB_CLIENT_ID, getNativeSocialLog
 
 /* ─── SHARED STYLES ──────────────────────────────────────────────────────────── */
 const inp = {
-  width: '100%', background: 'var(--white)', border: '1.5px solid var(--border)',
+  width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)',
   borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: '1rem',
   color: 'var(--text-primary)', padding: '10px 14px', outline: 'none',
   transition: 'border-color 180ms', boxSizing: 'border-box',
@@ -28,7 +28,7 @@ const linkBtn = {
   textDecoration: 'underline', textUnderlineOffset: 3,
 }
 
-function focus(e) { e.target.style.borderColor = '#999' }
+function focus(e) { e.target.style.borderColor = 'var(--border-focus)' }
 function blur(e)  { e.target.style.borderColor = 'var(--border)' }
 
 
@@ -108,8 +108,8 @@ const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator
 const SHOW_APPSTORE_BUTTON = !IN_NATIVE_APP && !IS_ANDROID
 
 const AUTH_CSS = `
-.auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:#F9F6F0}
-.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:#0C3D4E;color:#F9F6F0;flex:0 1 clamp(104px,17dvh,136px);
+.auth-wrap{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column;background:var(--cream)}
+.auth-hero{box-sizing:border-box;position:relative;overflow:hidden;background:var(--fixed-teal);color:var(--on-fixed-teal);flex:0 1 clamp(104px,17dvh,136px);
   min-height:90px;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 22px 44px}
 .auth-collage{position:absolute;inset:-12% -10%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
   transform:rotate(-8deg);opacity:.72}
@@ -122,7 +122,7 @@ const AUTH_CSS = `
 .auth-copy{position:relative;z-index:2;text-align:center;display:none}
 .auth-title{font-family:var(--font-display);font-weight:400;font-size:1.55rem;line-height:1.1;letter-spacing:-.01em;margin:0}
 .auth-sub{display:none;font-family:var(--font-body);font-size:.95rem;line-height:1.5;opacity:.9;margin:0;max-width:30ch}
-.auth-panel{flex:1 0 auto;max-height:calc(100% - 62px);position:relative;z-index:3;margin-top:-28px;background:#F9F6F0;border-radius:14px 14px 0 0;
+.auth-panel{flex:1 0 auto;max-height:calc(100% - 62px);position:relative;z-index:3;margin-top:-28px;background:var(--cream);border-radius:14px 14px 0 0;
   padding:14px 20px 12px;overflow-y:auto;min-height:0}
 .auth-inner{max-width:420px;margin:0 auto}
 .auth-head{margin-bottom:12px!important}
@@ -136,7 +136,7 @@ const AUTH_CSS = `
 .auth-noacct{margin-bottom:8px}
 @media (max-height:700px){.auth-head p{display:none}.auth-noacct{display:none}}
 .play-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-sizing:border-box;
-  background:#0C3D4E;color:#F9F6F0;border-radius:14px;padding:11px 18px;text-decoration:none;
+  background:var(--fixed-teal);color:var(--on-fixed-teal);border-radius:14px;padding:11px 18px;text-decoration:none;
   font-family:var(--font-body);transition:background 180ms}
 .play-btn:hover{background:#1A5E75}
 @media (min-width:1024px){
@@ -411,7 +411,7 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
             {t('auth.verifySent', { email })}
           </p>
         </div>
-        <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
             {t('auth.verifyBody')}
           </p>
@@ -441,12 +441,12 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
         </div>
 
         {error && (
-          <div style={{ background: '#FFF0F0', border: '1px solid #F5BABA', color: '#A03030', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
+          <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
             {error}
           </div>
         )}
 
-        <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
           <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label style={lbl}>{t('auth.email')}</label>
@@ -487,7 +487,7 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
             {t('auth.forgotSentIntro', { email })}
           </p>
         </div>
-        <div style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
             {t('auth.forgotSentBody')}
           </p>
@@ -521,24 +521,24 @@ export default function AuthScreen({ initialMode = 'signin', onExplore = null })
       )}
 
       {error && (
-        <div style={{ background: '#FFF0F0', border: '1px solid #F5BABA', color: '#A03030', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
+        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)', fontSize: '0.85rem', padding: '12px 16px', borderRadius: 8, fontFamily: 'var(--font-body)', marginBottom: 16 }}>
           {error}
         </div>
       )}
 
-      <div className="auth-card" style={{ background: 'var(--white)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
+      <div className="auth-card" style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)', padding: '24px' }}>
         {(!IN_APP_WEBVIEW || !!getNativeSocialLogin()) && (<>
         <button
           type="button" onClick={handleGoogle} disabled={loading}
           style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            background: 'var(--white)', color: 'var(--text-primary)', border: '1.5px solid var(--border)',
+            background: 'var(--surface)', color: 'var(--text-primary)', border: '1.5px solid var(--border)',
             borderRadius: 'var(--r-full)', padding: '11px 24px', fontFamily: 'var(--font-body)',
             fontSize: '0.95rem', fontWeight: 500, cursor: loading ? 'default' : 'pointer',
             opacity: loading ? 0.6 : 1, transition: 'background 150ms',
           }}
-          onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#F5F5F2' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'var(--white)' }}
+          onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'var(--hover-neutral)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)' }}
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>

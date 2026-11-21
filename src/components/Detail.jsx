@@ -67,9 +67,9 @@ function ShareBtn({ onClick, copied }) {
         background: 'none', border: 'none',
         cursor: 'pointer', display: 'flex', alignItems: 'center',
         justifyContent: 'center', flexShrink: 0,
-        color: '#0C3D4E', borderRadius: 8, transition: 'background 150ms, color 150ms',
+        color: 'var(--text-primary)', borderRadius: 8, transition: 'background 150ms, color 150ms',
       }}
-      onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
       onMouseLeave={e => e.currentTarget.style.background = 'none'}
     >
       {copied ? (
@@ -192,7 +192,7 @@ function IngredientCard({ ingredients, scaleFactor }) {
 
   return (
     <div className="mx-4 mt-3 lg:mx-10" style={{
-      background: 'var(--white)', borderRadius: 'var(--r-lg)',
+      background: 'var(--surface)', borderRadius: 'var(--r-lg)',
       border: '1px solid var(--border-soft)', padding: '20px 24px',
     }}>
       <div style={{ ...sectionLabelStyle, color: 'var(--text-tertiary)', marginBottom: 14 }}>{t('detail.ingredients')}</div>
@@ -353,7 +353,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
         width: '100%',
         maxWidth: 520,
         zIndex: 201,
-        background: '#F9F6F0',
+        background: 'var(--cream)',
         borderRadius: '22px 22px 0 0',
         boxShadow: '0 -4px 32px rgba(0,0,0,0.14)',
         maxHeight: '80vh',
@@ -408,7 +408,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
                 maxLength={60}
                 style={{
                   flex: 1, minWidth: 0,
-                  background: 'var(--white)', border: '1.5px solid var(--border-soft)',
+                  background: 'var(--surface)', border: '1.5px solid var(--border-soft)',
                   borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-body)',
                   fontSize: '0.9rem', color: 'var(--text-primary)',
                   padding: '9px 14px', outline: 'none',
@@ -423,7 +423,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
                   flexShrink: 0, padding: '9px 16px',
                   borderRadius: 'var(--r-full)',
                   background: newColName.trim() ? 'var(--green-primary)' : 'var(--border-soft)',
-                  color: newColName.trim() ? '#fff' : 'var(--text-tertiary)',
+                  color: newColName.trim() ? 'var(--on-primary-white)' : 'var(--text-tertiary)',
                   border: 'none', cursor: newColName.trim() ? 'pointer' : 'default',
                   fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 500,
                   transition: 'background 150ms, color 150ms',
@@ -512,7 +512,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
           padding: '16px 20px',
           borderTop: '1px solid var(--border-soft)',
           flexShrink: 0,
-          background: '#F9F6F0',
+          background: 'var(--cream)',
         }}>
           <button
             onClick={handleSave}
@@ -521,7 +521,7 @@ function CollectionSheet({ recipeId, session, onClose, onToast, onSaved }) {
               width: '100%', padding: '14px',
               borderRadius: 'var(--r-full)',
               background: hasChanges ? 'var(--green-primary)' : 'var(--border-soft)',
-              color: hasChanges ? '#fff' : 'var(--text-tertiary)',
+              color: hasChanges ? 'var(--on-primary-white)' : 'var(--text-tertiary)',
               border: 'none',
               cursor: hasChanges ? 'pointer' : 'default',
               fontFamily: 'var(--font-body)', fontSize: '0.95rem', fontWeight: 600,
@@ -948,13 +948,13 @@ export default function Detail({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
 
       {/* ── Nav ── */}
       {readOnly ? (
         /* Read-only nav: wordmark + Sign in CTA */
         <div
-          style={{ background: '#F9F6F0' }}
+          style={{ background: 'var(--cream)' }}
           className="
             px-5 py-[14px] flex items-center justify-between sticky top-0 z-10
             lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -964,7 +964,7 @@ export default function Detail({
         >
           <span style={{
             fontFamily: 'var(--font-body)', fontWeight: 800,
-            color: '#0C3D4E', letterSpacing: '0.06em',
+            color: 'var(--text-primary)', letterSpacing: '0.06em',
             textTransform: 'uppercase', fontSize: '1.15rem', lineHeight: 1,
           }}>MI SAZÓN</span>
           <button
@@ -972,7 +972,7 @@ export default function Detail({
             style={{
               ...GLASS,
               fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
-              borderRadius: 'var(--r-full)', color: '#0C3D4E',
+              borderRadius: 'var(--r-full)', color: 'var(--text-primary)',
               cursor: 'pointer', fontFamily: 'var(--font-body)',
             }}
           >{t('detail.signInToSave')}</button>
@@ -980,7 +980,7 @@ export default function Detail({
       ) : (
         /* Normal nav */
         <div
-          style={{ background: '#F9F6F0' }}
+          style={{ background: 'var(--cream)' }}
           className="
             px-5 py-[14px] flex items-center justify-between sticky top-0 z-10
             lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -991,7 +991,7 @@ export default function Detail({
           <button onClick={onBack} style={{
             background: 'none', border: 'none', cursor: 'pointer',
             fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontWeight: 600,
-            color: '#0C3D4E', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
+            color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1010,7 +1010,7 @@ export default function Detail({
                 <button onClick={() => onEdit(recipe)} style={{
                   ...GLASS,
                   fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
-                  borderRadius: 'var(--r-full)', color: '#0C3D4E',
+                  borderRadius: 'var(--r-full)', color: 'var(--text-primary)',
                   cursor: 'pointer', fontFamily: 'var(--font-body)',
                 }}>{t('detail.edit')}</button>
 
@@ -1023,10 +1023,10 @@ export default function Detail({
                       width: 34, height: 34,
                       background: 'none', border: 'none',
                       cursor: 'pointer', display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', flexShrink: 0, color: '#0C3D4E',
+                      justifyContent: 'center', flexShrink: 0, color: 'var(--text-primary)',
                       borderRadius: 6, transition: 'background 150ms',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}
                   >
                     <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1039,7 +1039,7 @@ export default function Detail({
                   {menuOpen && (
                     <div style={{
                       position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                      background: 'var(--white)', border: '1px solid var(--border-soft)',
+                      background: 'var(--surface)', border: '1px solid var(--border-soft)',
                       borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
                       minWidth: 170, zIndex: 100, overflow: 'hidden',
                     }}>
@@ -1054,7 +1054,7 @@ export default function Detail({
                             border: 'none', borderBottom: '1px solid var(--border-soft)',
                             cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                         >{t('detail.addToAnother')}</button>
                         <button
@@ -1065,7 +1065,7 @@ export default function Detail({
                             border: 'none', borderBottom: '1px solid var(--border-soft)',
                             cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                         >{t('detail.removeFromCollection')}</button>
                         </>
@@ -1078,7 +1078,7 @@ export default function Detail({
                             border: 'none', borderBottom: '1px solid var(--border-soft)',
                             cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                         >{t('detail.addToCollection')}</button>
                       )}
@@ -1091,7 +1091,7 @@ export default function Detail({
                           border: 'none', borderBottom: '1px solid var(--border-soft)',
                           cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                       >
                         {recipe.is_public ? t('detail.makePrivate') : t('detail.makePublic')}
@@ -1101,11 +1101,11 @@ export default function Detail({
                         onClick={() => { setMenuOpen(false); handleDelete() }}
                         style={{
                           display: 'block', width: '100%', padding: '13px 18px', textAlign: 'left',
-                          fontSize: '0.9rem', color: '#C0392B', background: 'none', border: 'none',
+                          fontSize: '0.9rem', color: 'var(--danger-menu)', background: 'none', border: 'none',
                           cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'background 150ms, color 150ms',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#F43F5E'; e.currentTarget.style.color = '#F9F6F0' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#C0392B' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-hover)'; e.currentTarget.style.color = 'var(--on-primary)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--danger-menu)' }}
                       >{t('detail.deleteRecipe')}</button>
                     </div>
                   )}
@@ -1130,7 +1130,7 @@ export default function Detail({
                     style={{
                       ...GLASS,
                       fontSize: '0.82rem', fontWeight: 500, padding: '8px 18px',
-                      borderRadius: 'var(--r-full)', color: '#0C3D4E',
+                      borderRadius: 'var(--r-full)', color: 'var(--text-primary)',
                       cursor: adding ? 'default' : 'pointer', fontFamily: 'var(--font-body)',
                       opacity: adding ? 0.6 : 1, transition: 'opacity 150ms',
                     }}
@@ -1148,10 +1148,10 @@ export default function Detail({
                       width: 34, height: 34,
                       background: 'none', border: 'none',
                       cursor: 'pointer', display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', flexShrink: 0, color: '#0C3D4E',
+                      justifyContent: 'center', flexShrink: 0, color: 'var(--text-primary)',
                       borderRadius: 6, transition: 'background 150ms',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(12,61,78,0.08)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--ink-08)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}
                   >
                     <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1164,7 +1164,7 @@ export default function Detail({
                   {menuOpen && (
                     <div style={{
                       position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                      background: 'var(--white)', border: '1px solid var(--border-soft)',
+                      background: 'var(--surface)', border: '1px solid var(--border-soft)',
                       borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
                       minWidth: 170, zIndex: 100, overflow: 'hidden',
                     }}>
@@ -1176,7 +1176,7 @@ export default function Detail({
                           border: 'none', cursor: 'pointer',
                           fontFamily: 'var(--font-body)', transition: 'background 150ms',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-primary)' }}
                       >{isInAnyCollection ? t('detail.addToAnother') : t('detail.addToCollection')}</button>
                     </div>
@@ -1191,9 +1191,9 @@ export default function Detail({
 
       {/* ── Header card ── */}
       <div className="mx-4 mt-4 lg:mx-10" style={{
-        background: photos.length > 0 ? 'var(--white)' : '#FFFFFF',
+        background: photos.length > 0 ? 'var(--surface)' : 'var(--surface)',
         borderRadius: 'var(--r-lg)',
-        border: photos.length > 0 ? '1px solid var(--border-soft)' : '1px solid #D1D5DB',
+        border: photos.length > 0 ? '1px solid var(--border-soft)' : '1px solid var(--border-card)',
         padding: '24px',
         position: 'relative',
       }}>
@@ -1297,7 +1297,7 @@ export default function Detail({
                     aria-label={t('detail.goToPhoto', { n: i + 1 })}
                     style={{
                       width: 6, height: 6, borderRadius: '50%', padding: 0, border: 'none',
-                      background: i === activePhoto ? '#fff' : 'rgba(255,255,255,0.45)',
+                      background: i === activePhoto ? 'var(--surface)' : 'rgba(255,255,255,0.45)',
                       transition: 'background 150ms', cursor: 'pointer',
                     }}
                   />
@@ -1393,7 +1393,7 @@ export default function Detail({
                   onClick={handleToggleFavourite}
                   aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
                   style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
-                    color: recipe.is_favourite ? '#D7191D' : '#fff' }}
+                    color: recipe.is_favourite ? 'var(--heart)' : '#fff' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
                 >
@@ -1404,7 +1404,7 @@ export default function Detail({
                   onClick={handleToggleLike}
                   aria-label={isLiked ? t('card.unlike') : t('card.like')}
                   style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
-                    color: isLiked ? '#D7191D' : '#fff' }}
+                    color: isLiked ? 'var(--heart)' : '#fff' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
                 >
@@ -1437,16 +1437,16 @@ export default function Detail({
                   onClick={() => !uploading && photoInputRef.current?.click()}
                   style={{
                     width: '100%', height: 100,
-                    background: '#EFEFED',
+                    background: 'var(--neutral-bg)',
                     border: 'none',
                     cursor: uploading ? 'default' : 'pointer',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
-                    gap: 10, color: '#9CA3AF', fontFamily: 'var(--font-body)',
+                    gap: 10, color: 'var(--neutral-fg)', fontFamily: 'var(--font-body)',
                     transition: 'background 150ms, color 150ms',
                   }}
-                  onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = '#E4E2DF'; e.currentTarget.style.color = '#6B7280' } }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#EFEFED'; e.currentTarget.style.color = '#9CA3AF' }}
+                  onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = 'var(--neutral-bg-hover)'; e.currentTarget.style.color = 'var(--placeholder)' } }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--neutral-bg)'; e.currentTarget.style.color = 'var(--neutral-fg)' }}
                 >
                   {uploading ? (
                     <span style={{ fontSize: '0.85rem' }}>{t('detail.uploading')}</span>
@@ -1469,7 +1469,7 @@ export default function Detail({
                   style={{
                     ...blurBtn,
                     position: 'absolute', top: 12, right: 12, padding: 10,
-                    color: recipe.is_favourite ? '#D7191D' : '#fff',
+                    color: recipe.is_favourite ? 'var(--heart)' : '#fff',
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
@@ -1512,7 +1512,7 @@ export default function Detail({
                     onClick={handleToggleFavourite}
                     aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
                     style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
-                      color: recipe.is_favourite ? '#D7191D' : '#fff' }}
+                      color: recipe.is_favourite ? 'var(--heart)' : '#fff' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
                   >
@@ -1523,7 +1523,7 @@ export default function Detail({
                     onClick={handleToggleLike}
                     aria-label={isLiked ? t('card.unlike') : t('card.like')}
                     style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
-                      color: isLiked ? '#D7191D' : '#fff' }}
+                      color: isLiked ? 'var(--heart)' : '#fff' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
                   >
@@ -1540,14 +1540,14 @@ export default function Detail({
                 disabled={uploading}
                 style={{
                   width: 150, aspectRatio: '2/3', flexShrink: 0,
-                  borderRadius: 'var(--r-lg)', border: '1.5px dashed #C9CDD1',
-                  background: '#F3F3F1', color: '#8A9096',
+                  borderRadius: 'var(--r-lg)', border: '1.5px dashed var(--neutral-border)',
+                  background: 'var(--neutral-bg-2)', color: 'var(--neutral-fg-2)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
                   fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 500,
                   cursor: uploading ? 'default' : 'pointer', transition: 'background 150ms, color 150ms, border-color 150ms',
                 }}
-                onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = '#E9E8E5'; e.currentTarget.style.color = '#0C3D4E'; e.currentTarget.style.borderColor = '#0C3D4E' } }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#F3F3F1'; e.currentTarget.style.color = '#8A9096'; e.currentTarget.style.borderColor = '#C9CDD1' }}
+                onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = 'var(--neutral-bg-hover-2)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--green-primary)' } }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--neutral-bg-2)'; e.currentTarget.style.color = 'var(--neutral-fg-2)'; e.currentTarget.style.borderColor = 'var(--neutral-border)' }}
               >
                 {uploading ? <span>{t('detail.uploading')}</span> : (
                   <>
@@ -1657,19 +1657,19 @@ export default function Detail({
             }}
           >
             {totalTimeText && (
-              <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
+              <div className="pl-3 ml-3 border-l border-[var(--border-soft)] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
                 <div style={factLabel}>{t('detail.totalTime')}</div>
                 <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{totalTimeText}</div>
               </div>
             )}
             {prepTimeText && (
-              <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
+              <div className="pl-3 ml-3 border-l border-[var(--border-soft)] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
                 <div style={factLabel}>{t('detail.prepTime')}</div>
                 <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{prepTimeText}</div>
               </div>
             )}
             {recipe.serves ? (
-              <div className="pl-3 ml-3 border-l border-[#E0E8EA] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
+              <div className="pl-3 ml-3 border-l border-[var(--border-soft)] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
                 <div style={factLabel}>{t('detail.serves')}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 26 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -1677,7 +1677,7 @@ export default function Detail({
                     onClick={() => setScaledServings(s => Math.max(1, (s || recipe.serves) - 1))}
                     aria-label={t('detail.fewer')}
                     style={stepperBtn}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0'; e.currentTarget.style.borderColor = '#0C3D4E' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)'; e.currentTarget.style.borderColor = 'var(--green-primary)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-soft)' }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1696,7 +1696,7 @@ export default function Detail({
                     onClick={() => setScaledServings(s => (s || recipe.serves) + 1)}
                     aria-label={t('detail.more')}
                     style={stepperBtn}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#0C3D4E'; e.currentTarget.style.color = '#F9F6F0'; e.currentTarget.style.borderColor = '#0C3D4E' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)'; e.currentTarget.style.borderColor = 'var(--green-primary)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--border-soft)' }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1723,7 +1723,7 @@ export default function Detail({
               </div>
             ) : null}
             {recipe.cuisine && (
-              <div className="basis-full first:pl-0 lg:basis-auto lg:ml-6 lg:pl-6 lg:border-l lg:border-[#E0E8EA] lg:first:ml-0 lg:first:border-l-0 lg:first:pl-0">
+              <div className="basis-full first:pl-0 lg:basis-auto lg:ml-6 lg:pl-6 lg:border-l lg:border-[var(--border-soft)] lg:first:ml-0 lg:first:border-l-0 lg:first:pl-0">
                 <div style={factLabel}>{t('detail.cuisine')}</div>
                 <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{recipe.cuisine}</div>
               </div>
@@ -1737,7 +1737,7 @@ export default function Detail({
               const s = {
                 'Gluten free':  { background: 'var(--cream-mid)',    color: 'var(--text-secondary)' },
                 'Vegetarian':   { background: 'var(--green-tint)',   color: 'var(--green-primary)' },
-                'Vegan':        { background: 'var(--white)',        color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' },
+                'Vegan':        { background: 'var(--surface)',        color: 'var(--text-secondary)', border: '1px solid var(--border-soft)' },
                 'Pescatarian':  { background: 'var(--violet-light)', color: 'var(--violet-accent)' },
               }[d] || {}
               return <span key={d} style={{ ...pill, ...s }}>{tagLabel(t, 'dietary', d)}</span>
@@ -1755,7 +1755,7 @@ export default function Detail({
       {/* ── Method ── */}
       {steps.length > 0 && (
         <div className="mx-4 mt-3 lg:mx-10" style={{
-          background: 'var(--white)', borderRadius: 'var(--r-lg)',
+          background: 'var(--surface)', borderRadius: 'var(--r-lg)',
           border: '1px solid var(--border-soft)', padding: '20px 24px',
         }}>
           <div style={{

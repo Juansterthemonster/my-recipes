@@ -163,7 +163,7 @@ function PhotoGridUpload({ photos, onFilesAdded, onRemove, fileInputRef }) {
 }
 
 const inp = {
-  width:'100%', background:'var(--white)', border:'1.5px solid var(--border)',
+  width:'100%', background:'var(--surface)', border:'1.5px solid var(--border)',
   borderRadius:8, fontFamily:'var(--font-body)', fontSize:'1rem',
   color:'var(--text-primary)', padding:'10px 14px', outline:'none',
   transition:'border-color 180ms'
@@ -174,11 +174,11 @@ const lbl = {
   fontFamily:'var(--font-body)'
 }
 const card = {
-  background:'var(--white)', borderRadius:'var(--r-lg)',
+  background:'var(--surface)', borderRadius:'var(--r-lg)',
   border:'1px solid var(--border-soft)', padding:'20px'
 }
 
-function focus(e) { e.target.style.borderColor = '#999' }
+function focus(e) { e.target.style.borderColor = 'var(--border-focus)' }
 function blur(e)  { e.target.style.borderColor = 'var(--border)' }
 
 function TimeBox({ val, onChange, unit }) {
@@ -456,11 +456,11 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
   }
 
   return (
-    <div className="min-h-screen" style={{ background:'#F9F6F0' }}>
+    <div className="min-h-screen" style={{ background:'var(--cream)' }}>
 
       {/* Nav — matches app background, Dark Teal text/buttons */}
       <div
-        style={{ background: '#F9F6F0' }}
+        style={{ background: 'var(--cream)' }}
         className="
           px-5 py-[14px] flex items-center justify-between sticky top-0 z-10
           lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -471,15 +471,15 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         {/* Title — left */}
         <span style={{
           fontFamily:'var(--font-body)', fontSize:'1.1rem',
-          fontWeight:600, color:'#0C3D4E'
+          fontWeight:600, color:'var(--text-primary)'
         }}>{isEdit ? t('form.editRecipe') : t('form.newRecipe')}</span>
 
         {/* Cancel + Save — right, together */}
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           {/* Cancel — secondary: Dark Teal outline */}
           <button onClick={onBack} style={{
-            background:'transparent', color:'#0C3D4E',
-            border:'1.5px solid #0C3D4E',
+            background:'transparent', color:'var(--text-primary)',
+            border:'1.5px solid var(--green-primary)',
             borderRadius:'var(--r-full)', fontFamily:'var(--font-body)',
             fontSize:'0.82rem', fontWeight:400, padding:'9px 22px',
             cursor:'pointer',
@@ -488,7 +488,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
           {/* Save — primary: Dark Teal fill */}
           <button onClick={handleSave} disabled={saving}
             style={{
-              background:'#0C3D4E', color:'#FFFFFF',
+              background:'var(--green-primary)', color:'var(--on-primary-white)',
               border:'none', borderRadius:'var(--r-full)',
               fontFamily:'var(--font-body)', fontSize:'0.82rem',
               fontWeight:600, padding:'9px 22px',
@@ -509,7 +509,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         {/* Error — Ruby Red (#a31621) is reserved exclusively for error/danger states */}
         {error && (
           <div style={{
-            background:'#fdf2f3', border:'1px solid #f5baba', color:'#a31621',
+            background:'var(--danger-bg-soft)', border:'1px solid var(--danger-border)', color:'var(--danger-strong)',
             fontSize:'0.85rem', padding:'12px 16px', borderRadius:8,
             fontFamily:'var(--font-body)', marginBottom:12
           }}>{error}</div>
@@ -571,9 +571,9 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                           padding:'6px 14px', borderRadius:'var(--r-full)',
                           fontFamily:'var(--font-body)', fontSize:'0.78rem',
                           fontWeight: active ? 600 : 400, cursor:'pointer', transition:'all 180ms',
-                          border:     active ? '1.5px solid #F1C203' : '1.5px solid var(--border)',
-                          background: active ? '#FEFAD6'             : 'var(--white)',
-                          color:      active ? '#6B4F00'             : 'var(--text-secondary)',
+                          border:     active ? '1.5px solid var(--amber-accent)' : '1.5px solid var(--border)',
+                          background: active ? 'var(--amber-pale)'             : 'var(--surface)',
+                          color:      active ? 'var(--amber-text)'             : 'var(--text-secondary)',
                         }}
                       >{tagLabel(t, 'dietary', opt)}</button>
                     )
@@ -597,9 +597,9 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
                           padding:'6px 14px', borderRadius:'var(--r-full)',
                           fontFamily:'var(--font-body)', fontSize:'0.78rem',
                           fontWeight: active ? 600 : 400, cursor:'pointer', transition:'all 180ms',
-                          border:     active ? '1.5px solid #2c302e' : '1.5px solid var(--border)',
-                          background: active ? '#f2f3f2'             : 'var(--white)',
-                          color:      active ? '#2c302e'             : 'var(--text-secondary)',
+                          border:     active ? '1.5px solid var(--graphite)' : '1.5px solid var(--border)',
+                          background: active ? 'var(--graphite-bg)'             : 'var(--surface)',
+                          color:      active ? 'var(--graphite)'             : 'var(--text-secondary)',
                         }}
                       >{tagLabel(t, 'meal', opt)}</button>
                     )
@@ -781,7 +781,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
               position:'absolute', top:3,
               left: isPublic ? 21 : 3,
               width:20, height:20, borderRadius:'50%',
-              background:'#FFFFFF',
+              background:'var(--surface)',
               transition:'left 200ms',
               boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
             }} />

@@ -396,7 +396,7 @@ export default function App() {
     if (shareError || !shareRecipe) {
       return (
         <div className="min-h-screen" style={{
-          background: '#F9F6F0', display: 'flex',
+          background: 'var(--cream)', display: 'flex',
           flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         }}>
           <div style={{ textAlign: 'center', padding: '32px 24px', maxWidth: 360 }}>
@@ -414,8 +414,8 @@ export default function App() {
               onClick={exitShareView}
               style={{
                 fontSize: '0.9rem', fontWeight: 500, padding: '10px 24px',
-                borderRadius: 'var(--r-full)', border: '1.5px solid #0C3D4E',
-                background: 'transparent', color: '#0C3D4E',
+                borderRadius: 'var(--r-full)', border: '1.5px solid var(--green-primary)',
+                background: 'transparent', color: 'var(--text-primary)',
                 cursor: 'pointer', fontFamily: 'var(--font-body)',
               }}
             >{t('app.notFound.cta')}</button>
@@ -443,7 +443,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F6F0]">
+    <div className="min-h-screen bg-[color:var(--cream)]">
       <Toast visible={toast.visible} message={toast.message} onHide={hideToast} />
       {/* "What's new" sheet — only on the recipe list, once the username is known (see src/announcements.js) */}
       <WhatsNew session={session} enabled={view === 'browse' && !!username} />

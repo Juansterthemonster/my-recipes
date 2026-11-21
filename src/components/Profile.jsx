@@ -7,7 +7,7 @@ import { useI18n, LANGUAGES, translate } from '../i18n'
    These mirror the values defined in AuthScreen.jsx — kept local so this
    component is self-contained and doesn't create a cross-component dependency. */
 const inp = {
-  width: '100%', background: 'var(--white)', border: '1.5px solid var(--border)',
+  width: '100%', background: 'var(--surface)', border: '1.5px solid var(--border)',
   borderRadius: 8, fontFamily: 'var(--font-body)', fontSize: '1rem',
   color: 'var(--text-primary)', padding: '10px 14px', outline: 'none',
   transition: 'border-color 180ms', boxSizing: 'border-box',
@@ -29,7 +29,7 @@ const btnHug = {
   justifyContent: 'center', padding: '10px 24px',
 }
 const card = {
-  background: 'var(--white)', borderRadius: 'var(--r-lg)',
+  background: 'var(--surface)', borderRadius: 'var(--r-lg)',
   border: '1px solid var(--border-soft)', padding: '20px 24px',
 }
 const sectionLabel = {
@@ -38,14 +38,14 @@ const sectionLabel = {
   marginBottom: 14, fontFamily: 'var(--font-body)',
 }
 const errBlock = {
-  background: '#FFF0F0', border: '1px solid #F5BABA', borderRadius: 8,
-  padding: '10px 14px', color: '#A03030',
+  background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 8,
+  padding: '10px 14px', color: 'var(--danger-text)',
   fontFamily: 'var(--font-body)', fontSize: '0.875rem', marginBottom: 16,
 }
 
 const USERNAME_RE = /^[a-zA-Z0-9_-]+$/
 
-function focus(e) { e.target.style.borderColor = '#999' }
+function focus(e) { e.target.style.borderColor = 'var(--border-focus)' }
 function blur(e)  { e.target.style.borderColor = 'var(--border)' }
 
 /* ─── EYE ICON ───────────────────────────────────────────────────────────────
@@ -389,16 +389,16 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
   /* ── Username status hint ───────────────────────────────────────────────── */
   function UsernameHint() {
     if (usernameSaved) return (
-      <p style={{ marginTop: 6, fontSize: '0.8rem', fontFamily: 'var(--font-body)', color: '#4A7C59' }}>
+      <p style={{ marginTop: 6, fontSize: '0.8rem', fontFamily: 'var(--font-body)', color: 'var(--success-text-soft)' }}>
         {t('profile.usernameSaved')}
       </p>
     )
     if (!usernameStatus) return null
     const map = {
       checking:  { color: 'var(--text-tertiary)', text: t('profile.checking') },
-      available: { color: '#4A7C59',              text: t('profile.available') },
-      taken:     { color: '#A03030',              text: t('profile.taken') },
-      invalid:   { color: '#A03030',              text: t('profile.invalid') },
+      available: { color: 'var(--success-text-soft)',              text: t('profile.available') },
+      taken:     { color: 'var(--danger-text)',              text: t('profile.taken') },
+      invalid:   { color: 'var(--danger-text)',              text: t('profile.invalid') },
     }
     const { color, text } = map[usernameStatus]
     return (
@@ -409,11 +409,11 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F9F6F0' }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
 
       {/* ── Nav ── */}
       <div
-        style={{ background: '#F9F6F0' }}
+        style={{ background: 'var(--cream)' }}
         className="
           px-5 py-[14px] flex items-center justify-between sticky top-0 z-10
           lg:w-screen lg:-ml-[max(0px,calc((100vw-1400px)/2))]
@@ -424,7 +424,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         <button onClick={onBack} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontWeight: 600,
-          color: '#0C3D4E', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
+          color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -518,8 +518,8 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           {passwordError && <div style={errBlock}>{passwordError}</div>}
           {passwordSaved && (
             <div style={{
-              background: '#F0F7F2', border: '1px solid #B2D9BE', borderRadius: 8,
-              padding: '10px 14px', color: '#2E6B47',
+              background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: 8,
+              padding: '10px 14px', color: 'var(--success-text)',
               fontFamily: 'var(--font-body)', fontSize: '0.875rem', marginBottom: 16,
             }}>
               {t('profile.passwordUpdated')}
@@ -580,9 +580,9 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
                 onClick={() => handleLanguageChange(l.code)}
                 style={{
                   padding: '8px 18px', borderRadius: 'var(--r-full)',
-                  border: `1.5px solid ${active ? '#0C3D4E' : 'var(--border-soft)'}`,
-                  background: active ? '#0C3D4E' : 'transparent',
-                  color: active ? '#F9F6F0' : 'var(--text-primary)',
+                  border: `1.5px solid ${active ? 'var(--green-primary)' : 'var(--border-soft)'}`,
+                  background: active ? 'var(--green-primary)' : 'transparent',
+                  color: active ? 'var(--on-primary)' : 'var(--text-primary)',
                   fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500,
                   cursor: languageSaving ? 'default' : 'pointer',
                   transition: 'background 150ms, color 150ms, border-color 150ms',
@@ -605,7 +605,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           style={{
             ...GLASS, display: 'inline-block', textDecoration: 'none',
             borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
-            fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px', color: '#0C3D4E',
+            fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px', color: 'var(--text-primary)',
           }}
         >{t('profile.contactSupport')} · support@misazon.app</a>
       </div>
@@ -617,7 +617,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
           <button
             onClick={onOpenAdmin}
             style={{
-              background: '#0C3D4E', color: '#F9F6F0', border: 'none',
+              background: 'var(--green-primary)', color: 'var(--on-primary)', border: 'none',
               borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
               fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px', cursor: 'pointer',
             }}
@@ -625,7 +625,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             Admin Dashboard
             {adminNewCount > 0 && (
               <span style={{
-                marginLeft: 10, background: '#F9F6F0', color: '#0C3D4E', borderRadius: 999,
+                marginLeft: 10, background: 'var(--cream)', color: 'var(--text-primary)', borderRadius: 999,
                 fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
               }}>{adminNewCount} new</span>
             )}
@@ -652,7 +652,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             cursor: 'pointer', color: 'var(--text-secondary)',
             transition: 'border-color 150ms, color 150ms',
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#0C3D4E'; e.currentTarget.style.color = '#0C3D4E' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--text-primary)' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-soft)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
         >
           {t('profile.signOut')}
@@ -660,13 +660,13 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
         <button
           onClick={() => setDeleteOpen(true)}
           style={{
-            background: 'none', border: '1.5px solid #F5BABA',
+            background: 'none', border: '1.5px solid var(--danger-border)',
             borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)',
             fontSize: '0.9rem', fontWeight: 500, padding: '10px 22px',
-            cursor: 'pointer', color: '#A03030', marginLeft: 12, marginTop: 0,
+            cursor: 'pointer', color: 'var(--danger-text)', marginLeft: 12, marginTop: 0,
             transition: 'background 150ms',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#FFF0F0' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-bg)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
         >
           {t('profile.deleteAccount')}
@@ -683,15 +683,15 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             role="alertdialog" aria-modal="true" aria-labelledby="delete-title"
             onClick={e => e.stopPropagation()}
             onKeyDown={e => { if (e.key === 'Escape') closeDelete() }}
-            style={{ background: '#F9F6F0', borderRadius: 16, padding: '26px 24px', width: 'min(420px, 100%)', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
+            style={{ background: 'var(--cream)', borderRadius: 16, padding: '26px 24px', width: 'min(420px, 100%)', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
           >
-            <div id="delete-title" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: '#A03030', marginBottom: 10 }}>
+            <div id="delete-title" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--danger-text)', marginBottom: 10 }}>
               {t('profile.deleteTitle')}
             </div>
             <p style={{ margin: '0 0 10px', fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--text-primary)' }}>
               {t('profile.deleteBody')}
             </p>
-            <p style={{ margin: '0 0 16px', fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.55, fontWeight: 600, color: '#A03030' }}>
+            <p style={{ margin: '0 0 16px', fontFamily: 'var(--font-body)', fontSize: '0.9rem', lineHeight: 1.55, fontWeight: 600, color: 'var(--danger-text)' }}>
               {t('profile.deleteWarning')}
             </p>
             <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
@@ -700,7 +700,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
             <input
               autoFocus value={deleteText} onChange={e => setDeleteText(e.target.value)}
               placeholder="DELETE" autoComplete="off" autoCapitalize="characters" spellCheck={false}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--border-soft)', background: 'var(--white)', fontFamily: 'var(--font-body)', fontSize: '1rem', outline: 'none', marginBottom: 14 }}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--border-soft)', background: 'var(--surface)', fontFamily: 'var(--font-body)', fontSize: '1rem', outline: 'none', marginBottom: 14 }}
             />
             {deleteError && <div style={{ ...errBlock, marginBottom: 14 }}>{deleteError}</div>}
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -712,7 +712,7 @@ export default function Profile({ session, username, onBack, onSignOut, onUserna
                 onClick={handleDeleteAccount}
                 disabled={deleting || deleteText.trim().toUpperCase() !== 'DELETE'}
                 style={{
-                  background: '#A03030', color: '#fff', border: 'none', borderRadius: 'var(--r-full)',
+                  background: 'var(--danger-text)', color: '#fff', border: 'none', borderRadius: 'var(--r-full)',
                   padding: '10px 20px', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
                   opacity: (deleting || deleteText.trim().toUpperCase() !== 'DELETE') ? 0.45 : 1,
                   cursor: (deleting || deleteText.trim().toUpperCase() !== 'DELETE') ? 'default' : 'pointer',

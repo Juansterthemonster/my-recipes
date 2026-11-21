@@ -4,7 +4,7 @@ import { useIsPhone } from '../utils/useIsPhone'
 import { BottomSheet } from './MobileNav'
 import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 
-const SOLID_BG = '#F9F6F0'
+const SOLID_BG = 'var(--cream)'
 
 /* Frosted-glass dialog: a bottom sheet on phones, a centred card on larger screens.
    Used by the announcements and the collection cover picker. */

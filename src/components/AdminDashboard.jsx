@@ -190,8 +190,8 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, overflowWrap: 'anywhere' }}>{r.email || '—'}</div>
                       <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)}</div>
                       <div style={{ marginTop: 8 }}><PlatformBadges platforms={r.platforms} /></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
-                        {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].map(([label, k]) => (
+                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${sortable ? 4 : 2}, 1fr)`, gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
+                        {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].filter(([, k]) => sortable || k === 'recipe_count' || k === 'public_recipe_count').map(([label, k]) => (
                           <div key={k} style={{ textAlign: 'center' }}>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{Number(r[k])}</div>
                             <div style={{ ...labelStyle, fontSize: '0.56rem', letterSpacing: '0.06em', marginTop: 3 }}>{label}</div>
@@ -204,10 +204,10 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
               </>
             ) : (
             <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 760 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 560 }}>
                 <thead>
                   <tr>
-                    {COLUMNS.map(c => (
+                    {COLUMNS.filter(c => sortable || (c.key !== 'liked_count' && c.key !== 'collection_count')).map(c => (
                       <th key={c.key} style={{ textAlign: c.num ? 'right' : 'left', padding: '12px 16px', borderBottom: '1px solid var(--border-soft)' }}>
                         <button onClick={sortable ? () => toggleSort(c.key) : undefined} style={{
                           background: 'none', border: 'none', cursor: sortable ? 'pointer' : 'default', padding: 0,
@@ -230,7 +230,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)' }}>{r.email || '—'}</td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{fmtDate(r.signed_up)}</td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)' }}><PlatformBadges platforms={r.platforms} /></td>
-                      {['recipe_count', 'public_recipe_count', 'liked_count', 'collection_count'].map(k => (
+                      {['recipe_count', 'public_recipe_count', 'liked_count', 'collection_count'].filter(k => sortable || k === 'recipe_count' || k === 'public_recipe_count').map(k => (
                         <td key={k} style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', textAlign: 'right', color: 'var(--text-primary)' }}>{Number(r[k])}</td>
                       ))}
                     </tr>
@@ -310,32 +310,6 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, margin: '8px 2px 10px' }}>
-                      <div style={{ ...labelStyle }}>Newest users · {newest.length} of {rows.length}</div>
-                      <button onClick={openUsers} style={{
-                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                        fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)',
-                        textDecoration: 'underline', textUnderlineOffset: 3,
-                      }}>View all {rows.length} →</button>
-                    </div>
-                    {renderUsers(newest, false)}
-                    {rows.length > newest.length && (
-                      <button onClick={openUsers} style={{
-                        width: '100%', marginTop: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer',
-                        border: '1px solid var(--border-soft)', background: 'var(--surface)', color: 'var(--text-primary)',
-                        fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
-                      }}>View all {rows.length} users</button>
-                    )}
-                  </div>
-
-                  <div className="order-1 lg:order-2 lg:col-span-1">
-            {/* ── Reports ── */}
-            <AdminReports onOpenRecipe={onOpenRecipe} />
-
-            {/* ── What's new announcements (try them by hand) ── */}
-            <AdminAnnouncements />
-            <AdminTours />
-
             {/* ── New recipes feed ── */}
             <div style={{ ...card, marginBottom: 16 }}>
               <div style={{ fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', marginBottom: 12 }}>
@@ -383,6 +357,26 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                 </div>
               )}
             </div>
+
+
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, margin: '8px 2px 10px' }}>
+                      <div style={{ ...labelStyle }}>Newest users · {newest.length} of {rows.length}</div>
+                      <button onClick={openUsers} style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                        fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)',
+                        textDecoration: 'underline', textUnderlineOffset: 3,
+                      }}>View all {rows.length} →</button>
+                    </div>
+                    {renderUsers(newest, false)}
+                  </div>
+
+                  <div className="order-1 lg:order-2 lg:col-span-1">
+            {/* ── Reports ── */}
+            <AdminReports onOpenRecipe={onOpenRecipe} />
+
+            {/* ── What's new announcements (try them by hand) ── */}
+            <AdminAnnouncements />
+            <AdminTours />
 
                   </div>
                 </div>

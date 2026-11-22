@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { ANNOUNCEMENTS, MAX_VIEWS } from '../announcements'
 import { AnnouncementSheet } from './WhatsNew'
 import { whatsNewState } from '../utils/whatsNewState'
+import AdminAccordion from './AdminAccordion'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    AdminAnnouncements — owner tool to try the "what's new" messages by hand.
@@ -13,10 +14,6 @@ import { whatsNewState } from '../utils/whatsNewState'
    the preview itself uses your current app language (Profile → Language).
    ───────────────────────────────────────────────────────────────────────────── */
 
-const labelStyle = {
-  fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase',
-  color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
-}
 const fmtDate = iso => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 const fmtDateTime = iso => iso
   ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -60,11 +57,8 @@ export default function AdminAnnouncements() {
   const list = [...ANNOUNCEMENTS].sort((a, b) => new Date(b.releasedAt) - new Date(a.releasedAt))
 
   return (
-    <div style={{
-      background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)',
-      padding: '20px 24px', marginBottom: 16,
-    }}>
-      <div style={{ ...labelStyle, marginBottom: 4 }}>What's new announcements</div>
+    <>
+    <AdminAccordion title="What's new announcements" meta={list.length}>
       <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12 }}>
         Try them here. Preview shows the sheet without saving anything.
       </div>
@@ -104,7 +98,8 @@ export default function AdminAnnouncements() {
         </div>
       )}
 
-      <AnnouncementSheet items={preview} open={open} onClose={() => setOpen(false)} onGotIt={() => setOpen(false)} />
-    </div>
+    </AdminAccordion>
+    <AnnouncementSheet items={preview} open={open} onClose={() => setOpen(false)} onGotIt={() => setOpen(false)} />
+    </>
   )
 }

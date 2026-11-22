@@ -1,14 +1,11 @@
 import { useState } from 'react'
 import { TOURS, tourSeen, resetTour } from '../utils/tours'
+import AdminAccordion from './AdminAccordion'
 
 /* AdminTours — owner tool for the one-time spotlight tours (src/utils/tours.js).
    Tours are remembered per device, so "Reset on this device" makes it appear again the next
    time you open a recipe (on a phone-width screen, with a photo that is cropped). */
 
-const labelStyle = {
-  fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase',
-  color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
-}
 const btn = {
   background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',
   borderRadius: 999, padding: '7px 16px', cursor: 'pointer',
@@ -26,11 +23,7 @@ export default function AdminTours() {
   }
 
   return (
-    <div style={{
-      background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border-soft)',
-      padding: '20px 24px', marginBottom: 16,
-    }}>
-      <div style={{ ...labelStyle, marginBottom: 4 }}>Spotlight tours</div>
+    <AdminAccordion title="Spotlight tours" meta={TOURS.length}>
       <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12 }}>
         Each tour shows once per device. Reset it to see it again.
       </div>
@@ -50,6 +43,6 @@ export default function AdminTours() {
           <button onClick={() => reset(tour.id)} style={btn}>Reset on this device</button>
         </div>
       ))}
-    </div>
+    </AdminAccordion>
   )
 }

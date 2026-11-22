@@ -81,7 +81,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
   const [loadedAt] = useState(() => Date.now())
   const [recent, setRecent]   = useState(null)
   const [lastSeen]  = useState(() => getLastSeen())   // value from BEFORE this visit
-  const [page, setPage]   = useState('overview')       // 'overview' | 'users' (the full list, its own page)
+  const [page, setPage]   = useState(() => window.history.state?.adminPage === 'users' ? 'users' : 'overview')       // 'overview' | 'users' (the full list, its own page)
   const [query, setQuery] = useState('')
 
   // The full users list is its own history entry, so the phone's back button returns to the overview.

@@ -18,10 +18,24 @@ import { DetailSkeleton } from './components/Skeletons'
 import { MY_SORTS } from './utils/sortRecipes'
 import { IN_NATIVE_APP } from './utils/inApp'
 
+// On a page refresh the browser keeps the history entry's state, so we can reopen the same screen
+// (recipe, collection, profile, admin…) instead of dropping back to the recipe list.
+const RESTORED = (() => {
+  try {
+    if (typeof window === 'undefined' || window.location.pathname.startsWith('/recipe/')) return null
+    const st = window.history.state
+    if (!st) return null
+    if ((st.view === 'detail' || st.view === 'edit') && st.recipe) return st
+    if (st.view === 'collection' && st.collection) return st
+    if (st.view === 'add' || st.view === 'profile' || st.view === 'admin') return st
+  } catch { /* no history state: start normally */ }
+  return null
+})()
+
 export default function App() {
   const { t, setLang } = useI18n()
   const [session, setSession] = useState(undefined) // undefined = loading, null = signed out
-  const [view, setView]       = useState('browse')
+  const [view, setView]       = useState(RESTORED?.view ?? 'browse')
   const [isAdmin, setIsAdmin]  = useState(false)
   // true once we know this account has no username yet (first Google sign-in) → ChooseUsername screen
   const [needsUsername, setNeedsUsername] = useState(false)
@@ -30,17 +44,18 @@ export default function App() {
   const [listRefreshKey, setListRefreshKey] = useState(0)
   const [mySort, setMySort] = useState('newest')   // My Recipes sort, saved on the profile
   const [adminNewCount, setAdminNewCount] = useState(0)   // recipes added since the admin last opened the dashboard
-  const [selectedRecipe, setSelectedRecipe] = useState(null)
-  const [selectedCollection, setSelectedCollection] = useState(null)
-  const [detailFromCollection, setDetailFromCollection] = useState(false)
+  const [selectedRecipe, setSelectedRecipe] = useState(RESTORED?.recipe ?? null)
+  const [selectedCollection, setSelectedCollection] = useState(RESTORED?.collection ?? null)
+  const [detailFromCollection, setDetailFromCollection] = useState(!!RESTORED?.fromCollection)
   const [toast, setToast]     = useState({ visible: false, message: {} })
   // Restore the tab from the URL hash so a page refresh stays on the same tab
   const [activeTab, setActiveTab] = useState(() => {
     const h = window.location.hash.replace('#', '')
-    return ['mine', 'favourites', 'collections', 'public'].includes(h) ? h : 'mine'
+    if (['mine', 'favourites', 'collections', 'public'].includes(h)) return h
+    return ['mine', 'favourites', 'collections', 'public'].includes(RESTORED?.tab) ? RESTORED.tab : 'mine'
   })
   // Was a tab named in the URL on load? If not, a signed-out visitor starts on Explore.
-  const [hadHashTab] = useState(() => ['mine', 'favourites', 'collections', 'public'].includes(window.location.hash.replace('#', '')))
+  const [hadHashTab] = useState(() => !!RESTORED || ['mine', 'favourites', 'collections', 'public'].includes(window.location.hash.replace('#', '')))
   // Signed-out visitors browse the app; the sign-in screen only shows when asked for
   // (Sign in button, an action that needs an account) or right after signing out.
   // null = browsing · 'signin' | 'signup' = sign-in screen in that mode
@@ -70,6 +85,10 @@ export default function App() {
     // Restore session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      // A reopened screen that needs an account (profile, admin, forms) isn't valid when signed out
+      if (!session && RESTORED && ['profile', 'admin', 'add', 'edit'].includes(RESTORED.view)) {
+        setView('browse'); setSelectedRecipe(null)
+      }
     })
 
     // Keep session in sync — also intercepts PASSWORD_RECOVERY links
@@ -100,7 +119,7 @@ export default function App() {
     const authReturn = /access_token|refresh_token|error_description|type=recovery|[?&#]code=/.test(
       window.location.hash + window.location.search
     )
-    if (!shareRecipeId && !authReturn) {
+    if (!shareRecipeId && !authReturn && !RESTORED) {
       window.history.replaceState({ view: 'browse', tab: activeTab, recipe: null }, '', `#${activeTab}`)
     }
   }, [])

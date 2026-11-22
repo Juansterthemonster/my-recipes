@@ -294,19 +294,22 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
               </>
             ) : (
               <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 16 }}>
-              {totals.map(s => (
-                <div key={s.label} style={{ ...card, padding: '14px 16px' }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.7rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{s.value}</div>
-                  <div style={{ fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-
                 <div className="flex flex-col gap-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
                   {/* ── Users: the newest 15 (the full list opens on its own page) ── */}
                   <div className="order-2 lg:order-1 lg:col-span-2">
+                    {/* ── Stats: all the tiles in one section, under the same two columns as the users ── */}
+                    <div style={{ ...card, padding: '16px 18px', marginBottom: 16 }}>
+                      <div style={{ ...labelStyle, marginBottom: 12 }}>Stats</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
+                        {totals.map(s => (
+                          <div key={s.label} style={{ background: 'var(--cream)', borderRadius: 12, padding: '12px 14px' }}>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{s.value}</div>
+                            <div style={{ fontSize: '0.64rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, margin: '8px 2px 10px' }}>
                       <div style={{ ...labelStyle }}>Newest users · {newest.length} of {rows.length}</div>
                       <button onClick={openUsers} style={{

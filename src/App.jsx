@@ -167,7 +167,8 @@ export default function App() {
 
       // Tell the database which platform this account just used (admin dashboard shows it).
       // Errors (migration not run yet) are ignored.
-      supabase.rpc('record_platform', { p_platform: IN_NATIVE_APP ? 'android' : 'web' })
+      // (the Supabase builder only sends the request once it is awaited or .then()-ed)
+      supabase.rpc('record_platform', { p_platform: IN_NATIVE_APP ? 'android' : 'web' }).then(() => {}, () => {})
 
       // Interface language is stored on the profile. Read separately and ignore
       // errors so the app still works before supabase_migration_language.sql is run.

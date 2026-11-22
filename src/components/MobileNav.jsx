@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../i18n'
 import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
+import { IN_NATIVE_APP } from '../utils/inApp'
 
 /* Phone-only navigation: bottom tab bar + floating Add button + bottom sheets.
    Rendered by Browse only on phone-sized screens (see useIsPhone). */
@@ -9,7 +10,9 @@ import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-const NAV_HEIGHT = 68   // the floating pill
+// The Android app's bar is icon-only (no labels, like the iOS look) and slimmer; browsers keep labels.
+const SHOW_LABELS = !IN_NATIVE_APP
+const NAV_HEIGHT = SHOW_LABELS ? 68 : 54   // the floating pill
 const NAV_GAP = 10      // space between the pill and the bottom edge / system bar
 
 /* ─── ICONS — drawn to match the iOS tab bar's SF Symbols: outline when idle, filled when selected ── */
@@ -188,8 +191,10 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
   // While this bar is on screen it draws behind the system navigation bar itself, so the solid
   // fill used on other screens (index.css .bottom-nav-on) is switched off.
   useEffect(() => {
-    document.documentElement.classList.add('bottom-nav-on')
-    return () => document.documentElement.classList.remove('bottom-nav-on')
+    const cl = document.documentElement.classList
+    cl.add('bottom-nav-on')
+    if (!SHOW_LABELS) cl.add('nav-compact')
+    return () => { cl.remove('bottom-nav-on'); cl.remove('nav-compact') }
   }, [])
 
   if (typing) return null
@@ -235,6 +240,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                 key={tab.key}
                 onClick={() => onChange(tab.key)}
                 aria-current={on ? 'page' : undefined}
+                aria-label={SHOW_LABELS ? undefined : t(`bnav.${tab.key}`)}
                 style={{
                   position: 'relative', flex: 1, minWidth: 0, height: '100%', border: 'none', cursor: 'pointer',
                   borderRadius: (NAV_HEIGHT - 8) / 2,
@@ -254,9 +260,11 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
                     />
                   )}
                 </span>
-                <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {t(`bnav.${tab.key}`)}
-                </span>
+                {SHOW_LABELS && (
+                  <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t(`bnav.${tab.key}`)}
+                  </span>
+                )}
               </button>
             )
           })}

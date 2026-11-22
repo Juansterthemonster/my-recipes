@@ -9,8 +9,8 @@ import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-// Icon-only (no labels) and slimmer, on every phone-sized screen: the Android app and phone browsers.
-const SHOW_LABELS = false
+// Labels under the icons (the 68px bar). Set to false for an icon-only, 54px bar.
+const SHOW_LABELS = true
 const NAV_HEIGHT = SHOW_LABELS ? 68 : 54   // the floating pill
 const NAV_GAP = 10      // space between the pill and the bottom edge / system bar
 

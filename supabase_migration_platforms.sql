@@ -71,3 +71,43 @@ $$;
 
 revoke all on function public.admin_user_stats() from public, anon;
 grant execute on function public.admin_user_stats() to authenticated;
+
+-- ── Detect iOS without an app update ─────────────────────────────────────────
+-- The iOS app (Swift) uses the supabase-swift library, which sends an `x-client-info: supabase-swift/<ver>`
+-- header on every request. PostgREST exposes request headers to SQL, so these statement-level triggers
+-- tag the caller as 'ios' the first time an iOS build writes a recipe, like or collection.
+-- (Web and Android report themselves through record_platform(); once the iOS app also calls
+-- record_platform('ios') on launch, browse-only iOS users are covered too.)
+create or replace function public.tag_platform_from_request()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  hdrs json;
+  client_info text;
+begin
+  begin
+    hdrs := nullif(current_setting('request.headers', true), '')::json;
+  exception when others then
+    return null;
+  end;
+  if hdrs is null or auth.uid() is null then return null; end if;
+
+  client_info := lower(coalesce(hdrs ->> 'x-client-info', ''));
+  if client_info like 'supabase-swift%' then
+    update public.profiles
+       set platforms = array_append(platforms, 'ios')
+     where id = auth.uid() and not ('ios' = any(platforms));
+  end if;
+  return null;
+end;
+$$;
+
+drop trigger if exists tag_platform_recipes     on public.recipes;
+drop trigger if exists tag_platform_likes       on public.likes;
+drop trigger if exists tag_platform_collections on public.collections;
+create trigger tag_platform_recipes     after insert on public.recipes     for each statement execute function public.tag_platform_from_request();
+create trigger tag_platform_likes       after insert on public.likes       for each statement execute function public.tag_platform_from_request();
+create trigger tag_platform_collections after insert on public.collections for each statement execute function public.tag_platform_from_request();

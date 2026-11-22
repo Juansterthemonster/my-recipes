@@ -254,7 +254,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          {page === 'users' ? 'Admin Dashboard' : 'Profile'}
+          Back
         </button>
       </div>
 

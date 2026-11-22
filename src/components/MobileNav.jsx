@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../i18n'
 import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
-import { IN_NATIVE_APP } from '../utils/inApp'
 
 /* Phone-only navigation: bottom tab bar + floating Add button + bottom sheets.
    Rendered by Browse only on phone-sized screens (see useIsPhone). */
@@ -10,8 +9,8 @@ import { IN_NATIVE_APP } from '../utils/inApp'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-// The Android app's bar is icon-only (no labels, like the iOS look) and slimmer; browsers keep labels.
-const SHOW_LABELS = !IN_NATIVE_APP
+// Icon-only (no labels) and slimmer, on every phone-sized screen: the Android app and phone browsers.
+const SHOW_LABELS = false
 const NAV_HEIGHT = SHOW_LABELS ? 68 : 54   // the floating pill
 const NAV_GAP = 10      // space between the pill and the bottom edge / system bar
 

@@ -16,6 +16,7 @@ import { useI18n } from './i18n'
 import { patchCachedMyRecipe } from './utils/listCache'
 import { DetailSkeleton } from './components/Skeletons'
 import { MY_SORTS } from './utils/sortRecipes'
+import { IN_NATIVE_APP } from './utils/inApp'
 
 export default function App() {
   const { t, setLang } = useI18n()
@@ -163,6 +164,10 @@ export default function App() {
       } else {
         setUsername(existing.username || metaUsername || null)
       }
+
+      // Tell the database which platform this account just used (admin dashboard shows it).
+      // Errors (migration not run yet) are ignored.
+      supabase.rpc('record_platform', { p_platform: IN_NATIVE_APP ? 'android' : 'web' })
 
       // Interface language is stored on the profile. Read separately and ignore
       // errors so the app still works before supabase_migration_language.sql is run.

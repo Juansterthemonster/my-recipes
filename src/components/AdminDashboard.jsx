@@ -16,6 +16,7 @@ const COLUMNS = [
   { key: 'username',            label: 'Username',      num: false },
   { key: 'email',               label: 'Email',         num: false },
   { key: 'signed_up',           label: 'Signed up',     num: false },
+  { key: 'platforms',           label: 'Platform',      num: false },
   { key: 'recipe_count',        label: 'Recipes',       num: true  },
   { key: 'public_recipe_count', label: 'Public',        num: true  },
   { key: 'liked_count',         label: 'Liked',         num: true  },
@@ -29,6 +30,24 @@ const fmtDate = iso => iso
 const fmtDateTime = iso => iso
   ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
   : '—'
+
+const PLATFORM_LABEL = { web: 'Web', android: 'Android', ios: 'iOS' }
+
+// Which platforms an account has used. Empty = hasn't opened a build that reports it yet.
+function PlatformBadges({ platforms }) {
+  const list = (platforms || []).filter(p => PLATFORM_LABEL[p])
+  if (!list.length) return <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+  return (
+    <span style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
+      {list.map(p => (
+        <span key={p} style={{
+          fontSize: '0.7rem', fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-full)',
+          background: 'var(--green-light)', color: 'var(--text-primary)', whiteSpace: 'nowrap',
+        }}>{PLATFORM_LABEL[p]}</span>
+      ))}
+    </span>
+  )
+}
 
 const card = {
   background: 'var(--surface)', borderRadius: 'var(--r-lg)',
@@ -81,7 +100,8 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
     if (!rows) return []
     const dir = sortDir === 'asc' ? 1 : -1
     return [...rows].sort((a, b) => {
-      const x = a[sortKey], y = b[sortKey]
+      const x = Array.isArray(a[sortKey]) ? (a[sortKey].join(',') || null) : a[sortKey]
+      const y = Array.isArray(b[sortKey]) ? (b[sortKey].join(',') || null) : b[sortKey]
       if (x == null && y == null) return 0
       if (x == null) return 1
       if (y == null) return -1
@@ -103,6 +123,9 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
       { label: 'Public recipes',   value: sum('public_recipe_count') },
       { label: 'Likes',            value: sum('liked_count') },
       { label: 'Collections',      value: sum('collection_count') },
+      { label: 'On Android',       value: r.filter(x => x.platforms?.includes('android')).length },
+      { label: 'On iOS',           value: r.filter(x => x.platforms?.includes('ios')).length },
+      { label: 'On web',           value: r.filter(x => x.platforms?.includes('web')).length },
     ]
   }, [rows, loadedAt])
 
@@ -241,6 +264,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       </div>
                       <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, overflowWrap: 'anywhere' }}>{r.email || '—'}</div>
                       <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)}</div>
+                      <div style={{ marginTop: 8 }}><PlatformBadges platforms={r.platforms} /></div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
                         {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].map(([label, k]) => (
                           <div key={k} style={{ textAlign: 'center' }}>
@@ -255,7 +279,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
               </>
             ) : (
             <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 720 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 820 }}>
                 <thead>
                   <tr>
                     {COLUMNS.map(c => (
@@ -280,6 +304,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       </td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)' }}>{r.email || '—'}</td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{fmtDate(r.signed_up)}</td>
+                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)' }}><PlatformBadges platforms={r.platforms} /></td>
                       {['recipe_count', 'public_recipe_count', 'liked_count', 'collection_count'].map(k => (
                         <td key={k} style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', textAlign: 'right', color: 'var(--text-primary)' }}>{Number(r[k])}</td>
                       ))}

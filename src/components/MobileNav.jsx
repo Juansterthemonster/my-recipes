@@ -9,9 +9,9 @@ import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
 // Height of the system navigation bar. In the Android app the shell sets --sazon-bottom-inset (the page
 // is drawn underneath that bar); in browsers it falls back to the browser's own safe-area inset.
 const SAFE_BOTTOM = 'var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px))'
-// Labels under the icons (the 68px bar). Set to false for an icon-only, 54px bar.
+// Labels under the icons (the 61px bar). Set to false for an icon-only, 54px bar.
 const SHOW_LABELS = true
-const NAV_HEIGHT = SHOW_LABELS ? 68 : 54   // the floating pill
+const NAV_HEIGHT = SHOW_LABELS ? 61 : 54   // the floating pill
 const NAV_GAP = 10      // space between the pill and the bottom edge / system bar
 
 /* ─── ICONS — drawn to match the iOS tab bar's SF Symbols: outline when idle, filled when selected ── */
@@ -216,7 +216,7 @@ export function BottomNav({ tabs, active, onChange, dots = {}, onAdd }) {
         aria-label="Main"
         style={{
           // Floating glass pill, like the iOS tab bar: inset from the screen edges, fully rounded
-          position: 'fixed', left: 14, right: 14, zIndex: 30,
+          position: 'fixed', left: '50%', transform: 'translateX(-50%)', width: 'calc((100% - 28px) * 0.95)', zIndex: 30,
           bottom: `calc(${SAFE_BOTTOM} + ${NAV_GAP}px)`,
           height: NAV_HEIGHT, borderRadius: NAV_HEIGHT / 2, padding: 4,
           background: 'var(--nav-glass)',

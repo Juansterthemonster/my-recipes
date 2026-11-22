@@ -363,7 +363,7 @@ input[type=number] { -moz-appearance: textfield; }
    desktop and in Chrome without edge-to-edge (nothing changes), and the real bar/home-indicator height
    where the browser draws the page under the system bar (Chrome Android edge-to-edge, iPhone Safari). */
 :root { --toast-lift: 0px; }
-html.bottom-nav-on { --toast-lift: 92px; }   /* keep toasts above the bottom nav bar */
+html.bottom-nav-on { --toast-lift: 85px; }   /* keep toasts above the bottom nav bar */
 html.bottom-nav-on.nav-compact { --toast-lift: 78px; }   /* the Android bar is icon-only and slimmer */
 #root { padding-bottom: var(--sazon-bottom-inset, env(safe-area-inset-bottom, 0px)); }
 body::after {

@@ -81,6 +81,19 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
   const [loadedAt] = useState(() => Date.now())
   const [recent, setRecent]   = useState(null)
   const [lastSeen]  = useState(() => getLastSeen())   // value from BEFORE this visit
+  const [page, setPage]   = useState('overview')       // 'overview' | 'users' (the full list, its own page)
+  const [query, setQuery] = useState('')
+
+  // The full users list is its own history entry, so the phone's back button returns to the overview.
+  useEffect(() => {
+    const onPop = e => setPage(e.state?.adminPage === 'users' ? 'users' : 'overview')
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+  function openUsers() {
+    window.history.pushState({ ...(window.history.state || {}), adminPage: 'users' }, '', '#admin-users')
+    setPage('users'); window.scrollTo(0, 0)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -112,6 +125,15 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
     })
   }, [rows, sortKey, sortDir])
 
+  const newest = useMemo(
+    () => [...(rows || [])].sort((a, b) => new Date(b.signed_up) - new Date(a.signed_up)).slice(0, 15),
+    [rows])
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return sorted
+    return sorted.filter(r => `${r.username || ''} ${r.email || ''}`.toLowerCase().includes(q))
+  }, [sorted, query])
+
   const totals = useMemo(() => {
     const r = rows || []
     const sum = k => r.reduce((n, x) => n + Number(x[k] || 0), 0)
@@ -134,10 +156,96 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
     else { setSortKey(key); setSortDir(key === 'username' ? 'asc' : 'desc') }
   }
 
+  const renderUsers = (list, sortable) => (
+    <>
+
+            {isMobile ? (
+              <>
+                {sortable && <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
+                  <select
+                    value={sortKey} onChange={e => { setSortKey(e.target.value); setSortDir(e.target.value === 'username' ? 'asc' : 'desc') }}
+                    aria-label="Sort users by"
+                    style={{
+                      flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-soft)',
+                      background: 'var(--surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem',
+                    }}
+                  >
+                    {COLUMNS.map(c => <option key={c.key} value={c.key}>Sort: {c.label}</option>)}
+                  </select>
+                  <button
+                    onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                    aria-label={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+                    style={{
+                      padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-soft)', background: 'var(--surface)',
+                      color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+                    }}
+                  >{sortDir === 'asc' ? '↑' : '↓'}</button>
+                </div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {list.map(r => (
+                    <div key={r.profile_id} style={{ ...card, padding: '14px 16px' }}>
+                      <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem', overflowWrap: 'anywhere' }}>
+                        {r.username ? `@${r.username}` : <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(no username)</span>}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, overflowWrap: 'anywhere' }}>{r.email || '—'}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)}</div>
+                      <div style={{ marginTop: 8 }}><PlatformBadges platforms={r.platforms} /></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
+                        {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].map(([label, k]) => (
+                          <div key={k} style={{ textAlign: 'center' }}>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{Number(r[k])}</div>
+                            <div style={{ ...labelStyle, fontSize: '0.56rem', letterSpacing: '0.06em', marginTop: 3 }}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+            <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 760 }}>
+                <thead>
+                  <tr>
+                    {COLUMNS.map(c => (
+                      <th key={c.key} style={{ textAlign: c.num ? 'right' : 'left', padding: '12px 16px', borderBottom: '1px solid var(--border-soft)' }}>
+                        <button onClick={sortable ? () => toggleSort(c.key) : undefined} style={{
+                          background: 'none', border: 'none', cursor: sortable ? 'pointer' : 'default', padding: 0,
+                          fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
+                          letterSpacing: '0.1em', textTransform: 'uppercase',
+                          color: sortable && sortKey === c.key ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                        }}>
+                          {c.label}{sortable && sortKey === c.key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map(r => (
+                    <tr key={r.profile_id}>
+                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-primary)', fontWeight: 500 }}>
+                        {r.username ? `@${r.username}` : <span style={{ color: 'var(--text-tertiary)' }}>(no username)</span>}
+                      </td>
+                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)' }}>{r.email || '—'}</td>
+                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{fmtDate(r.signed_up)}</td>
+                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)' }}><PlatformBadges platforms={r.platforms} /></td>
+                      {['recipe_count', 'public_recipe_count', 'liked_count', 'collection_count'].map(k => (
+                        <td key={k} style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', textAlign: 'right', color: 'var(--text-primary)' }}>{Number(r[k])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
+    </>
+  )
+
   return (
     <div style={{ paddingBottom: 40 }}>
       <div className="mx-4 lg:mx-10" style={{ paddingTop: 16 }}>
-        <button onClick={onBack} style={{
+        <button onClick={page === 'users' ? () => window.history.back() : onBack} style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontWeight: 600,
           color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, padding: 0,
@@ -146,13 +254,13 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Profile
+          {page === 'users' ? 'Admin Dashboard' : 'Profile'}
         </button>
       </div>
 
       <div className="mx-4 mt-4 lg:mx-10">
         <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: '1.6rem', color: 'var(--text-primary)', margin: '0 0 16px' }}>
-          Admin Dashboard
+          {page === 'users' ? 'All users' : 'Admin Dashboard'}
         </h1>
 
         {error && (
@@ -167,6 +275,25 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
 
         {rows && (
           <>
+{page === 'users' ? (
+              <>
+                <input
+                  type="search" value={query} onChange={e => setQuery(e.target.value)}
+                  placeholder="Search username or email"
+                  aria-label="Search users"
+                  style={{
+                    width: '100%', maxWidth: 420, boxSizing: 'border-box', padding: '10px 14px', marginBottom: 12,
+                    borderRadius: 10, border: '1px solid var(--border-soft)', background: 'var(--surface)',
+                    color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.92rem',
+                  }}
+                />
+                <div style={{ ...labelStyle, margin: '0 2px 10px' }}>
+                  {query.trim() ? `${filtered.length} of ${rows.length} users` : `${rows.length} users`}
+                </div>
+                {renderUsers(filtered, true)}
+              </>
+            ) : (
+              <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 16 }}>
               {totals.map(s => (
                 <div key={s.label} style={{ ...card, padding: '14px 16px' }}>
@@ -176,6 +303,29 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
               ))}
             </div>
 
+
+                <div className="flex flex-col gap-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
+                  {/* ── Users: the newest 15 (the full list opens on its own page) ── */}
+                  <div className="order-2 lg:order-1 lg:col-span-2">
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, margin: '8px 2px 10px' }}>
+                      <div style={{ ...labelStyle }}>Newest users · {newest.length} of {rows.length}</div>
+                      <button onClick={openUsers} style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                        fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)',
+                        textDecoration: 'underline', textUnderlineOffset: 3,
+                      }}>View all {rows.length} →</button>
+                    </div>
+                    {renderUsers(newest, false)}
+                    {rows.length > newest.length && (
+                      <button onClick={openUsers} style={{
+                        width: '100%', marginTop: 12, padding: '11px 14px', borderRadius: 10, cursor: 'pointer',
+                        border: '1px solid var(--border-soft)', background: 'var(--surface)', color: 'var(--text-primary)',
+                        fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+                      }}>View all {rows.length} users</button>
+                    )}
+                  </div>
+
+                  <div className="order-1 lg:order-2 lg:col-span-1">
             {/* ── Reports ── */}
             <AdminReports onOpenRecipe={onOpenRecipe} />
 
@@ -231,88 +381,9 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
               )}
             </div>
 
-            {/* ── Users ── */}
-            <div style={{ ...labelStyle, margin: '8px 2px 10px' }}>Users · {rows.length}</div>
-
-            {isMobile ? (
-              <>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
-                  <select
-                    value={sortKey} onChange={e => { setSortKey(e.target.value); setSortDir(e.target.value === 'username' ? 'asc' : 'desc') }}
-                    aria-label="Sort users by"
-                    style={{
-                      flex: 1, minWidth: 0, padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-soft)',
-                      background: 'var(--surface)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem',
-                    }}
-                  >
-                    {COLUMNS.map(c => <option key={c.key} value={c.key}>Sort: {c.label}</option>)}
-                  </select>
-                  <button
-                    onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-                    aria-label={sortDir === 'asc' ? 'Ascending' : 'Descending'}
-                    style={{
-                      padding: '9px 14px', borderRadius: 8, border: '1px solid var(--border-soft)', background: 'var(--surface)',
-                      color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
-                    }}
-                  >{sortDir === 'asc' ? '↑' : '↓'}</button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {sorted.map(r => (
-                    <div key={r.profile_id} style={{ ...card, padding: '14px 16px' }}>
-                      <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem', overflowWrap: 'anywhere' }}>
-                        {r.username ? `@${r.username}` : <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(no username)</span>}
-                      </div>
-                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, overflowWrap: 'anywhere' }}>{r.email || '—'}</div>
-                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)}</div>
-                      <div style={{ marginTop: 8 }}><PlatformBadges platforms={r.platforms} /></div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
-                        {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].map(([label, k]) => (
-                          <div key={k} style={{ textAlign: 'center' }}>
-                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>{Number(r[k])}</div>
-                            <div style={{ ...labelStyle, fontSize: '0.56rem', letterSpacing: '0.06em', marginTop: 3 }}>{label}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                  </div>
                 </div>
               </>
-            ) : (
-            <div style={{ ...card, padding: 0, overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-body)', fontSize: '0.88rem', minWidth: 820 }}>
-                <thead>
-                  <tr>
-                    {COLUMNS.map(c => (
-                      <th key={c.key} style={{ textAlign: c.num ? 'right' : 'left', padding: '12px 16px', borderBottom: '1px solid var(--border-soft)' }}>
-                        <button onClick={() => toggleSort(c.key)} style={{
-                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                          fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
-                          letterSpacing: '0.1em', textTransform: 'uppercase',
-                          color: sortKey === c.key ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                        }}>
-                          {c.label}{sortKey === c.key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
-                        </button>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.map(r => (
-                    <tr key={r.profile_id}>
-                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-primary)', fontWeight: 500 }}>
-                        {r.username ? `@${r.username}` : <span style={{ color: 'var(--text-tertiary)' }}>(no username)</span>}
-                      </td>
-                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)' }}>{r.email || '—'}</td>
-                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{fmtDate(r.signed_up)}</td>
-                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)' }}><PlatformBadges platforms={r.platforms} /></td>
-                      {['recipe_count', 'public_recipe_count', 'liked_count', 'collection_count'].map(k => (
-                        <td key={k} style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', textAlign: 'right', color: 'var(--text-primary)' }}>{Number(r[k])}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
             )}
           </>
         )}

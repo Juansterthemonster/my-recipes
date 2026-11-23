@@ -1149,8 +1149,12 @@ export default function Detail({
         </div>
       )}
 
-      {/* ── Header card ── */}
-      <div className="mx-4 mt-4 lg:mx-10" style={{
+      {/* ── Header card ──
+          Desktop (lg+): two columns. Left: the recipe info. Right: the photos (or the owner's "Add photo"
+          tile), so the top of the page is more visual. Below lg nothing changes: photos on top, info under. */}
+      <div
+        className={`mx-4 mt-4 lg:mx-10${(photos.length > 0 || isOwner) ? ' lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,44%)] lg:gap-8 lg:items-start' : ''}`}
+        style={{
         background: photos.length > 0 ? 'var(--surface)' : 'var(--surface)',
         borderRadius: 'var(--r-lg)',
         border: photos.length > 0 ? '1px solid var(--border-soft)' : '1px solid var(--border-card)',
@@ -1158,12 +1162,13 @@ export default function Detail({
         position: 'relative',
       }}>
 
+        <div className="lg:col-start-2 lg:row-start-1 min-w-0">
         {photos.length > 0 ? (
           /* Photo(s) present — heart sits top-right over the image (blur style).
              A swipeable carousel with dot indicators renders only when there is
              more than one photo; a single photo renders exactly as before. */
           <div
-            className={photos.length === 1 ? 'lg:hidden' : undefined}
+            className={photos.length === 1 ? 'lg:hidden' : 'lg:!m-0 lg:!rounded-[var(--r-lg)]'}
             style={{ position: 'relative', margin: '-24px -24px 10px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}
           >
             {photos.length > 1 ? (
@@ -1386,7 +1391,7 @@ export default function Detail({
 
             {isOwner && (
               /* Owner — full-width clickable Add photo zone with heart overlaid */
-              <div style={{
+              <div className="lg:!m-0 lg:!rounded-[var(--r-lg)]" style={{
                 position: 'relative',
                 margin: '-24px -24px 10px',
                 borderRadius: 'var(--r-lg) var(--r-lg) 0 0',
@@ -1394,6 +1399,7 @@ export default function Detail({
               }}>
                 <button
                   type="button"
+                  className="lg:!h-[280px]"
                   onClick={() => !uploading && photoInputRef.current?.click()}
                   style={{
                     width: '100%', height: 100,
@@ -1457,9 +1463,9 @@ export default function Detail({
             Below lg the banner above is used. Two or more photos use the
             multi-photo layout instead. */}
         {photos.length === 1 && (
-          <div className="hidden lg:flex" style={{ gap: 12, margin: '-24px -24px 11px', padding: 24, paddingBottom: 0 }}>
+          <div className="hidden lg:flex lg:!m-0 lg:!p-0" style={{ gap: 12, margin: '-24px -24px 11px', padding: 24, paddingBottom: 0 }}>
             <div style={{
-              position: 'relative', width: 255, aspectRatio: '2/3', flexShrink: 0,
+              position: 'relative', flex: '1 1 0', minWidth: 0, aspectRatio: '2/3',
               borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
             }}>
               <img
@@ -1523,6 +1529,9 @@ export default function Detail({
           </div>
         )}
 
+        </div>
+
+        <div className="lg:col-start-1 lg:row-start-1 min-w-0">
         {/* Eyebrow row: meal-type label (left) + share icon (right).
             Renders whenever either element needs to appear; if neither does the
             row is omitted entirely.  The share button lives here so it is always
@@ -1704,6 +1713,7 @@ export default function Detail({
             })}
           </div>
         )}
+        </div>
 
       </div>
 

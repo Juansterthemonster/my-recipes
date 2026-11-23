@@ -1272,6 +1272,21 @@ export default function Detail({
                 </div>
               ))}
             </div>
+            {/* Very soft shadow on the side where a photo is cut off, to suggest it continues */}
+            {isDesktopPhotoView && (
+              <>
+                <div aria-hidden style={{
+                  position: 'absolute', top: 0, bottom: 0, left: 0, width: 56, pointerEvents: 'none',
+                  background: 'linear-gradient(to right, rgba(0,0,0,0.16), rgba(0,0,0,0))',
+                  opacity: deskNav.prev ? 1 : 0, transition: 'opacity 180ms',
+                }} />
+                <div aria-hidden style={{
+                  position: 'absolute', top: 0, bottom: 0, right: 0, width: 56, pointerEvents: 'none',
+                  background: 'linear-gradient(to left, rgba(0,0,0,0.16), rgba(0,0,0,0))',
+                  opacity: deskNav.next ? 1 : 0, transition: 'opacity 180ms',
+                }} />
+              </>
+            )}
             {isDesktopPhotoView && deskNav.prev && (
               <button
                 type="button" onClick={() => scrollDesk(-1)} aria-label={t('detail.prevPhoto')}

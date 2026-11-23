@@ -1598,21 +1598,6 @@ export default function Detail({
           </div>
         )}
 
-        {/* Source — recipes imported from a link credit the website (only http/https links are shown) */}
-        {(() => {
-          let href = null, host = ''
-          try {
-            const u = new URL(recipe.source_url || '')
-            if (u.protocol === 'https:' || u.protocol === 'http:') { href = u.href; host = u.hostname.replace(/^www\./, '') }
-          } catch { /* no source */ }
-          return href ? (
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-tertiary)', margin: '0 0 14px', lineHeight: 1.5, overflowWrap: 'anywhere' }}>
-              {t('detail.source')} · <a href={href} target="_blank" rel="noopener noreferrer nofollow"
-                style={{ color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3 }}>{host}</a>
-            </p>
-          ) : null
-        })()}
-
         {recipe.description && (
           <p
             className="text-[1.0625rem] md:text-[0.95rem]"

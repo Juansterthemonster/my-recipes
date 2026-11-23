@@ -531,7 +531,6 @@ export default function App() {
             onBack={goBack}
             onSave={() => handleSaved(view === 'edit')}
             session={session}
-            canImport={isAdmin}   // import-from-link is admin-only while it is being tested
           />
         )}
       </div>

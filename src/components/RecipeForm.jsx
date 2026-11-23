@@ -5,7 +5,6 @@ import { compressImage, snapshotFile } from '../utils/compressImage'
 import { uploadToR2 } from '../utils/uploadToR2'
 import { useI18n, tagLabel } from '../i18n'
 import PasteIngredientsModal from './PasteIngredientsModal'
-import { parseIngredientText } from '../utils/parseIngredients'
 
 // Generates a UUID, falling back to a manual v4 implementation when
 // crypto.randomUUID isn't available — it requires a secure context (HTTPS or
@@ -251,7 +250,7 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, s
   )
 }
 
-export default function RecipeForm({ recipe, onBack, onSave, session, canImport = false }) {
+export default function RecipeForm({ recipe, onBack, onSave, session }) {
   const { t } = useI18n()
   const isEdit = !!recipe
   const [name, setName]               = useState(recipe?.name || '')
@@ -274,12 +273,6 @@ export default function RecipeForm({ recipe, onBack, onSave, session, canImport 
   )
   const [ingredientGroups, setIngredientGroups] = useState(() => groupsFromFlat(recipe?.ingredients))
   const [pasteOpen, setPasteOpen] = useState(false)
-  // Import from a recipe link (new recipes only): the page is read on the server and fills the form below
-  const [sourceUrl, setSourceUrl]     = useState(recipe?.source_url || '')
-  const [importUrl, setImportUrl]     = useState('')
-  const [importing, setImporting]     = useState(false)
-  const [importError, setImportError] = useState('')
-  const [importedHost, setImportedHost] = useState('')
   const [steps, setSteps]     = useState(recipe?.steps?.join('\n') || '')
   const [isPublic, setIsPublic] = useState(recipe?.is_public || false)
   const initialPhotoUrls = recipe?.photos?.length ? recipe.photos : (recipe?.photo_url ? [recipe.photo_url] : [])
@@ -377,51 +370,6 @@ export default function RecipeForm({ recipe, onBack, onSave, session, canImport 
     })
     setPasteOpen(false)
   }
-  const IMPORT_ERRORS = {
-    no_recipe: 'import.errNoRecipe', invalid_url: 'import.errInvalid', blocked_address: 'import.errInvalid',
-    rate_limited: 'import.errRate', unauthorized: 'import.errAuth',
-  }
-  async function importFromLink() {
-    const raw = importUrl.trim()
-    if (!raw || importing) return
-    setImporting(true); setImportError(''); setImportedHost('')
-    try {
-      const { data: { session: s } } = await supabase.auth.getSession()
-      const res = await fetch('/api/import-recipe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s?.access_token || ''}` },
-        body: JSON.stringify({ url: /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}` }),
-      })
-      const body = await res.json().catch(() => ({}))
-      if (!res.ok || !body.recipe) {
-        // A short code after the message says what went wrong (also visible to support): the server's
-        // reason, or "HTTP <status>" when the server didn't answer with JSON at all
-        const code = body.error || `HTTP ${res.status}`
-        const key = IMPORT_ERRORS[body.error] || (/^http_(401|403|429|503)$/.test(body.error || '') ? 'import.errBlocked' : 'import.errFetch')
-        setImportError(`${t(key)} (${code})`)
-        return
-      }
-      const rec = body.recipe
-      setName(rec.name || '')
-      if (rec.description) setDescription(rec.description)
-      if (rec.serves) setServes(String(rec.serves))
-      if (rec.cuisine) setCuisine(rec.cuisine)
-      if (rec.activeMins) { const a = fromMins(rec.activeMins); setAH(a.hours || ''); setAM(a.minutes || '') }
-      if (rec.totalMins)  { const tt = fromMins(rec.totalMins); setTMinH(tt.hours || ''); setTMinM(tt.minutes || '') }
-      const groups = parseIngredientText((rec.ingredients || []).join('\n'))
-      setIngredientGroups(groups.length
-        ? groups.map(g => ({ id: newId(), label: g.label, items: g.items }))
-        : [{ id: newId(), label: '', items: [{ name: '', amount: '', optional: false }] }])
-      setSteps((rec.steps || []).join('\n'))
-      setSourceUrl(body.source?.url || raw)
-      setImportedHost(body.source?.host || '')
-      setImportUrl('')
-    } catch {
-      setImportError(t('import.errNetwork'))
-    } finally {
-      setImporting(false)
-    }
-  }
   function addGroup() {
     setIngredientGroups(gs => [...gs, { id: newId(), label: '', items: [{ name:'', amount:'', optional:false }] }])
   }
@@ -493,13 +441,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session, canImport 
           ;({ error:err } = await supabase.from('recipes').update(payload).eq('id', recipe.id))
         }
       } else {
-        const row = { ...payload, id: recipeId, user_id: session.user.id, ...(sourceUrl ? { source_url: sourceUrl } : {}) }
-        ;({ error:err } = await supabase.from('recipes').insert(row))
-        // supabase_migration_source_url.sql not run yet → the column doesn't exist; save without it
-        if (err && /source_url/.test(err.message || '')) {
-          delete row.source_url
-          ;({ error:err } = await supabase.from('recipes').insert(row))
-        }
+        ({ error:err } = await supabase.from('recipes').insert({ ...payload, id: recipeId, user_id: session.user.id }))
       }
     } catch (e) {
       err = e
@@ -571,37 +513,6 @@ export default function RecipeForm({ recipe, onBack, onSave, session, canImport 
             fontSize:'0.85rem', padding:'12px 16px', borderRadius:8,
             fontFamily:'var(--font-body)', marginBottom:12
           }}>{error}</div>
-        )}
-
-        {/* Import from a recipe link — new recipes only. Fills the form; nothing is saved until Save. */}
-        {!isEdit && canImport && (
-          <div style={{ ...card, marginBottom: 12 }}>
-            <label style={lbl}>{t('import.title')}</label>
-            <p style={{ fontFamily:'var(--font-body)', fontSize:'0.82rem', color:'var(--text-secondary)', margin:'0 0 10px', lineHeight:1.5 }}>
-              {t('import.hint')}
-            </p>
-            <form onSubmit={e => { e.preventDefault(); importFromLink() }} style={{ display:'flex', gap:8 }}>
-              <input type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                value={importUrl} onChange={e => setImportUrl(e.target.value)}
-                placeholder={t('import.placeholder')} aria-label={t('import.title')}
-                style={{ ...inp, flex:1, minWidth:0 }} onFocus={focus} onBlur={blur} />
-              <button type="submit" disabled={importing || !importUrl.trim()}
-                style={{
-                  background:'var(--green-primary)', color:'var(--on-primary-white)', border:'none',
-                  borderRadius:'var(--r-full)', fontFamily:'var(--font-body)', fontSize:'0.85rem', fontWeight:600,
-                  padding:'0 20px', cursor:'pointer', whiteSpace:'nowrap',
-                  opacity: (importing || !importUrl.trim()) ? 0.55 : 1,
-                }}>{importing ? t('import.working') : t('import.button')}</button>
-            </form>
-            {importError && (
-              <div role="alert" style={{ marginTop:10, fontFamily:'var(--font-body)', fontSize:'0.82rem', color:'var(--danger-strong)' }}>{importError}</div>
-            )}
-            {importedHost && !importError && (
-              <div role="status" style={{ marginTop:10, fontFamily:'var(--font-body)', fontSize:'0.82rem', color:'var(--text-secondary)' }}>
-                {t('import.done', { host: importedHost })}
-              </div>
-            )}
-          </div>
         )}
 
         <div className="lg:grid lg:grid-cols-2 lg:gap-x-5 lg:items-start">

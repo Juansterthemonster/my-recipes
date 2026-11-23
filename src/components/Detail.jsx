@@ -95,6 +95,10 @@ function ShareBtn({ onClick, copied }) {
 }
 
 /* Shared blur button — mirrors Browse's blurBtn constant */
+// Desktop photo strip: 2:3 tiles, 520px tall
+const DESK_TILE_W = 347
+const DESK_GAP = 12
+
 const blurBtn = {
   background: 'rgba(0,0,0,0.24)',
   backdropFilter: 'blur(12px)',
@@ -603,8 +607,25 @@ export default function Detail({
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id, isDesktopPhotoView])
-  // Desktop, exactly two photos: each one a 2:3 tile (up to 347px wide), side by side
-  const TWO_PHOTO_TILE = { flex: '0 1 347px', minWidth: 0, aspectRatio: '2/3', height: 'auto', objectFit: 'cover', display: 'block' }
+  // Desktop (lg+): every photo is a 2:3 tile in one horizontal strip. When they don't all fit, the next tile
+  // peeks in from the right and prev/next arrows scroll the strip (the carousel idea, as on phones).
+  const deskStripRef = useRef(null)
+  const [deskNav, setDeskNav] = useState({ prev: false, next: false })
+  function updateDeskNav() {
+    const el = deskStripRef.current
+    if (!el) return
+    const prev = el.scrollLeft > 4
+    const next = el.scrollLeft + el.clientWidth < el.scrollWidth - 4
+    setDeskNav(d => (d.prev === prev && d.next === next ? d : { prev, next }))
+  }
+  useEffect(() => {
+    const id = requestAnimationFrame(updateDeskNav)
+    window.addEventListener('resize', updateDeskNav)
+    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', updateDeskNav) }
+  }, [photos.length, isDesktopPhotoView])
+  function scrollDesk(dir) {
+    deskStripRef.current?.scrollBy({ left: dir * (DESK_TILE_W + DESK_GAP), behavior: 'smooth' })
+  }
   const photoBoxStyle = {
     height: photoOpen ? photoOpenH : 260, transition: 'height 260ms ease', cursor: 'pointer',
   }
@@ -755,10 +776,10 @@ export default function Detail({
   // Make the photo being viewed the cover (first photo) without opening the editor.
   const [settingCover, setSettingCover] = useState(false)
   const canSetCover = isOwner && !readOnly && photoOpen && !isDesktopPhotoView && photos.length > 1 && activePhoto > 0
-  async function handleSetCover() {
-    if (!canSetCover || settingCover) return
-    const picked = photos[activePhoto]
-    const newPhotos = [picked, ...photos.filter((_, i) => i !== activePhoto)]
+  async function handleSetCover(index = activePhoto) {
+    if (!isOwner || readOnly || settingCover || index < 1 || index >= photos.length) return
+    const picked = photos[index]
+    const newPhotos = [picked, ...photos.filter((_, i) => i !== index)]
     setSettingCover(true)
     const { error } = await supabase.from('recipes').update({ photos: newPhotos, photo_url: newPhotos[0] }).eq('id', recipe.id)
     setSettingCover(false)
@@ -766,6 +787,7 @@ export default function Detail({
     setRecipe(r => ({ ...r, photos: newPhotos, photo_url: newPhotos[0] }))
     setActivePhoto(0)
     photoScrollRef.current?.scrollTo({ left: 0 })
+    deskStripRef.current?.scrollTo({ left: 0 })
     onToast?.(t('detail.coverSet'))
   }
 
@@ -1170,7 +1192,7 @@ export default function Detail({
              A swipeable carousel with dot indicators renders only when there is
              more than one photo; a single photo renders exactly as before. */
           <div
-            className={photos.length === 1 ? 'lg:hidden' : 'lg:!m-0 lg:!rounded-[var(--r-lg)]'}
+            className="lg:!m-0 lg:!rounded-[var(--r-lg)] lg:!w-fit lg:!max-w-full"
             style={{ position: 'relative', margin: '-24px -24px 10px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}
           >
             {photos.length > 1 ? (
@@ -1199,52 +1221,67 @@ export default function Detail({
                   </div>
                 </div>
 
-                {/* Desktop (lg and up): show every photo at once — a bigger
-                    cover photo (photo 1) plus the rest in a grid alongside
-                    it. The grid always fills completely with no empty cells:
-                    the last grid photo spans both columns whenever the
-                    remaining count is odd (e.g. 4 total → 1 side photo
-                    spans full width under 2 others; 6 total → same, under
-                    2 rows of 2). */}
-                <div className="hidden lg:flex" style={{ gap: 4, height: photos.length === 2 ? 'auto' : 480 }}>
-                  <img
-                    src={photos[0]} alt={t('detail.photoAlt', { name: recipe.name, n: 1 })}
-                    style={photos.length === 2 ? TWO_PHOTO_TILE : {
-                      flex: photos.length > 2 ? '1.4 1 0' : '1 1 0', minWidth: 0,
-                      width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                    }}
-                  />
-                  {photos.length > 2 ? (
-                    <div style={{
-                      flex: '1 1 0', minWidth: 0, minHeight: 0, height: '100%', display: 'grid',
-                      gridTemplateColumns: 'repeat(2, 1fr)', gridAutoRows: '1fr', gap: 4,
-                    }}>
-                      {photos.slice(1).map((url, i, rest) => (
-                        <img
-                          key={url + i} src={url} alt={t('detail.photoAlt', { name: recipe.name, n: i + 2 })}
-                          style={{
-                            width: '100%', height: '100%', minHeight: 0, objectFit: 'cover', display: 'block',
-                            gridColumn: rest.length % 2 === 1 && i === rest.length - 1 ? 'span 2' : undefined,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <img
-                      src={photos[1]} alt={t('detail.photoAlt', { name: recipe.name, n: 2 })}
-                      style={TWO_PHOTO_TILE}
-                    />
-                  )}
-                </div>
               </>
             ) : (
-              <div ref={singlePhotoRef} style={photoBoxStyle} {...photoToggleProps}>
+              <div ref={singlePhotoRef} className="lg:hidden" style={photoBoxStyle} {...photoToggleProps}>
                 <img
                   src={photos[0]} alt={recipe.name}
                   onLoad={measurePhoto}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               </div>
+            )}
+
+            {/* Desktop (lg+): all photos as 2:3 tiles in one strip. Same controls whatever the count: "Add photos"
+                top-left, heart top-right, and on every photo but the first a "Use as cover" button. */}
+            <div
+              ref={deskStripRef} onScroll={updateDeskNav}
+              className="hidden lg:flex pill-row"
+              style={{ gap: DESK_GAP, overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x proximity' }}
+            >
+              {photos.map((url, i) => (
+                <div key={url + i} style={{
+                  position: 'relative', flex: `0 0 ${DESK_TILE_W}px`, aspectRatio: '2/3', scrollSnapAlign: 'start',
+                  borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
+                }}>
+                  <img
+                    src={url} alt={t('detail.photoAlt', { name: recipe.name, n: i + 1 })} draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                  {isOwner && !readOnly && i > 0 && (
+                    <button
+                      type="button" onClick={() => handleSetCover(i)} disabled={settingCover}
+                      style={{
+                        ...blurBtn, position: 'absolute', left: 12, bottom: 12, gap: 6, padding: '9px 14px', color: '#fff',
+                        borderRadius: 'var(--r-full)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 500,
+                        cursor: settingCover ? 'default' : 'pointer', opacity: settingCover ? 0.7 : 1,
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+                    >{t('detail.useAsCover')}</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {isDesktopPhotoView && deskNav.prev && (
+              <button
+                type="button" onClick={() => scrollDesk(-1)} aria-label={t('detail.prevPhoto')}
+                style={{ ...blurBtn, position: 'absolute', top: '50%', left: 10, transform: 'translateY(-50%)', width: 38, height: 38, color: '#fff' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+              </button>
+            )}
+            {isDesktopPhotoView && deskNav.next && (
+              <button
+                type="button" onClick={() => scrollDesk(1)} aria-label={t('detail.nextPhoto')}
+                style={{ ...blurBtn, position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', width: 38, height: 38, color: '#fff' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+              </button>
             )}
 
             {/* Dots + arrows only make sense against the mobile carousel above
@@ -1338,7 +1375,7 @@ export default function Detail({
               {canSetCover && (
                 <button
                   type="button"
-                  onClick={handleSetCover}
+                  onClick={() => handleSetCover()}
                   disabled={settingCover}
                   style={{
                     ...blurBtn, gap: 6, padding: '9px 14px', color: '#fff', borderRadius: 'var(--r-full)',
@@ -1457,78 +1494,6 @@ export default function Detail({
             style={{ display: 'none' }}
             onChange={handlePhotoUpload}
           />
-        )}
-
-        {/* Single photo, desktop only (lg+): a compact photo section ABOVE the
-            title — the photo in a 2:3 tile (about 75% of the old size so the
-            title stays above the fold) next to an owner-only "Add photos" tile.
-            Below lg the banner above is used. Two or more photos use the
-            multi-photo layout instead. */}
-        {photos.length === 1 && (
-          <div className="hidden lg:flex lg:!m-0 lg:!p-0" style={{ gap: 12, margin: '-24px -24px 11px', padding: 24, paddingBottom: 0 }}>
-            <div style={{
-              position: 'relative', height: 520, aspectRatio: '2/3', flexShrink: 0,
-              borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
-            }}>
-              <img
-                src={photos[0]} alt={recipe.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-              {!readOnly && (
-                isOwner ? (
-                  <button
-                    onClick={handleToggleFavourite}
-                    aria-label={recipe.is_favourite ? t('card.removeFav') : t('card.addFav')}
-                    style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
-                      color: recipe.is_favourite ? 'var(--heart)' : '#fff' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
-                  >
-                    <HeartIcon filled={recipe.is_favourite} />
-                  </button>
-                ) : (session?.user || onRequireAccount) ? (
-                  <button
-                    onClick={handleToggleLike}
-                    aria-label={isLiked ? t('card.unlike') : t('card.like')}
-                    style={{ ...blurBtn, position: 'absolute', top: 12, right: 12, padding: 10,
-                      color: isLiked ? 'var(--heart)' : '#fff' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.42)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.24)'}
-                  >
-                    <HeartIcon filled={isLiked} />
-                  </button>
-                ) : null
-              )}
-            </div>
-
-            {isOwner && !readOnly && photos.length < MAX_PHOTOS && (
-              <button
-                type="button"
-                onClick={triggerAddPhotos}
-                disabled={uploading}
-                style={{
-                  width: 150, aspectRatio: '2/3', flexShrink: 0, alignSelf: 'flex-start',
-                  borderRadius: 'var(--r-lg)', border: '1.5px dashed var(--neutral-border)',
-                  background: 'var(--neutral-bg-2)', color: 'var(--neutral-fg-2)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 500,
-                  cursor: uploading ? 'default' : 'pointer', transition: 'background 150ms, color 150ms, border-color 150ms',
-                }}
-                onMouseEnter={e => { if (!uploading) { e.currentTarget.style.background = 'var(--neutral-bg-hover-2)'; e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--green-primary)' } }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--neutral-bg-2)'; e.currentTarget.style.color = 'var(--neutral-fg-2)'; e.currentTarget.style.borderColor = 'var(--neutral-border)' }}
-              >
-                {uploading ? <span>{t('detail.uploading')}</span> : (
-                  <>
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    <span>{t('detail.addMorePhotos')}</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         )}
 
         </div>

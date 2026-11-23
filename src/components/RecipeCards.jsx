@@ -7,6 +7,7 @@
 /* ─── HEART ICON ───────────────────────────────────────────────────────────── */
 import { useI18n, tagLabel, translate } from '../i18n'
 import CardImg from './CardImg'
+import { useTitleOverlay } from '../utils/useTitleOverlay'
 
 export function HeartIcon({ filled }) {
   return (
@@ -102,6 +103,7 @@ export const blurBtn = {
 /* ─── MY RECIPE CARD ───────────────────────────────────────────────────────── */
 export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
   const { t } = useI18n()
+  const { nameRef, blockRef, overlay } = useTitleOverlay(OVERLAY_IMAGE, recipe.photo_url)
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
     ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(v => tagLabel(t, 'meal', v)).join(' · ')
@@ -120,7 +122,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         <CardImg src={recipe.photo_url} alt={recipe.name} style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
-        <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
+        <div style={{ position: 'absolute', inset: 0, background: overlay }} />
 
         {/* Top row: pill (left) + action buttons column (right) */}
         <div style={{
@@ -149,7 +151,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         </div>
 
         {/* Bottom: eyebrow → title → dietary */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 16px', zIndex: 2 }}>
+        <div ref={blockRef} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 16px', zIndex: 2 }}>
           {mealTypeLabel && (
             <div style={{
               fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
@@ -157,7 +159,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
               fontFamily: 'var(--font-body)', marginBottom: 5,
             }}>{mealTypeLabel}</div>
           )}
-          <div style={{
+          <div ref={nameRef} style={{
             fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
             color: '#fff', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
             display: '-webkit-box', WebkitLineClamp: 3,
@@ -270,6 +272,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
 /* ─── PUBLIC RECIPE CARD ───────────────────────────────────────────────────── */
 export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
   const { t } = useI18n()
+  const { nameRef, blockRef, overlay } = useTitleOverlay(OVERLAY_IMAGE, recipe.photo_url)
   const hasPhoto = !!recipe.photo_url
   const mealTypeLabel = recipe.meal_type
     ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).map(v => tagLabel(t, 'meal', v)).join(' · ')
@@ -288,7 +291,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         <CardImg src={recipe.photo_url} alt={recipe.name} style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
         }} />
-        <div style={{ position: 'absolute', inset: 0, background: OVERLAY_IMAGE }} />
+        <div style={{ position: 'absolute', inset: 0, background: overlay }} />
 
         {/* Top row: pill (left) + action buttons column (right) */}
         <div style={{
@@ -317,7 +320,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         </div>
 
         {/* Bottom: eyebrow → title → dietary → attribution */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 16px', zIndex: 2 }}>
+        <div ref={blockRef} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 16px', zIndex: 2 }}>
           {mealTypeLabel && (
             <div style={{
               fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
@@ -325,7 +328,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
               fontFamily: 'var(--font-body)', marginBottom: 5,
             }}>{mealTypeLabel}</div>
           )}
-          <div style={{
+          <div ref={nameRef} style={{
             fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
             color: '#fff', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
             display: '-webkit-box', WebkitLineClamp: 3,

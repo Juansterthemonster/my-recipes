@@ -1188,7 +1188,7 @@ export default function Detail({
 
         {/* Desktop: a very subtle well behind the photos, so the room for more photos is faintly visible
             when there are only one or two (instead of blank space). */}
-        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:rounded-[var(--r-lg)] lg:p-1' : ''}`}>
+        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:rounded-[var(--r-lg)] lg:p-2' : ''}`}>
         {photos.length > 0 ? (
           /* Photo(s) present — heart sits top-right over the image (blur style).
              A swipeable carousel with dot indicators renders only when there is

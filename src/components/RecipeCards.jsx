@@ -160,7 +160,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
           <div style={{
             fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
             color: '#fff', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
-            display: '-webkit-box', WebkitLineClamp: 2,
+            display: '-webkit-box', WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{recipe.name}</div>
           {(dietaryLabel || recipe.is_public) && (
@@ -243,7 +243,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
           color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: (dietaryLabel || recipe.is_public) ? 5 : 0,
-          display: '-webkit-box', WebkitLineClamp: 2,
+          display: '-webkit-box', WebkitLineClamp: 3,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
         {(dietaryLabel || recipe.is_public) && (
@@ -328,7 +328,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
           <div style={{
             fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
             color: '#fff', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
-            display: '-webkit-box', WebkitLineClamp: 2,
+            display: '-webkit-box', WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{recipe.name}</div>
           {dietaryLabel && (
@@ -408,7 +408,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         <div style={{
           fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 400,
           color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: dietaryLabel ? 5 : 0,
-          display: '-webkit-box', WebkitLineClamp: 2,
+          display: '-webkit-box', WebkitLineClamp: 3,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{recipe.name}</div>
         {dietaryLabel && (

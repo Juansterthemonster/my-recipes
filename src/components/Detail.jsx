@@ -623,6 +623,12 @@ export default function Detail({
     window.addEventListener('resize', updateDeskNav)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', updateDeskNav) }
   }, [photos.length, isDesktopPhotoView])
+  // A side where a photo is cut off is square (no rounded corner), so the photo looks like it continues
+  const deskRadius = (() => {
+    const left = deskNav.prev ? '0' : 'var(--r-lg)'
+    const right = deskNav.next ? '0' : 'var(--r-lg)'
+    return `${left} ${right} ${right} ${left}`
+  })()
   function scrollDesk(dir) {
     // a little less than one tile, so the photo you just passed still peeks in at the edge
     deskStripRef.current?.scrollBy({ left: dir * (DESK_TILE_W + DESK_GAP - 56), behavior: 'smooth' })
@@ -1189,14 +1195,14 @@ export default function Detail({
 
         {/* Desktop: a very subtle well behind the photos, so the room for more photos is faintly visible
             when there are only one or two (instead of blank space). */}
-        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:rounded-[var(--r-lg)] lg:py-2 lg:overflow-hidden' : ''}`}>
+        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:py-2 lg:overflow-hidden' : ''}`} style={photos.length > 0 && isDesktopPhotoView ? { borderRadius: deskRadius } : undefined}>
         {photos.length > 0 ? (
           /* Photo(s) present — heart sits top-right over the image (blur style).
              A swipeable carousel with dot indicators renders only when there is
              more than one photo; a single photo renders exactly as before. */
           <div
-            className="lg:!m-0 lg:!rounded-[var(--r-lg)] lg:!w-fit lg:!max-w-full"
-            style={{ position: 'relative', margin: '-24px -24px 10px', overflow: 'hidden', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}
+            className="lg:!m-0 lg:!w-fit lg:!max-w-full"
+            style={{ position: 'relative', margin: '-24px -24px 10px', overflow: 'hidden', borderRadius: isDesktopPhotoView ? deskRadius : 'var(--r-lg) var(--r-lg) 0 0' }}
           >
             {photos.length > 1 ? (
               <>

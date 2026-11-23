@@ -97,7 +97,7 @@ function ShareBtn({ onClick, copied }) {
 /* Shared blur button — mirrors Browse's blurBtn constant */
 // Desktop photo strip: 2:3 tiles, 520px tall
 const DESK_TILE_W = 347
-const DESK_GAP = 12
+const DESK_GAP = 8
 
 const blurBtn = {
   background: 'rgba(0,0,0,0.24)',

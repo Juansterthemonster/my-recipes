@@ -1150,10 +1150,10 @@ export default function Detail({
       )}
 
       {/* ── Header card ──
-          Desktop (lg+): two columns. Left: the recipe info. Right: the photos (or the owner's "Add photo"
+          Desktop (lg+): two columns. Left (1/3): the recipe info. Right (2/3): the photos (or the owner's "Add photo"
           tile), so the top of the page is more visual. Below lg nothing changes: photos on top, info under. */}
       <div
-        className={`mx-4 mt-4 lg:mx-10${(photos.length > 0 || isOwner) ? ' lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,44%)] lg:gap-8 lg:items-start' : ''}`}
+        className={`mx-4 mt-4 lg:mx-10${(photos.length > 0 || isOwner) ? ' lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-8 lg:items-start' : ''}`}
         style={{
         background: photos.length > 0 ? 'var(--surface)' : 'var(--surface)',
         borderRadius: 'var(--r-lg)',
@@ -1204,7 +1204,7 @@ export default function Detail({
                     remaining count is odd (e.g. 4 total → 1 side photo
                     spans full width under 2 others; 6 total → same, under
                     2 rows of 2). */}
-                <div className="hidden lg:flex" style={{ gap: 4, height: 420 }}>
+                <div className="hidden lg:flex" style={{ gap: 4, height: 480 }}>
                   <img
                     src={photos[0]} alt={t('detail.photoAlt', { name: recipe.name, n: 1 })}
                     style={{
@@ -1465,7 +1465,7 @@ export default function Detail({
         {photos.length === 1 && (
           <div className="hidden lg:flex lg:!m-0 lg:!p-0" style={{ gap: 12, margin: '-24px -24px 11px', padding: 24, paddingBottom: 0 }}>
             <div style={{
-              position: 'relative', flex: '1 1 0', minWidth: 0, aspectRatio: '2/3',
+              position: 'relative', height: 520, aspectRatio: '2/3', flexShrink: 0,
               borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
             }}>
               <img
@@ -1505,7 +1505,7 @@ export default function Detail({
                 onClick={triggerAddPhotos}
                 disabled={uploading}
                 style={{
-                  width: 150, aspectRatio: '2/3', flexShrink: 0,
+                  width: 150, aspectRatio: '2/3', flexShrink: 0, alignSelf: 'flex-start',
                   borderRadius: 'var(--r-lg)', border: '1.5px dashed var(--neutral-border)',
                   background: 'var(--neutral-bg-2)', color: 'var(--neutral-fg-2)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,

@@ -251,7 +251,7 @@ function TimeSection({ aH, setAH, aM, setAM, tMinH, setTMinH, tMinM, setTMinM, s
   )
 }
 
-export default function RecipeForm({ recipe, onBack, onSave, session }) {
+export default function RecipeForm({ recipe, onBack, onSave, session, canImport = false }) {
   const { t } = useI18n()
   const isEdit = !!recipe
   const [name, setName]               = useState(recipe?.name || '')
@@ -574,7 +574,7 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         )}
 
         {/* Import from a recipe link — new recipes only. Fills the form; nothing is saved until Save. */}
-        {!isEdit && (
+        {!isEdit && canImport && (
           <div style={{ ...card, marginBottom: 12 }}>
             <label style={lbl}>{t('import.title')}</label>
             <p style={{ fontFamily:'var(--font-body)', fontSize:'0.82rem', color:'var(--text-secondary)', margin:'0 0 10px', lineHeight:1.5 }}>

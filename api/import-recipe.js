@@ -1,7 +1,7 @@
 // Vercel serverless function: reads a recipe from a web page link.
 //   POST /api/import-recipe   { url }   Authorization: Bearer <the signed-in user's Supabase access token>
 //   200 { recipe: {...}, source: { url, host } }
-//   4xx/5xx { error: <code> }   codes: unauthorized · invalid_url · rate_limited · no_recipe · fetch_failed
+//   4xx/5xx { error: <code> }   codes: unauthorized · forbidden (not an admin yet) · invalid_url · rate_limited · no_recipe · fetch_failed
 //                                      blocked_address · not_html · too_large · timeout · http_<status>
 // Only signed-in users can call it (the token is checked with Supabase), and each user gets a small
 // allowance, so it can't be used as an open proxy. The page is fetched with the guards in _lib/safeFetch.js.
@@ -25,8 +25,9 @@ function allowed(userId) {
   return true
 }
 
-async function userIdFor(req) {
-  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+const tokenOf = req => String(req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+
+async function userIdFor(token) {
   if (!token || !SUPABASE_URL || !SUPABASE_KEY) return null
   try {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` } })
@@ -35,7 +36,18 @@ async function userIdFor(req) {
   } catch { return null }
 }
 
-const STATUS = { unauthorized: 401, invalid_url: 400, blocked_address: 400, rate_limited: 429, no_recipe: 422 }
+// While the feature is being tested it is for the owner only: the database says whether this account is an admin
+// (the same is_admin() the dashboard uses), so the limit holds even if someone calls the endpoint directly.
+async function isAdmin(token) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: 'POST', headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: '{}',
+    })
+    return r.ok && (await r.json()) === true
+  } catch { return false }
+}
+
+const STATUS = { unauthorized: 401, forbidden: 403, invalid_url: 400, blocked_address: 400, rate_limited: 429, no_recipe: 422 }
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store')
@@ -43,8 +55,10 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'method_not_allowed' }) }
 
-  const userId = await userIdFor(req)
+  const token = tokenOf(req)
+  const userId = await userIdFor(token)
   if (!userId) return fail('unauthorized')
+  if (!(await isAdmin(token))) return fail('forbidden')
   if (!allowed(userId)) return fail('rate_limited')
 
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : ''

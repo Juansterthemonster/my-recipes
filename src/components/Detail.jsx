@@ -603,6 +603,8 @@ export default function Detail({
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id, isDesktopPhotoView])
+  // Desktop, exactly two photos: each one a 2:3 tile (up to 347px wide), side by side
+  const TWO_PHOTO_TILE = { flex: '0 1 347px', minWidth: 0, aspectRatio: '2/3', height: 'auto', objectFit: 'cover', display: 'block' }
   const photoBoxStyle = {
     height: photoOpen ? photoOpenH : 260, transition: 'height 260ms ease', cursor: 'pointer',
   }
@@ -1204,10 +1206,10 @@ export default function Detail({
                     remaining count is odd (e.g. 4 total → 1 side photo
                     spans full width under 2 others; 6 total → same, under
                     2 rows of 2). */}
-                <div className="hidden lg:flex" style={{ gap: 4, height: 480 }}>
+                <div className="hidden lg:flex" style={{ gap: 4, height: photos.length === 2 ? 'auto' : 480 }}>
                   <img
                     src={photos[0]} alt={t('detail.photoAlt', { name: recipe.name, n: 1 })}
-                    style={{
+                    style={photos.length === 2 ? TWO_PHOTO_TILE : {
                       flex: photos.length > 2 ? '1.4 1 0' : '1 1 0', minWidth: 0,
                       width: '100%', height: '100%', objectFit: 'cover', display: 'block',
                     }}
@@ -1230,7 +1232,7 @@ export default function Detail({
                   ) : (
                     <img
                       src={photos[1]} alt={t('detail.photoAlt', { name: recipe.name, n: 2 })}
-                      style={{ flex: '1 1 0', minWidth: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      style={TWO_PHOTO_TILE}
                     />
                   )}
                 </div>

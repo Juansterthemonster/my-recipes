@@ -78,10 +78,13 @@ function requestOnce(u) {
     const req = lib.request(u, {
       method: 'GET', lookup: guardedLookup, timeout: TIMEOUT_MS,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MiSazonImporter/1.0; +https://misazon.app)',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en,fr;q=0.8,es;q=0.8',
+        // Sent on behalf of a signed-in person who pasted this link, like their own browser opening it.
+        // Many recipe sites turn away requests that don't look like a browser.
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,fr;q=0.7',
         'Accept-Encoding': 'gzip, deflate, br',
+        'Upgrade-Insecure-Requests': '1',
       },
     }, res => {
       const status = res.statusCode || 0

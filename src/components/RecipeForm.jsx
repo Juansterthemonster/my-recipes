@@ -393,7 +393,14 @@ export default function RecipeForm({ recipe, onBack, onSave, session }) {
         body: JSON.stringify({ url: /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}` }),
       })
       const body = await res.json().catch(() => ({}))
-      if (!res.ok || !body.recipe) { setImportError(t(IMPORT_ERRORS[body.error] || 'import.errFetch')); return }
+      if (!res.ok || !body.recipe) {
+        // A short code after the message says what went wrong (also visible to support): the server's
+        // reason, or "HTTP <status>" when the server didn't answer with JSON at all
+        const code = body.error || `HTTP ${res.status}`
+        const key = IMPORT_ERRORS[body.error] || (/^http_(401|403|429|503)$/.test(body.error || '') ? 'import.errBlocked' : 'import.errFetch')
+        setImportError(`${t(key)} (${code})`)
+        return
+      }
       const rec = body.recipe
       setName(rec.name || '')
       if (rec.description) setDescription(rec.description)

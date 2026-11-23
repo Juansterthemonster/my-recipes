@@ -476,7 +476,6 @@ export default function App() {
         {view === 'profile' && session && (
           <Profile
             session={session}
-            canImport={isAdmin}   // import-from-link is admin-only while it is being tested
             username={username}
             onBack={goBack}
             onSignOut={signOut}
@@ -532,6 +531,7 @@ export default function App() {
             onBack={goBack}
             onSave={() => handleSaved(view === 'edit')}
             session={session}
+            canImport={isAdmin}   // import-from-link is admin-only while it is being tested
           />
         )}
       </div>

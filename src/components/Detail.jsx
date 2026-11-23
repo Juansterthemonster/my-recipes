@@ -607,8 +607,8 @@ export default function Detail({
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id, isDesktopPhotoView])
-  // Desktop (lg+): every photo is a 2:3 tile in one horizontal strip. When they don't all fit, the next tile
-  // peeks in from the right and prev/next arrows scroll the strip (the carousel idea, as on phones).
+  // Desktop (lg+): every photo is a 2:3 tile in one horizontal strip with 8px side margins. When they don't all fit,
+  // a cut-off photo runs right to the edge (no margin there), so it is clear there is more, and prev/next arrows scroll.
   const deskStripRef = useRef(null)
   const [deskNav, setDeskNav] = useState({ prev: false, next: false })
   function updateDeskNav() {
@@ -624,7 +624,8 @@ export default function Detail({
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', updateDeskNav) }
   }, [photos.length, isDesktopPhotoView])
   function scrollDesk(dir) {
-    deskStripRef.current?.scrollBy({ left: dir * (DESK_TILE_W + DESK_GAP), behavior: 'smooth' })
+    // a little less than one tile, so the photo you just passed still peeks in at the edge
+    deskStripRef.current?.scrollBy({ left: dir * (DESK_TILE_W + DESK_GAP - 56), behavior: 'smooth' })
   }
   const photoBoxStyle = {
     height: photoOpen ? photoOpenH : 260, transition: 'height 260ms ease', cursor: 'pointer',
@@ -1188,7 +1189,7 @@ export default function Detail({
 
         {/* Desktop: a very subtle well behind the photos, so the room for more photos is faintly visible
             when there are only one or two (instead of blank space). */}
-        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:rounded-[var(--r-lg)] lg:p-2' : ''}`}>
+        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:rounded-[var(--r-lg)] lg:py-2 lg:overflow-hidden' : ''}`}>
         {photos.length > 0 ? (
           /* Photo(s) present — heart sits top-right over the image (blur style).
              A swipeable carousel with dot indicators renders only when there is
@@ -1239,11 +1240,11 @@ export default function Detail({
             <div
               ref={deskStripRef} onScroll={updateDeskNav}
               className="hidden lg:flex pill-row"
-              style={{ gap: DESK_GAP, overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x proximity' }}
+              style={{ gap: DESK_GAP, overflowX: 'auto', overflowY: 'hidden', paddingLeft: 8, paddingRight: 8 }}
             >
               {photos.map((url, i) => (
                 <div key={url + i} style={{
-                  position: 'relative', flex: `0 0 ${DESK_TILE_W}px`, aspectRatio: '2/3', scrollSnapAlign: 'start',
+                  position: 'relative', flex: `0 0 ${DESK_TILE_W}px`, aspectRatio: '2/3',
                   borderRadius: 'var(--r-lg)', overflow: 'hidden', background: '#000',
                 }}>
                   <img

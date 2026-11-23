@@ -1023,3 +1023,12 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 ## v4.46 — Phone tab bar matches iOS
 - `MobileNav.jsx` BottomNav is now a floating glass pill (inset 14px, 10px above the bottom/system bar) with an inner rounded highlight on the selected tab; colours are the `--nav-*` tokens in index.css (light + both dark blocks).
 - Icons mirror the iOS SF Symbols (book, heart, square.grid.2x2; Explore keeps the original compass): outline when idle, filled when selected. They are hand-drawn SVGs, not the Apple glyphs.
+
+## v4.47 — Platform tracking, admin dashboard, refresh, desktop recipe header (2026-11-22)
+- `profiles.platforms text[]` filled by RPC `record_platform('web'|'android')` (App.jsx, after sign-in; the Supabase builder is lazy, so it needs `.then()`). iOS users are tagged by DB triggers reading the `supabase-swift` request header until the iOS app calls the RPC (see Project doc `claude/HANDOFF_ios_platform_tracking.md`). SQL: `supabase_migration_platforms.sql`.
+- Admin dashboard: two-column layout (stats tiles + New recipes + Newest 15 users in 2/3; Reports + accordions for Announcements/Tours in 1/3). Full user list is its own page (`adminPage` history state, `#admin-users`). `AdminAccordion.jsx` is shared.
+- Refresh keeps the screen: module-level `RESTORED` in App.jsx reads `history.state` (detail/edit/collection/add/profile/admin).
+- Tab bar: 61px tall, 95% width, glass rim tokens `--nav-rim-*`, black icons in light mode. Labels are on.
+- Recipe page (desktop, lg): info 1/3, photos 2/3 in a 2:3 strip with a subtle well, 8px margin/gutters, cut-off photos run to the edge, arrows + per-photo Use as cover, soft edge shadow.
+- Recipe cards: names clamp at 3 lines; `useTitleOverlay` makes the photo-card gradient taller when a name needs 3 lines.
+- Import-from-link was built and removed (sites return 403 to server fetches). `recipes.source_url` column is unused and can be dropped.

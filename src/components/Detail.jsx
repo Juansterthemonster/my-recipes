@@ -623,7 +623,8 @@ export default function Detail({
     window.addEventListener('resize', updateDeskNav)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', updateDeskNav) }
   }, [photos.length, isDesktopPhotoView])
-  // A side where a photo is cut off is square (no rounded corner), so the photo looks like it continues
+  // The photos' own clip: a side where a photo is cut off is square (no rounded corner), so it looks like it continues.
+  // (The grey background behind them keeps its rounded corners.)
   const deskRadius = (() => {
     const left = deskNav.prev ? '0' : 'var(--r-lg)'
     const right = deskNav.next ? '0' : 'var(--r-lg)'
@@ -1195,7 +1196,7 @@ export default function Detail({
 
         {/* Desktop: a very subtle well behind the photos, so the room for more photos is faintly visible
             when there are only one or two (instead of blank space). */}
-        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:py-2 lg:overflow-hidden' : ''}`} style={photos.length > 0 && isDesktopPhotoView ? { borderRadius: deskRadius } : undefined}>
+        <div className={`lg:col-start-2 lg:row-start-1 min-w-0${photos.length > 0 ? ' lg:bg-[var(--neutral-bg-2)] lg:rounded-[var(--r-lg)] lg:py-2 lg:overflow-hidden' : ''}`}>
         {photos.length > 0 ? (
           /* Photo(s) present — heart sits top-right over the image (blur style).
              A swipeable carousel with dot indicators renders only when there is

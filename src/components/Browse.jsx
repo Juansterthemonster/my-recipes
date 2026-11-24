@@ -944,8 +944,36 @@ function EmptyMyRecipes({ onAdd }) {
 }
 
 /* Signed-out visitor on a tab that needs an account */
-function SignedOutPitch({ tab, onCreate, onSignIn }) {
+function SignedOutPitch({ tab, onCreate, onSignIn, asCard = false }) {
   const { t } = useI18n()
+  if (asCard) {
+    // Same container as a no-photo recipe card, so it sits in the grid like another recipe
+    return (
+      <div style={{
+        borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border-card)',
+        padding: '28px 16px 22px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+      }}>
+        <div style={{
+          fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 400,
+          color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.2,
+        }}>{t(`guest.${tab}.title`)}</div>
+        <div style={{
+          fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
+          lineHeight: 1.45, marginBottom: 16,
+        }}>{t(`guest.${tab}.body`)}</div>
+        <button onClick={onCreate} style={{
+          background: 'var(--green-primary)', color: 'var(--on-primary)', border: 'none', borderRadius: 999,
+          padding: '10px 18px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600,
+          cursor: 'pointer',
+        }}>{t('guest.cta')}</button>
+        <button onClick={onSignIn} style={{
+          marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+          color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: '0.78rem',
+          textDecoration: 'underline', textUnderlineOffset: 3,
+        }}>{t('guest.signIn')}</button>
+      </div>
+    )
+  }
   return (
     <div style={{
       background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border-soft)',
@@ -1082,7 +1110,7 @@ function CollectionPhotoGrid({ photos = [], cover = null }) {
    Mirrors the recipe photo card: 2:3, photo/collage behind a dark gradient,
    white text on the image. Count pill top-left, kebab top-right, then
    title + description at the bottom.                                          */
-function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete }) {
+function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete, readOnly = false }) {
   const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -1100,7 +1128,7 @@ function CollectionCard({ collection, onClick, onRename, onSelectCover, onDelete
   // Only a user-chosen cover gives the photo card; "Default" is the plain teal card
   const hasImage = !!collection.cover_photo_url
 
-  const kebab = (
+  const kebab = readOnly ? null : (
         <div ref={menuRef} style={{ position: 'relative', flexShrink: 0, pointerEvents: 'auto' }}>
           <button
             onClick={e => { e.stopPropagation(); setMenuOpen(o => !o) }}
@@ -1309,6 +1337,9 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   const [publicRecipes, setPublicRecipes] = useState(cached ? cached.pub : [])
   const [collections, setCollections]     = useState(cached ? cached.collections : [])
   const [loading, setLoading]             = useState(!cached)
+  // Signed out: the two sample recipes (read-only) shown in My Recipes and the Sample collection
+  const [samples, setSamples]             = useState([])
+  const [sampleOpen, setSampleOpen]       = useState(false)
   const [search, setSearch]               = useState('')
   const [activeDietary,   setActiveDietary]   = useState([])
   const [activeMealTypes, setActiveMealTypes] = useState([])
@@ -1452,6 +1483,18 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
     let finalMy = null, finalPub = null, finalCols = null
     // Signed out: only the public Explore list is loaded; the personal lists stay empty.
     const none = Promise.resolve({ data: [], error: null })
+    if (!uid) {
+      // Read-only RPC: returns only the starter originals (nothing else private)
+      const { data: sampleData } = await supabase.rpc('sample_recipes')
+      const rows = sampleData || []
+      const ids = [...new Set(rows.map(r => r.user_id).filter(Boolean))]
+      let names = {}
+      if (ids.length) {
+        const { data: pr } = await supabase.from('profiles').select('id, username').in('id', ids)
+        names = Object.fromEntries((pr || []).map(p => [p.id, p.username]))
+      }
+      setSamples(rows.map(r => ({ ...r, author_username: names[r.user_id] || null, is_liked: false })))
+    }
     const pubQuery = supabase.from('recipes').select('*').eq('is_public', true)
     const [myRes, pubRes, likesRes, colRes, opensRes] = await Promise.all([
       uid ? supabase.from('recipes').select('*')
@@ -1784,7 +1827,41 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
         ) : (
           <>
             {/* ── Signed out: personal tabs invite to create an account ── */}
-            {!uid && activeTab !== 'public' && (
+            {!uid && activeTab !== 'public' && (activeTab === 'favourites' || samples.length > 0) && (
+              <div style={{ marginBottom: 20 }}>
+                {activeTab === 'collections' && sampleOpen && (
+                  <button onClick={() => setSampleOpen(false)} style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 12px',
+                    color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', fontSize: '0.88rem',
+                  }}>← {t('guest.samples.back')}</button>
+                )}
+                <MasonryGrid
+                  items={[
+                    ...(activeTab === 'favourites' ? []
+                      : activeTab === 'collections' && !sampleOpen
+                        ? [{ id: '__sample_col__', kind: 'col' }]
+                        : samples.map(r => ({ id: r.id, kind: 'recipe', recipe: r }))),
+                    { id: '__pitch__', kind: 'pitch' },
+                  ]}
+                  getKey={it => it.id}
+                  estimateHeight={(it, w) => it.kind === 'recipe' ? (it.recipe.photo_url ? w * 1.5 : 170)
+                    : it.kind === 'col' ? 194 : 240}
+                  renderItem={it => it.kind === 'recipe' ? (
+                    <MyRecipeCard recipe={it.recipe} onClick={() => onSelect(it.recipe)}
+                      onToggleFavourite={e => { e.stopPropagation(); onRequireAccount?.('like', it.recipe) }} />
+                  ) : it.kind === 'col' ? (
+                    <CollectionCard readOnly
+                      collection={{ id: '__sample__', name: t('guest.samples.colName'), description: t('guest.samples.colDesc'),
+                        cover_photo_url: null, recipe_count: samples.length }}
+                      onClick={() => setSampleOpen(true)} />
+                  ) : (
+                    <SignedOutPitch asCard tab={activeTab}
+                      onCreate={() => onRequireAccount?.('tab:' + activeTab)} onSignIn={onSignIn} />
+                  )}
+                />
+              </div>
+            )}
+            {!uid && activeTab !== 'public' && !(activeTab === 'favourites' || samples.length > 0) && (
               <SignedOutPitch
                 tab={activeTab}
                 onCreate={() => onRequireAccount?.('tab:' + activeTab)}

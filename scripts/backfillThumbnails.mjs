@@ -21,7 +21,7 @@ import sharp from 'sharp'
 
 const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME } = process.env
 const COMMIT = process.argv.includes('--commit')
-const SIZES = [640, 960]
+const SIZES = [640, 960, 1280]
 const QUALITY = 90
 
 if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
@@ -43,7 +43,7 @@ do {
   token = r.IsTruncated ? r.NextContinuationToken : undefined
 } while (token)
 
-const isThumb = k => /_(640|960)\.webp$/.test(k)
+const isThumb = k => /_(640|960|1280)\.webp$/.test(k)
 const EXT = /\.(webp|png|jpe?g)$/i
 const baseOf = k => k.replace(EXT, '')
 const originals = [...keys].filter(k => EXT.test(k) && !isThumb(k))

@@ -26,5 +26,16 @@
         }
       ]
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/optimize-photos",
+      "schedule": "0 9 * * 0"
+    }
+  ],
+  "functions": {
+    "api/optimize-photos.js": {
+      "maxDuration": 60
+    }
+  }
 }

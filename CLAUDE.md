@@ -1032,3 +1032,9 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 - Recipe page (desktop, lg): info 1/3, photos 2/3 in a 2:3 strip with a subtle well, 8px margin/gutters, cut-off photos run to the edge, arrows + per-photo Use as cover, soft edge shadow.
 - Recipe cards: names clamp at 3 lines; `useTitleOverlay` makes the photo-card gradient taller when a name needs 3 lines.
 - Import-from-link was built and removed (sites return 403 to server fetches). `recipes.source_url` column is unused and can be dropped.
+
+## v4.48 — Photo optimizer (weekly cron) + 1280px copies (2026-11-24)
+- Photos uploaded from the iPhone app have no small copies. `api/optimize-photos.js` creates `_640/_960/_1280.webp` (q90, originals untouched) for any original in R2 missing one. GET from Vercel cron (`vercel.json`, Sundays 09:00 UTC, `CRON_SECRET` bearer) or POST from the admin card (session token, checked with `is_admin()`). Up to 40 photos / 45 s per run; the rest show as "still waiting".
+- Every run logs a row in `photo_optimization_runs` (`supabase_migration_photo_runs.sql`, admin-read only). Admin dashboard → "Photo optimizer" accordion (`AdminPhotoOptimizer.jsx`): status dot (amber if no run for 8+ days or failures), Run now, last 8 runs.
+- New third size 1280: `thumb.js` srcset, `RecipeForm` upload, `presign-upload` allow-list, `backfillThumbnails.mjs` all updated. `sharp` moved to `dependencies` (server needs it).
+- Vercel env needed: `SUPABASE_SERVICE_ROLE_KEY` (server only), `CRON_SECRET`; existing R2_* and VITE_SUPABASE_* are reused.

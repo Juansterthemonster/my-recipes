@@ -4,6 +4,7 @@ import { getLastSeen, markSeen } from '../utils/adminSeen'
 import AdminReports from './AdminReports'
 import AdminAnnouncements from './AdminAnnouncements'
 import AdminTours from './AdminTours'
+import AdminPhotoOptimizer from './AdminPhotoOptimizer'
 
 /* ─────────────────────────────────────────────────────────────────────────────
    AdminDashboard — owner-only overview of every account.
@@ -377,6 +378,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
             {/* ── What's new announcements (try them by hand) ── */}
             <AdminAnnouncements />
             <AdminTours />
+            <AdminPhotoOptimizer />
 
                   </div>
                 </div>

@@ -89,11 +89,11 @@ export default async function handler(req, res) {
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 })
     const publicUrl = `${process.env.VITE_R2_PUBLIC_URL}/${key}`
 
-    // Optional small copies for list cards: <base>_640.webp / <base>_960.webp.
-    // Only these two widths are allowed, so nobody can write arbitrary keys.
+    // Optional small copies for list cards: <base>_640.webp / _960.webp / _1280.webp.
+    // Only these widths are allowed, so nobody can write arbitrary keys.
     const thumbs = {}
     for (const w of (Array.isArray(thumbSizes) ? thumbSizes : [])) {
-      if (w !== 640 && w !== 960) continue
+      if (w !== 640 && w !== 960 && w !== 1280) continue
       const thumbCmd = new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
         Key: `${base}_${w}.webp`,

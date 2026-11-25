@@ -17,6 +17,7 @@ const COLUMNS = [
   { key: 'username',            label: 'Username',      num: false },
   { key: 'email',               label: 'Email',         num: false },
   { key: 'signed_up',           label: 'Signed up',     num: false },
+  { key: 'last_visit',          label: 'Last visit',    num: false },
   { key: 'platforms',           label: 'Platform',      num: false },
   { key: 'recipe_count',        label: 'Recipes',       num: true  },
   { key: 'public_recipe_count', label: 'Public',        num: true  },
@@ -189,7 +190,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                         {r.username ? `@${r.username}` : <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(no username)</span>}
                       </div>
                       <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, overflowWrap: 'anywhere' }}>{r.email || '—'}</div>
-                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', color: 'var(--text-tertiary)', fontSize: '0.78rem', marginTop: 2 }}>Signed up {fmtDate(r.signed_up)} · Last visit {fmtDate(r.last_visit)}</div>
                       <div style={{ marginTop: 8 }}><PlatformBadges platforms={r.platforms} /></div>
                       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${sortable ? 4 : 2}, 1fr)`, gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
                         {[['Recipes', 'recipe_count'], ['Public', 'public_recipe_count'], ['Liked', 'liked_count'], ['Collections', 'collection_count']].filter(([, k]) => sortable || k === 'recipe_count' || k === 'public_recipe_count').map(([label, k]) => (
@@ -230,6 +231,7 @@ export default function AdminDashboard({ onBack, onOpenRecipe }) {
                       </td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)' }}>{r.email || '—'}</td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{fmtDate(r.signed_up)}</td>
+                      <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{fmtDate(r.last_visit)}</td>
                       <td style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)' }}><PlatformBadges platforms={r.platforms} /></td>
                       {['recipe_count', 'public_recipe_count', 'liked_count', 'collection_count'].filter(k => sortable || k === 'recipe_count' || k === 'public_recipe_count').map(k => (
                         <td key={k} style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-soft)', textAlign: 'right', color: 'var(--text-primary)' }}>{Number(r[k])}</td>

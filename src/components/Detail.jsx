@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { GLASS } from '../utils/glass'
 import { supabase } from '../supabase'
 import { formatTime } from './TimePicker'
@@ -10,7 +10,7 @@ import { slugify } from '../utils/slugify'
 import { getNativeShare } from '../utils/inApp'
 import Spotlight from './Spotlight'
 import GlassDialog from './GlassDialog'
-import { tourSeen, markTourSeen } from '../utils/tours'
+import { tourSeen, markTourSeen, claimTourSlot, countVisit, countedDue, markTourShown, markTourDone, tourArmed } from '../utils/tours'
 
 // Must match the MAX_PHOTOS check in RecipeForm.jsx — same cap, enforced on
 // both places a photo can be added to a recipe.
@@ -200,7 +200,7 @@ function IngredientCard({ ingredients, scaleFactor }) {
       background: 'var(--surface)', borderRadius: 'var(--r-lg)',
       border: '1px solid var(--border-soft)', padding: '20px 24px',
     }}>
-      <div style={{ ...sectionLabelStyle, color: 'var(--text-tertiary)', marginBottom: 14 }}>{t('detail.ingredients')}</div>
+      <div style={{ ...sectionLabelStyle, color: 'var(--text-secondary)', marginBottom: 14 }}>{t('detail.ingredients')}</div>
       {groups.map((group, gi) => {
         const required = group.items.filter(i => !i.optional)
         const optional = group.items.filter(i => i.optional)
@@ -587,6 +587,9 @@ export default function Detail({
   // One-time spotlight tour: "tap the photo to see all of it". Phones/tablets only, only when the
   // photo really is cropped, only until it has been seen once (see src/utils/tours.js).
   const [photoTour, setPhotoTour] = useState(false)
+  // One spotlight per recipe visit: the photo, servings and share tours take turns (see claimTourSlot).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const visitToken = useMemo(() => ({}), [recipe.id])
   const getPhotoBox = () => (photos.length > 1 ? photoScrollRef.current : singlePhotoRef.current)
   function endPhotoTour() {
     if (!photoTour) return
@@ -602,11 +605,65 @@ export default function Detail({
       if (!box || !img) return
       if (!img.naturalWidth) { if (++tries < 4) timer = setTimeout(check, 1000); return }   // still loading
       const fullHeight = box.clientWidth * img.naturalHeight / img.naturalWidth
-      if (fullHeight > box.clientHeight + 24) setPhotoTour(true)   // only when there is more to see
+      if (fullHeight > box.clientHeight + 24 && claimTourSlot(visitToken)) setPhotoTour(true)   // only when there is more to see
     }, 900)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id, isDesktopPhotoView])
+  // Servings tour: points at the − / + stepper. Any recipe that has servings, on any screen size.
+  // Shows on the first recipe opened and again from about the 4th open, twice at most (see tours.js).
+  // "Got it", or using the stepper yourself, stops it for good; tapping outside only closes it this time.
+  const servesRef = useRef(null)
+  const [servesTour, setServesTour] = useState(false)
+  function endServesTour(stopForGood) {
+    setServesTour(false)
+    if (stopForGood) markTourDone('servings')
+  }
+  useEffect(() => {
+    if (!recipe.serves) return
+    countVisit('servings', visitToken)
+    if (!countedDue('servings')) return
+    const timer = setTimeout(() => {
+      if (servesRef.current && countedDue('servings') && claimTourSlot(visitToken)) {
+        markTourShown('servings')
+        setServesTour(true)
+      }
+    }, 1600)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipe.id])
+  // Share tours (once each): signed-out visitors on a public recipe, and the owner after their first
+  // created or saved recipe (armed in App.jsx). Mode: 'guest' | 'first-public' | 'first-private'.
+  // A private recipe has no share button yet, so that one points at the ⋯ menu ("Make recipe public").
+  const shareRef = useRef(null)
+  const kebabRef = useRef(null)
+  const [shareTour, setShareTour] = useState(null)
+  function endShareTour() {
+    if (shareTour === 'guest') markTourSeen('share-guest')
+    else if (shareTour) markTourSeen('share-first')
+    setShareTour(null)
+  }
+  // Used the real control yourself: that counts as having found it.
+  function foundShare() {
+    if (readOnly) markTourSeen('share-guest')
+    else if (tourArmed('share-first')) markTourSeen('share-first')
+    setShareTour(null)
+  }
+  useEffect(() => {
+    const guest = readOnly && recipe.is_public
+    if (!guest && !isOwner) return
+    const timer = setTimeout(() => {
+      let mode = null
+      if (guest) { if (!tourSeen('share-guest') && shareRef.current) mode = 'guest' }
+      else if (tourArmed('share-first') && !tourSeen('share-first')) {
+        if (recipe.is_public && shareRef.current) mode = 'first-public'
+        else if (!recipe.is_public && kebabRef.current) mode = 'first-private'
+      }
+      if (mode && claimTourSlot(visitToken)) setShareTour(mode)
+    }, 1800)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipe.id])
   // Desktop (lg+): every photo is a 2:3 tile in one horizontal strip with 8px side margins. When they don't all fit,
   // a cut-off photo runs right to the edge (no margin there), so it is clear there is more, and prev/next arrows scroll.
   const deskStripRef = useRef(null)
@@ -923,7 +980,7 @@ export default function Detail({
   /* ── Key-facts typography: small-caps label over a larger value ── */
   const factLabel = {
     fontSize: '0.62rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
-    color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', marginBottom: 4,
+    color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 4,
   }
   const factValue = {
     fontWeight: 600, color: 'var(--text-primary)',
@@ -1009,7 +1066,8 @@ export default function Detail({
                 {/* Kebab menu */}
                 <div ref={menuRef} style={{ position: 'relative' }}>
                   <button
-                    onClick={() => setMenuOpen(o => !o)}
+                    ref={kebabRef}
+                    onClick={() => { foundShare(); setMenuOpen(o => !o) }}
                     aria-label={t('detail.moreOptions')}
                     style={{
                       width: 34, height: 34,
@@ -1523,7 +1581,7 @@ export default function Detail({
 
         </div>
 
-        <div className="lg:col-start-1 lg:row-start-1 min-w-0">
+        <div className="lg:col-start-1 lg:row-start-1 min-w-0 lg:self-stretch lg:flex lg:flex-col">
         {/* Eyebrow row: meal-type label (left) + share icon (right).
             Renders whenever either element needs to appear; if neither does the
             row is omitted entirely.  The share button lives here so it is always
@@ -1532,7 +1590,7 @@ export default function Detail({
           const mealItems = recipe.meal_type
             ? (Array.isArray(recipe.meal_type) ? recipe.meal_type : [recipe.meal_type]).filter(Boolean)
             : []
-          const showShare = recipe.is_public && !readOnly
+          const showShare = recipe.is_public   // signed-out visitors get it too, so they can pass recipes on
           if (!mealItems.length && !showShare) return null
           return (
             <div style={{
@@ -1542,15 +1600,15 @@ export default function Detail({
               {mealItems.length > 0 ? (
                 <div style={{
                   fontSize: '0.62rem', fontWeight: 500, letterSpacing: '0.1em',
-                  textTransform: 'uppercase', color: 'var(--text-tertiary)',
+                  textTransform: 'uppercase', color: 'var(--text-secondary)',
                   fontFamily: 'var(--font-body)',
                 }}>
                   {mealItems.map(v => tagLabel(t, 'meal', v)).join(' · ')}
                 </div>
               ) : <span />}
               {showShare && (
-                <div style={{ marginRight: -12 }}>
-                  <ShareBtn onClick={handleCopyLink} copied={linkCopied} />
+                <div ref={shareRef} style={{ marginRight: -12 }}>
+                  <ShareBtn onClick={() => { foundShare(); handleCopyLink() }} copied={linkCopied} />
                 </div>
               )}
             </div>
@@ -1558,12 +1616,13 @@ export default function Detail({
         })()}
 
           <h1
-            className="text-[1.5rem] md:text-[1.8rem]"
+            className="text-[1.5rem] md:text-[1.8rem] lg:text-[2.25rem]"
             style={{
               fontFamily: 'var(--font-display)', fontWeight: 400,
               color: 'var(--text-primary)', lineHeight: 1.15,
               marginBottom: authorName || addedDate || savedToMineDate || (recipe.copied_from && recipe.is_modified && !isStarter) ? 6 : 10,
               letterSpacing: '-0.01em',
+              overflowWrap: 'anywhere', textWrap: 'balance',   // long names wrap instead of pushing the layout
             }}>{recipe.name}</h1>
 
         {/* Modification notice — directly under recipe name */}
@@ -1609,7 +1668,7 @@ export default function Detail({
         {/* ── Key facts: time / servings / cuisine as distinct groups ──
             2-up grid on mobile, one divided row on desktop. Label (small caps)
             over value, so each reads as its own piece of information. */}
-        {(totalTimeText || prepTimeText || recipe.serves || recipe.cuisine) && (
+        {(totalTimeText || prepTimeText || recipe.serves) && (
           <div
             className="flex flex-wrap gap-y-4"
             style={{
@@ -1633,9 +1692,9 @@ export default function Detail({
               <div className="pl-3 ml-3 border-l border-[var(--border-soft)] first:pl-0 first:ml-0 first:border-l-0 lg:pl-6 lg:ml-6">
                 <div style={factLabel}>{t('detail.serves')}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 26 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div ref={servesRef} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <button
-                    onClick={() => setScaledServings(s => Math.max(1, (s || recipe.serves) - 1))}
+                    onClick={() => { endServesTour(true); setScaledServings(s => Math.max(1, (s || recipe.serves) - 1)) }}
                     aria-label={t('detail.fewer')}
                     style={stepperBtn}
                     onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)'; e.currentTarget.style.borderColor = 'var(--green-primary)' }}
@@ -1654,7 +1713,7 @@ export default function Detail({
                     {scaledServings ?? recipe.serves}
                   </span>
                   <button
-                    onClick={() => setScaledServings(s => (s || recipe.serves) + 1)}
+                    onClick={() => { endServesTour(true); setScaledServings(s => (s || recipe.serves) + 1) }}
                     aria-label={t('detail.more')}
                     style={stepperBtn}
                     onMouseEnter={e => { e.currentTarget.style.background = 'var(--green-primary)'; e.currentTarget.style.color = 'var(--on-primary)'; e.currentTarget.style.borderColor = 'var(--green-primary)' }}
@@ -1683,12 +1742,20 @@ export default function Detail({
                 </div>
               </div>
             ) : null}
-            {recipe.cuisine && (
-              <div className="basis-full first:pl-0 lg:basis-auto lg:ml-6 lg:pl-6 lg:border-l lg:border-[var(--border-soft)] lg:first:ml-0 lg:first:border-l-0 lg:first:pl-0">
-                <div style={factLabel}>{t('detail.cuisine')}</div>
-                <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{recipe.cuisine}</div>
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* Cuisine + dietary tags: one group, pinned to the bottom of this column on desktop (lg:mt-auto) */}
+        <div className="lg:mt-auto">
+        {recipe.cuisine && (
+          <div style={{
+            padding: '16px 0', margin: (totalTimeText || prepTimeText || recipe.serves) ? '0 0 18px' : '4px 0 18px',
+            // the line above Cuisine belongs to the facts block; only draw one here when there is no facts block
+            borderTop: (totalTimeText || prepTimeText || recipe.serves) ? 'none' : '1px solid var(--border-soft)',
+            borderBottom: '1px solid var(--border-soft)',
+          }}>
+            <div style={factLabel}>{t('detail.cuisine')}</div>
+            <div className="text-[0.95rem] lg:text-[1.0625rem]" style={factValue}>{recipe.cuisine}</div>
           </div>
         )}
 
@@ -1705,6 +1772,7 @@ export default function Detail({
             })}
           </div>
         )}
+        </div>{/* /cuisine + tags group */}
         </div>
 
       </div>
@@ -1714,7 +1782,7 @@ export default function Detail({
         <IngredientCard ingredients={ingredients} scaleFactor={scaleFactor} />
       )}
 
-      {/* ── Method ── */}
+      {/* ── Instructions ── */}
       {steps.length > 0 && (
         <div className="mx-4 mt-3 lg:mx-10" style={{
           background: 'var(--surface)', borderRadius: 'var(--r-lg)',
@@ -1722,7 +1790,7 @@ export default function Detail({
         }}>
           <div style={{
             fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: 'var(--text-tertiary)',
+            textTransform: 'uppercase', color: 'var(--text-secondary)',
             marginBottom: 14, fontFamily: 'var(--font-body)',
           }}>{t('detail.method')}</div>
           {steps.map((step, i) => (
@@ -1755,6 +1823,23 @@ export default function Detail({
         body={t('tour.photo-expand.body')}
         buttonLabel={t('tour.gotIt')}
         onClose={endPhotoTour}
+      />
+      <Spotlight
+        open={servesTour}
+        getTarget={() => servesRef.current}
+        title={t('tour.servings.title')}
+        body={t('tour.servings.body')}
+        buttonLabel={t('tour.gotIt')}
+        onClose={() => endServesTour(false)}
+        onGotIt={() => endServesTour(true)}
+      />
+      <Spotlight
+        open={!!shareTour}
+        getTarget={() => (shareTour === 'first-private' ? kebabRef.current : shareRef.current)}
+        title={t(`tour.${shareTour === 'guest' ? 'share-guest' : shareTour === 'first-private' ? 'share-first-private' : 'share-first'}.title`)}
+        body={t(`tour.${shareTour === 'guest' ? 'share-guest' : shareTour === 'first-private' ? 'share-first-private' : 'share-first'}.body`)}
+        buttonLabel={t('tour.gotIt')}
+        onClose={endShareTour}
       />
 
       {/* ── Collection bottom sheet ── */}

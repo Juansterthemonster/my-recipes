@@ -2,7 +2,7 @@ export default {
   en: {
     'detail.warnAmount': 'Amount could not be scaled automatically',
     'detail.linkCopied': 'Link copied!', 'detail.share': 'Share recipe', 'detail.linkCopiedToast': 'Recipe link copied',
-    'detail.ingredients': 'Ingredients', 'detail.optionalIngredients': 'Optional ingredients', 'detail.method': 'Method',
+    'detail.ingredients': 'Ingredients', 'detail.optionalIngredients': 'Optional ingredients', 'detail.method': 'Instructions',
     'detail.collectionsUpdated': 'Collections updated', 'detail.addedTo': 'Added to {name}', 'detail.removedFrom': 'Removed from {name}',
     'detail.addToCollection': 'Add to collection', 'detail.addToAnother': 'Add to another collection',
     'detail.removeFromCollection': 'Remove from collection', 'detail.removedFromCollections': 'Removed from collections',
@@ -30,7 +30,7 @@ export default {
   fr: {
     'detail.warnAmount': 'La quantité n\'a pas pu être ajustée automatiquement',
     'detail.linkCopied': 'Lien copié!', 'detail.share': 'Partager la recette', 'detail.linkCopiedToast': 'Lien de la recette copié',
-    'detail.ingredients': 'Ingrédients', 'detail.optionalIngredients': 'Ingrédients facultatifs', 'detail.method': 'Préparation',
+    'detail.ingredients': 'Ingrédients', 'detail.optionalIngredients': 'Ingrédients facultatifs', 'detail.method': 'Instructions',
     'detail.collectionsUpdated': 'Collections mises à jour', 'detail.addedTo': 'Ajoutée à {name}', 'detail.removedFrom': 'Retirée de {name}',
     'detail.addToCollection': 'Ajouter à une collection', 'detail.addToAnother': 'Ajouter à une autre collection',
     'detail.removeFromCollection': 'Retirer de la collection', 'detail.removedFromCollections': 'Retirée des collections',
@@ -58,7 +58,7 @@ export default {
   es: {
     'detail.warnAmount': 'No se pudo ajustar la cantidad automáticamente',
     'detail.linkCopied': '¡Enlace copiado!', 'detail.share': 'Compartir receta', 'detail.linkCopiedToast': 'Enlace de la receta copiado',
-    'detail.ingredients': 'Ingredientes', 'detail.optionalIngredients': 'Ingredientes opcionales', 'detail.method': 'Preparación',
+    'detail.ingredients': 'Ingredientes', 'detail.optionalIngredients': 'Ingredientes opcionales', 'detail.method': 'Instrucciones',
     'detail.collectionsUpdated': 'Colecciones actualizadas', 'detail.addedTo': 'Agregada a {name}', 'detail.removedFrom': 'Quitada de {name}',
     'detail.addToCollection': 'Agregar a una colección', 'detail.addToAnother': 'Agregar a otra colección',
     'detail.removeFromCollection': 'Quitar de la colección', 'detail.removedFromCollections': 'Quitada de las colecciones',

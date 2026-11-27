@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TOURS, tourSeen, resetTour } from '../utils/tours'
+import { TOURS, tourInfo, resetTour } from '../utils/tours'
 import AdminAccordion from './AdminAccordion'
 
 /* AdminTours — owner tool for the one-time spotlight tours (src/utils/tours.js).
@@ -18,14 +18,14 @@ export default function AdminTours() {
 
   function reset(id) {
     resetTour(id)
-    setNote('Done. Open any recipe with a photo (phone-width screen) and the tour will appear.')
+    setNote('Done. Open a recipe (see the tour’s description for what it needs) and the tour will appear.')
     bump(n => n + 1)
   }
 
   return (
     <AdminAccordion title="Spotlight tours" meta={TOURS.length}>
       <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12 }}>
-        Each tour shows once per device. Reset it to see it again.
+        Tours are remembered per device. Reset one to see it again.
       </div>
       {note && <div style={{ background: 'var(--green-light)', color: 'var(--success-text-dark)', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', marginBottom: 12 }}>{note}</div>}
       {TOURS.map((tour, i) => (
@@ -37,7 +37,7 @@ export default function AdminTours() {
             <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)' }}>{tour.id}</div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 2 }}>{tour.label}</div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: 2 }}>
-              {tourSeen(tour.id) ? 'This device: already seen' : 'This device: not seen yet'}
+              {tourInfo(tour.id)}
             </div>
           </div>
           <button onClick={() => reset(tour.id)} style={btn}>Reset on this device</button>

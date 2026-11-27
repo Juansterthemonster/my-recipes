@@ -1396,6 +1396,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
   function matchesSearch(recipe, q) {
     if (!q) return true
     if (recipe.name.toLowerCase().includes(q)) return true
+    if (recipe.cuisine && recipe.cuisine.toLowerCase().includes(q)) return true
     if (Array.isArray(recipe.ingredients)) {
       return recipe.ingredients.some(
         ing => ing.name && ing.name.toLowerCase().includes(q)
@@ -1548,7 +1549,7 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
 
       const { data: crData } = await supabase
         .from('collection_recipes')
-        .select('collection_id, recipes(id, photo_url, name, ingredients)')
+        .select('collection_id, recipes(id, photo_url, name, ingredients, cuisine)')
         .in('collection_id', collectionIds)
 
       // Group photos + counts by collection_id
@@ -1557,8 +1558,9 @@ export default function Browse({ onSelect, onAdd, session, activeTab, onTabChang
         const cid = row.collection_id
         if (!grouped[cid]) grouped[cid] = { count: 0, photos: [], text: [] }
         grouped[cid].count++
-        // Text of every recipe in the collection (name + ingredient names) so search can look inside
+        // Text of every recipe in the collection (name + cuisine + ingredient names) so search can look inside
         if (row.recipes?.name) grouped[cid].text.push(row.recipes.name)
+        if (row.recipes?.cuisine) grouped[cid].text.push(row.recipes.cuisine)
         if (Array.isArray(row.recipes?.ingredients)) {
           for (const ing of row.recipes.ingredients) if (ing?.name) grouped[cid].text.push(ing.name)
         }

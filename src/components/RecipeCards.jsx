@@ -238,7 +238,7 @@ export function MyRecipeCard({ recipe, onClick, onToggleFavourite, onRemove }) {
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'var(--ink-50)',
+            textTransform: 'uppercase', color: 'var(--text-secondary)',
             fontFamily: 'var(--font-body)', marginBottom: 5,
           }}>{mealTypeLabel}</div>
         )}
@@ -404,7 +404,7 @@ export function PublicRecipeCard({ recipe, onClick, onToggleLike, onRemove }) {
         {mealTypeLabel && (
           <div style={{
             fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: 'var(--ink-50)',
+            textTransform: 'uppercase', color: 'var(--text-secondary)',
             fontFamily: 'var(--font-body)', marginBottom: 5,
           }}>{mealTypeLabel}</div>
         )}

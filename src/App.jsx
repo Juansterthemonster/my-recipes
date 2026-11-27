@@ -17,6 +17,7 @@ import { patchCachedMyRecipe } from './utils/listCache'
 import { DetailSkeleton } from './components/Skeletons'
 import { MY_SORTS } from './utils/sortRecipes'
 import { IN_NATIVE_APP } from './utils/inApp'
+import { tourSeen, armTour, tourArmed } from './utils/tours'
 
 // On a page refresh the browser keeps the history entry's state, so we can reopen the same screen
 // (recipe, collection, profile, admin…) instead of dropping back to the recipe list.
@@ -384,12 +385,23 @@ export default function App() {
     window.history.replaceState({ view: 'browse', tab: 'mine', recipe: null }, '', '#mine')
   }
 
+  // After someone's first own recipe (not counting the starter recipes every account gets), switch on the
+  // "share it" tour; it shows the next time they open one of their recipes.
+  function armShareTourIfFirst() {
+    const uid = session?.user?.id
+    if (!uid || tourSeen('share-first') || tourArmed('share-first')) return
+    supabase.from('recipes').select('id', { count: 'exact', head: true }).eq('user_id', uid).is('starter_by', null)
+      .then(({ count, error }) => { if (!error && count === 1) armTour('share-first') })
+  }
+
   function handleSaved(isEdit) {
+    if (!isEdit) armShareTourIfFirst()
     goHome()
     showToast(isEdit ? t('app.toast.savedChanges') : t('app.toast.saved'))
   }
 
   function handleAddedToMyRecipes(copiedRecipe) {
+    armShareTourIfFirst()
     showToast(t('app.toast.added'))
     openDetail(copiedRecipe)
   }

@@ -7,7 +7,8 @@ import { FROST_FILL, FROST_EDGE, FROST_DIM } from '../utils/glass'
    The lit area is a real hole: taps on it reach the element underneath (so "tap the
    photo" works right inside the tour). Taps anywhere else, Esc, or the button close it.
    The card is frosted glass (iOS-style) with a little triangle pointing at the lit element.
-   Props: open, getTarget() → element, title, body, buttonLabel, onClose.
+   Props: open, getTarget() → element, title, body, buttonLabel, onClose, onGotIt (optional: the button
+   calls this instead of onClose, so "Got it" can be told apart from tapping outside or Esc).
    ───────────────────────────────────────────────────────────────────────────── */
 
 const PAD = 4          // breathing room around the lit element
@@ -19,7 +20,7 @@ const ARROW_EDGE = CARD_EDGE
 
 const GLASS_FILL = FROST_FILL   // same frosted glass as the card and its triangle
 
-export default function Spotlight({ open, getTarget, title, body, buttonLabel, onClose }) {
+export default function Spotlight({ open, getTarget, title, body, buttonLabel, onClose, onGotIt }) {
   const [rect, setRect] = useState(null)
   const [vp, setVp] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
 
@@ -59,8 +60,11 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
   const below = vp.h - bottom > 200
 
   const cardW = Math.min(CARD_MAX, vp.w - 32)
-  const cardLeft = (vp.w - cardW) / 2
   const holeCenter = hole.left + hole.width / 2
+  // Sit the card under (or over) the lit element, not in the middle of the screen: on a wide desktop window
+  // a centred card would float far away from a small target. On phones the card is nearly full width, so this
+  // lands in the same place as before.
+  const cardLeft = Math.max(16, Math.min(vp.w - cardW - 16, holeCenter - cardW / 2))
   const arrowX = Math.max(26, Math.min(cardW - 26, holeCenter - cardLeft))   // keep it off the rounded corners
   const gap = 8 + ARROW_H
   const cardPos = below
@@ -123,7 +127,7 @@ export default function Spotlight({ open, getTarget, title, body, buttonLabel, o
 
         <div style={{ position: 'relative', fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{title}</div>
         <div style={{ position: 'relative', fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 6 }}>{body}</div>
-        <button onClick={onClose} style={{
+        <button onClick={onGotIt || onClose} style={{
           position: 'relative', alignSelf: 'flex-end', marginTop: 14,
           background: 'transparent', color: 'var(--green-primary)', border: '1.5px solid var(--green-primary)',
           borderRadius: 999, padding: '8px 20px', cursor: 'pointer',

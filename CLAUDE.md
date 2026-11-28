@@ -1,6 +1,8 @@
 # Mi Sazón — Claude Context File
 
 > Keep this file up to date after every session. It's what Claude reads first to get oriented.
+>
+> **Scope:** this file is about the app itself (product, code, design, releases). Marketing, positioning, store copy and growth plans live in `marketing.md` — read it for those, and don't duplicate its content here. Product work that marketing asks for gets logged here once built.
 
 ---
 
@@ -62,7 +64,11 @@ my-recipes/
   vercel.json             SPA rewrite rule for /recipe/:id deep links
   vite.config.js          Vite config — server.host:true for WiFi local dev
   CLAUDE.md               ← this file
-  STYLEGUIDE_v2.md        Full design system reference (colours, type, icons, components)
+  marketing.md            Marketing plan, voice, channels (separate from this file)
+  docs/README.md          Index of all docs (start here to find anything)
+  docs/design/STYLEGUIDE_v2.md   Full design system reference (colours, type, icons, components)
+  docs/handoffs/          Old repo-era handoffs (newer cross-platform handoffs live in the Claude Project)
+  docs/archive/           Superseded files
   README.md               Public-facing setup docs
 ```
 
@@ -70,7 +76,7 @@ my-recipes/
 
 ## Design system (source of truth: index.css)
 
-See `STYLEGUIDE_v2.md` for the complete visual reference. Quick token lookup:
+See `docs/design/STYLEGUIDE_v2.md` for the complete visual reference. Quick token lookup:
 
 ### Colours
 | Token | Hex | Role |
@@ -1012,7 +1018,9 @@ The cream system navigation bar in Android Chrome (non-edge-to-edge) can't be co
 3. **Update this file after each session** — add completed features to version history, note new decisions or known issues
 4. **For UI changes** — paste the component name and describe what you want. Claude can read and edit the actual `.jsx` files directly
 5. **For DB changes** — Claude can write the Supabase SQL migration for you to run in the Supabase SQL editor
-6. **For design reference** — see `STYLEGUIDE_v2.md` for the complete visual system
+6. **For design reference** — see `docs/design/STYLEGUIDE_v2.md` for the complete visual system
+7. **For marketing work** — see `marketing.md` (positioning, voice, channels, calendar, metrics)
+8. **To find any other doc** — see `docs/README.md`
 
 ## v4.45 — Dark theme (follows the system setting)
 - All colours are CSS variables in `src/index.css`; the dark values live in the `@media (prefers-color-scheme: dark)` block right after `:root` and mirror the iOS `Theme.swift` (page #151A1C, cards #1F2527, pale-teal primary #CFE7EE with dark `--on-primary`).
